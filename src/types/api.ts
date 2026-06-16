@@ -69,6 +69,11 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface LogoutRequest {
   refreshToken: string;
 }
@@ -88,10 +93,8 @@ export interface AuthUser {
   id: UUID;
   email: string;
   fullName: string;
-  roleName?: string | null;
-  roleNames?: string[];
+  roles: string[];
   tenantSlug?: string | null;
-  permissions?: string[];
 }
 
 export interface LoginResponse {

@@ -1,6 +1,7 @@
 export type {
   LoginRequest,
   RefreshTokenRequest,
+  RefreshTokenResponse,
   LogoutRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
