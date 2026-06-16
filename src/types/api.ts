@@ -1,0 +1,371 @@
+export type UUID = string;
+
+/** Every API response is wrapped in this envelope (confirmed against the live API). */
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  errors: ApiErrorPayload | null;
+  traceId: string;
+}
+
+export interface ApiErrorPayload {
+  code: string;
+  details?: Record<string, string[]>;
+}
+
+/** Normalized error shape surfaced to the UI by baseQueryWithReauth. */
+export interface ApiError {
+  status: number;
+  code: string;
+  message: string;
+  details?: Record<string, string[]>;
+  traceId?: string;
+}
+
+/**
+ * The Swagger doc has no response schemas (Swashbuckle without ProducesResponseType
+ * annotations) — only request DTOs are typed there. Everything below the request DTOs
+ * is inferred from naming conventions and the confirmed envelope; verify against a live
+ * authenticated response and adjust as needed once endpoints are exercised for real.
+ */
+export interface PaginatedResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+// ---------- Address (shared across Tenant/User/TenantAdmin) ----------
+
+export interface AddressRequest {
+  line1?: string | null;
+  line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+}
+
+export type AddressDto = AddressRequest;
+
+// ---------- Auth ----------
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+  tenantSlug?: string | null;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+export interface LogoutRequest {
+  refreshToken: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+  tenantSlug?: string | null;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface AuthUser {
+  id: UUID;
+  email: string;
+  fullName: string;
+  roleName?: string | null;
+  roleNames?: string[];
+  tenantSlug?: string | null;
+  permissions?: string[];
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
+}
+
+// ---------- Account setup ----------
+
+export interface SetPasswordRequest {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}
+
+// ---------- Invitations (generic accept flow) ----------
+
+export interface CompanyInfo {
+  name?: string | null;
+  website?: string | null;
+  industry?: string | null;
+}
+
+export interface AcceptTenantAdminInvitationRequest {
+  token: string;
+  fullName: string;
+  phone?: string | null;
+  password: string;
+  confirmPassword: string;
+  company?: CompanyInfo;
+}
+
+export interface AcceptTenantUserInvitationRequest {
+  token: string;
+  fullName: string;
+  phone?: string | null;
+  password: string;
+  confirmPassword: string;
+}
+
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+
+export interface InvitationDto {
+  id: UUID;
+  email: string;
+  status: InvitationStatus;
+  roleNames: string[];
+  invitedAt: string;
+  expiresAt?: string;
+}
+
+// ---------- Files ----------
+
+export interface FileDto {
+  id: UUID;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  url?: string;
+  uploadedAt: string;
+}
+
+// ---------- Permissions ----------
+
+export interface PermissionDto {
+  id: UUID;
+  name: string;
+  description?: string;
+  group?: string;
+}
+
+export interface PermissionGroup {
+  group: string;
+  permissions: PermissionDto[];
+}
+
+// ---------- Tenants ----------
+
+export interface TenantDto {
+  id: UUID;
+  slug: string;
+  name: string;
+  isActive: boolean;
+  profileFileId?: UUID | null;
+  profileImageUrl?: string | null;
+  address?: AddressDto | null;
+  createdAt: string;
+}
+
+export interface OnboardUserDetails {
+  fullName: string;
+  email: string;
+  password: string;
+}
+
+export interface OnboardTenantDetails {
+  name: string;
+  slug: string;
+}
+
+export interface OnboardRoleDetails {
+  name: string;
+  description?: string | null;
+  permissions?: UUID[];
+}
+
+export interface OnboardTenantRequest {
+  user: OnboardUserDetails;
+  tenant: OnboardTenantDetails;
+  roles?: OnboardRoleDetails[];
+}
+
+export interface UpdateTenantRequest {
+  slug: string;
+  name?: string;
+  newSlug?: string;
+  isActive?: boolean;
+  profileFileId?: UUID | null;
+  clearProfileImage?: boolean;
+  address?: AddressRequest;
+  clearAddress?: boolean;
+}
+
+export interface DeleteTenantRequest {
+  slug: string;
+}
+
+// ---------- Tenant admins (super-admin managing admins across tenants) ----------
+
+export interface TenantAdminDto {
+  id: UUID;
+  email: string;
+  fullName: string;
+  roleNames: string[];
+  tenantId: UUID;
+  tenantSlug?: string;
+  isActive: boolean;
+  profileImageUrl?: string | null;
+  address?: AddressDto | null;
+  createdAt: string;
+}
+
+export interface CreateTenantAdminRequest {
+  tenantSlug: string;
+  fullName: string;
+  email: string;
+  roleNames?: string[];
+}
+
+export interface UpdateTenantAdminRequest {
+  userId: UUID;
+  fullName?: string;
+  roleName?: string;
+  profileFileId?: UUID | null;
+  clearProfileImage?: boolean;
+  address?: AddressRequest;
+  clearAddress?: boolean;
+}
+
+export interface InviteTenantAdminRequest {
+  tenantSlug: string;
+  email: string;
+  roleIds?: UUID[];
+}
+
+// ---------- Users (in-tenant users) ----------
+
+export interface UserDto {
+  id: UUID;
+  email: string;
+  fullName: string;
+  roleName: string;
+  isActive: boolean;
+  profileImageUrl?: string | null;
+  address?: AddressDto | null;
+  createdAt: string;
+}
+
+export interface CreateUserRequest {
+  fullName: string;
+  email: string;
+  password: string;
+  roleName?: string;
+}
+
+/** PUT /api/v1/users has no {id} segment — the user being updated is identified by email. */
+export interface UpdateUserRequest {
+  email: string;
+  fullName?: string;
+  roleName?: string;
+  password?: string;
+  profileFileId?: UUID | null;
+  clearProfileImage?: boolean;
+  address?: AddressRequest;
+  clearAddress?: boolean;
+}
+
+export interface DeleteUserRequest {
+  email: string;
+}
+
+export interface UpdateCurrentUserRequest {
+  fullName?: string;
+  password?: string;
+  profileFileId?: UUID | null;
+  clearProfileImage?: boolean;
+  address?: AddressRequest;
+  clearAddress?: boolean;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface CreateTenantUserRequest {
+  fullName: string;
+  email: string;
+  roleNames?: string[];
+}
+
+export interface InviteTenantUserRequest {
+  email: string;
+  roleIds?: UUID[];
+}
+
+// ---------- Roles ----------
+
+export interface RoleDto {
+  id: UUID;
+  name: string;
+  description?: string;
+  permissions: PermissionDto[];
+  createdAt: string;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  description?: string | null;
+  permissions?: UUID[];
+}
+
+export interface UpdateRoleRequest {
+  name: string;
+  description?: string | null;
+  permissions?: UUID[];
+}
+
+// ---------- Products ----------
+
+export interface ProductDto {
+  id: UUID;
+  name: string;
+  price: number;
+  createdAt: string;
+}
+
+export interface CreateProductRequest {
+  name: string;
+  price: number;
+}
+
+/** PUT /api/v1/products renames by sending the current name + newName. */
+export interface UpdateProductRequest {
+  name: string;
+  newName?: string;
+  price: number;
+}
+
+// ---------- Reports ----------
+
+/** No request/response schema in Swagger at all — refine once the endpoint is exercised. */
+export interface ReportsSummary {
+  [key: string]: unknown;
+}
