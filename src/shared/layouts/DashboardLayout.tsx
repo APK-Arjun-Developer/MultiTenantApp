@@ -1,5 +1,7 @@
 import { useState, Suspense } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { PageTransition } from '@/shared/components/PageTransition';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { selectCurrentUser, selectRefreshToken } from '@/features/auth/slices/authSlice';
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
@@ -54,6 +56,7 @@ function PageLoader() {
 export function DashboardLayout() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
   const themeMode = useAppSelector(selectThemeMode);
   const refreshToken = useAppSelector(selectRefreshToken);
@@ -217,7 +220,11 @@ export function DashboardLayout() {
         }}
       >
         <Suspense fallback={<PageLoader />}>
-          <Outlet />
+          <AnimatePresence mode="wait" initial={false}>
+            <PageTransition motionKey={location.pathname}>
+              <Outlet />
+            </PageTransition>
+          </AnimatePresence>
         </Suspense>
       </Box>
     </Box>
