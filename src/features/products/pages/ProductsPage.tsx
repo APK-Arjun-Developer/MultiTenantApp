@@ -13,6 +13,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { PageTransition } from '@/shared/components/PageTransition';
+import { PermissionGuard } from '@/shared/components/PermissionGuard';
+import { PERMISSIONS } from '@/shared/constants/permissions';
 import { formatDate, formatCurrency } from '@/shared/utils/format';
 import { ProductForm } from '../components/ProductForm';
 import { useGetProductsQuery, useDeleteProductMutation } from '../api/productsApi';
@@ -56,22 +58,30 @@ export function ProductsPage() {
         header: '',
         cell: ({ row }) => (
           <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-            <Tooltip title="Edit">
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setSelectedProduct(row.original);
-                  setDrawerOpen(true);
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => setDeleteTarget(row.original)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <PermissionGuard permission={PERMISSIONS.PRODUCTS_UPDATE}>
+              <Tooltip title="Edit">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSelectedProduct(row.original);
+                    setDrawerOpen(true);
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
+            <PermissionGuard permission={PERMISSIONS.PRODUCTS_DELETE}>
+              <Tooltip title="Delete">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setDeleteTarget(row.original)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
           </Stack>
         ),
       },
@@ -85,16 +95,18 @@ export function ProductsPage() {
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           Products
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setSelectedProduct(undefined);
-            setDrawerOpen(true);
-          }}
-        >
-          Add Product
-        </Button>
+        <PermissionGuard permission={PERMISSIONS.PRODUCTS_CREATE}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setSelectedProduct(undefined);
+              setDrawerOpen(true);
+            }}
+          >
+            Add Product
+          </Button>
+        </PermissionGuard>
       </Box>
 
       <DataTable data={data} columns={columns} isLoading={isLoading} />

@@ -17,6 +17,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { PageTransition } from '@/shared/components/PageTransition';
+import { PermissionGuard } from '@/shared/components/PermissionGuard';
+import { PERMISSIONS } from '@/shared/constants/permissions';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { formatDate } from '@/shared/utils/format';
 import { TenantForm } from '../components/TenantForm';
@@ -77,22 +79,30 @@ export function TenantsPage() {
         header: '',
         cell: ({ row }) => (
           <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-            <Tooltip title="Edit">
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setSelectedTenant(row.original);
-                  setDrawerOpen(true);
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => setDeleteTarget(row.original)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <PermissionGuard permission={PERMISSIONS.TENANTS_UPDATE}>
+              <Tooltip title="Edit">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSelectedTenant(row.original);
+                    setDrawerOpen(true);
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
+            <PermissionGuard permission={PERMISSIONS.TENANTS_DELETE}>
+              <Tooltip title="Delete">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setDeleteTarget(row.original)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
           </Stack>
         ),
       },
@@ -125,16 +135,18 @@ export function TenantsPage() {
               },
             }}
           />
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setSelectedTenant(undefined);
-              setDrawerOpen(true);
-            }}
-          >
-            Onboard Tenant
-          </Button>
+          <PermissionGuard permission={PERMISSIONS.TENANTS_CREATE}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setSelectedTenant(undefined);
+                setDrawerOpen(true);
+              }}
+            >
+              Onboard Tenant
+            </Button>
+          </PermissionGuard>
         </Stack>
       </Box>
 

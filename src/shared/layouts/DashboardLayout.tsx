@@ -1,9 +1,14 @@
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/shared/components/PageTransition';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { selectCurrentUser, selectRefreshToken } from '@/features/auth/slices/authSlice';
+import {
+  selectCurrentUser,
+  selectRefreshToken,
+  setPermissions,
+} from '@/features/auth/slices/authSlice';
+import { useGetCurrentRoleQuery } from '@/features/roles/api/rolesApi';
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
 import AppBar from '@mui/material/AppBar';
@@ -61,6 +66,13 @@ export function DashboardLayout() {
   const themeMode = useAppSelector(selectThemeMode);
   const refreshToken = useAppSelector(selectRefreshToken);
   const [logoutMutation] = useLogoutMutation();
+  const { data: currentRole } = useGetCurrentRoleQuery();
+
+  useEffect(() => {
+    if (currentRole) {
+      dispatch(setPermissions(currentRole.permissions.map((p) => p.name)));
+    }
+  }, [currentRole, dispatch]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 

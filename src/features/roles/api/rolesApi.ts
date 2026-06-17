@@ -3,6 +3,9 @@ import type { RoleDto, CreateRoleRequest, UpdateRoleRequest } from '@/types/api'
 
 export const rolesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    getCurrentRole: builder.query<RoleDto, void>({
+      query: () => ({ url: '/api/v1/roles/current' }),
+    }),
     getRoles: builder.query<RoleDto[], void>({
       query: () => ({ url: '/api/v1/roles' }),
       providesTags: (result) =>
@@ -40,6 +43,7 @@ export const rolesApi = apiSlice.injectEndpoints({
 });
 
 export const {
+  useGetCurrentRoleQuery,
   useGetRolesQuery,
   useGetRoleQuery,
   useCreateRoleMutation,

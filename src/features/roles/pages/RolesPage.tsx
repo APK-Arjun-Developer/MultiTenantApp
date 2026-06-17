@@ -14,6 +14,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { PageTransition } from '@/shared/components/PageTransition';
+import { PermissionGuard } from '@/shared/components/PermissionGuard';
+import { PERMISSIONS } from '@/shared/constants/permissions';
 import { formatDate } from '@/shared/utils/format';
 import { RoleForm } from '../components/RoleForm';
 import { useGetRolesQuery, useDeleteRoleMutation } from '../api/rolesApi';
@@ -60,22 +62,30 @@ export function RolesPage() {
         header: '',
         cell: ({ row }) => (
           <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-            <Tooltip title="Edit">
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setSelectedRole(row.original);
-                  setDrawerOpen(true);
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => setDeleteTarget(row.original)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <PermissionGuard permission={PERMISSIONS.ROLES_UPDATE}>
+              <Tooltip title="Edit">
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSelectedRole(row.original);
+                    setDrawerOpen(true);
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
+            <PermissionGuard permission={PERMISSIONS.ROLES_DELETE}>
+              <Tooltip title="Delete">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setDeleteTarget(row.original)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
           </Stack>
         ),
       },
@@ -89,16 +99,18 @@ export function RolesPage() {
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           Roles
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setSelectedRole(undefined);
-            setDrawerOpen(true);
-          }}
-        >
-          Add Role
-        </Button>
+        <PermissionGuard permission={PERMISSIONS.ROLES_CREATE}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setSelectedRole(undefined);
+              setDrawerOpen(true);
+            }}
+          >
+            Add Role
+          </Button>
+        </PermissionGuard>
       </Box>
 
       <DataTable data={data} columns={columns} isLoading={isLoading} />
