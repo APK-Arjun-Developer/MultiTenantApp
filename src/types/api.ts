@@ -89,6 +89,17 @@ export interface ResetPasswordRequest {
   confirmPassword: string;
 }
 
+export interface VerifyEmailOtpRequest {
+  email: string;
+  tenantSlug?: string | null;
+  otp: string;
+}
+
+export interface ResendEmailOtpRequest {
+  email: string;
+  tenantSlug?: string | null;
+}
+
 export interface AuthUser {
   id: UUID;
   email: string;
@@ -100,7 +111,16 @@ export interface AuthUser {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
-  user: AuthUser;
+  expiresAt: string;
+  email: string;
+  fullName: string;
+  roles: string[];
+}
+
+export interface ValidateResetTokenResponse {
+  isValid: boolean;
+  email?: string | null;
+  errorMessage?: string | null;
 }
 
 // ---------- Account setup ----------
@@ -112,6 +132,43 @@ export interface SetPasswordRequest {
 }
 
 // ---------- Invitations (generic accept flow) ----------
+
+export type InvitationType = 'TenantAdmin' | 'TenantUser';
+
+export interface ValidateInvitationResponse {
+  isValid: boolean;
+  email?: string | null;
+  invitationType?: InvitationType | null;
+  tenantName?: string | null;
+  tenantSlug?: string | null;
+  errorMessage?: string | null;
+}
+
+export interface AcceptInvitationResponse {
+  userId: UUID;
+  email: string;
+  fullName: string;
+  tenantId: UUID;
+  tenantSlug?: string | null;
+  roles: string[];
+  invitationType: InvitationType;
+  isActive: boolean;
+}
+
+export interface ValidateAccountSetupResponse {
+  isValid: boolean;
+  email?: string | null;
+  fullName?: string | null;
+  tenantSlug?: string | null;
+  errorMessage?: string | null;
+}
+
+export interface SetPasswordResponse {
+  userId: UUID;
+  email: string;
+  tenantSlug?: string | null;
+  isActive: boolean;
+}
 
 export interface CompanyInfo {
   name?: string | null;

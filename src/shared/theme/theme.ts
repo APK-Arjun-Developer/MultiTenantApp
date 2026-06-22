@@ -37,6 +37,13 @@ export function buildTheme(mode: 'light' | 'dark') {
       },
       MuiTextField: {
         defaultProps: { size: 'small', variant: 'outlined' },
+        styleOverrides: {
+          root: {
+            input: {
+              padding: '10px 12px',
+            },
+          },
+        },
       },
       MuiCard: {
         styleOverrides: {

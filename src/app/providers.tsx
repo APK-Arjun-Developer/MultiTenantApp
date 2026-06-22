@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import { useAppSelector } from './hooks';
 import { buildTheme } from '@/shared/theme';
 import { selectThemeMode } from '@/features/ui/uiSlice';
+import { SnackbarProvider } from '@/shared/components/SnackbarProvider';
 
 function ThemedApp({ children }: { children: ReactNode }) {
   const themeMode = useAppSelector(selectThemeMode);
@@ -16,8 +16,7 @@ function ThemedApp({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {children}
-      <Toaster position="top-right" />
+      <SnackbarProvider>{children}</SnackbarProvider>
     </ThemeProvider>
   );
 }

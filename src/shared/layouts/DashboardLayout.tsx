@@ -1,14 +1,9 @@
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/shared/components/PageTransition';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import {
-  selectCurrentUser,
-  selectRefreshToken,
-  setPermissions,
-} from '@/features/auth/slices/authSlice';
-import { useGetCurrentRoleQuery } from '@/features/roles/api/rolesApi';
+import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
 import AppBar from '@mui/material/AppBar';
@@ -28,27 +23,15 @@ import MenuItem from '@mui/material/MenuItem';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import InventoryIcon from '@mui/icons-material/Inventory';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
-import PeopleIcon from '@mui/icons-material/People';
 
 const DRAWER_WIDTH = 240;
 
-const NAV_ITEMS = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Tenants', icon: <BusinessIcon />, path: '/tenants' },
-  { text: 'Users', icon: <PeopleIcon />, path: '/users' },
-  { text: 'Roles', icon: <AdminPanelSettingsIcon />, path: '/roles' },
-  { text: 'Products', icon: <InventoryIcon />, path: '/products' },
-  { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
-] as const;
+const NAV_ITEMS = [{ text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' }];
 
 function PageLoader() {
   return (
@@ -64,15 +47,8 @@ export function DashboardLayout() {
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
   const themeMode = useAppSelector(selectThemeMode);
-  const refreshToken = useAppSelector(selectRefreshToken);
   const [logoutMutation] = useLogoutMutation();
-  const { data: currentRole } = useGetCurrentRoleQuery();
-
-  useEffect(() => {
-    if (currentRole) {
-      dispatch(setPermissions(currentRole.permissions.map((p) => p.name)));
-    }
-  }, [currentRole, dispatch]);
+  const visibleNavItems = NAV_ITEMS;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -83,9 +59,7 @@ export function DashboardLayout() {
 
   const handleLogout = async () => {
     handleMenuClose();
-    if (refreshToken) {
-      await logoutMutation({ refreshToken });
-    }
+    await logoutMutation();
     navigate('/login', { replace: true });
   };
 
@@ -107,7 +81,7 @@ export function DashboardLayout() {
       </Toolbar>
       <Divider />
       <List sx={{ flex: 1, pt: 1 }}>
-        {NAV_ITEMS.map(({ text, icon, path }) => (
+        {visibleNavItems.map(({ text, icon, path }) => (
           <ListItem key={path} disablePadding>
             <NavLink to={path} style={{ width: '100%', textDecoration: 'none', color: 'inherit' }}>
               {({ isActive }) => (

@@ -4,44 +4,44 @@ import type { RootState } from '@/app/store';
 import type { AuthUser } from '@/types/api';
 
 interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
   user: AuthUser | null;
   permissions: string[];
   isAuthenticated: boolean;
 }
 
+const USER_KEY = 'auth.user';
+
+function readUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+const storedUser = readUser();
+
 const initialState: AuthState = {
-  accessToken: null,
-  refreshToken: null,
-  user: null,
+  user: storedUser,
   permissions: [],
-  isAuthenticated: false,
+  isAuthenticated: Boolean(storedUser),
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    login: (
-      state,
-      action: PayloadAction<{ accessToken: string; refreshToken: string; user: AuthUser }>,
-    ) => {
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
-      state.user = action.payload.user;
+    login: (state, action: PayloadAction<AuthUser>) => {
+      state.user = action.payload;
       state.isAuthenticated = true;
+      localStorage.setItem(USER_KEY, JSON.stringify(action.payload));
     },
     logout: (state) => {
-      state.accessToken = null;
-      state.refreshToken = null;
       state.user = null;
       state.permissions = [];
       state.isAuthenticated = false;
-    },
-    setTokens: (state, action: PayloadAction<{ accessToken: string; refreshToken: string }>) => {
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
+      localStorage.removeItem(USER_KEY);
     },
     setPermissions: (state, action: PayloadAction<string[]>) => {
       state.permissions = action.payload;
@@ -49,11 +49,9 @@ const authSlice = createSlice({
   },
 });
 
-export const { login, logout, setTokens, setPermissions } = authSlice.actions;
+export const { login, logout, setPermissions } = authSlice.actions;
 export default authSlice.reducer;
 
 export const selectCurrentUser = (state: RootState) => state.auth.user;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
-export const selectAccessToken = (state: RootState) => state.auth.accessToken;
-export const selectRefreshToken = (state: RootState) => state.auth.refreshToken;
 export const selectPermissions = (state: RootState) => state.auth.permissions;

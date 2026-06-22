@@ -1,36 +1,52 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link as RouterLink } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import Alert from '@mui/material/Alert';
+import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EmailIcon from '@mui/icons-material/Email';
+import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
+import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
   tenantSlug: z.string().optional(),
 });
-
 type FormValues = z.infer<typeof schema>;
 
-export function ForgotPasswordPage() {
-  const [sent, setSent] = useState(false);
-  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+const fields: FieldConfig[] = [
+  {
+    name: 'email',
+    label: 'Email address',
+    type: FIELD_TYPE.TEXT,
+    required: true,
+    muiProps: { type: 'email', autoComplete: 'email', autoFocus: true },
+  },
+  {
+    name: 'tenantSlug',
+    label: 'Tenant slug',
+    type: FIELD_TYPE.TEXT,
+    muiProps: { autoComplete: 'off' },
+  },
+];
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+const variants = {
+  enter: { opacity: 0, y: 12 },
+  center: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
+};
+
+export function ForgotPasswordPage() {
+  const snackbar = useSnackbar();
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
+  const [sent, setSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState('');
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -38,62 +54,94 @@ export function ForgotPasswordPage() {
         email: values.email,
         tenantSlug: values.tenantSlug || undefined,
       }).unwrap();
+      setSentEmail(values.email);
       setSent(true);
     } catch (err) {
       const error = err as ApiError;
-      toast.error(error.message || 'Could not send reset email. Please try again.');
+      snackbar.error(error.message || 'No account found with that email address.');
     }
   };
 
-  if (sent) {
-    return (
-      <Box>
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Check your email — we sent you a password reset link.
-        </Alert>
-        <Link component={RouterLink} to="/login" variant="body2">
-          ← Back to sign in
-        </Link>
-      </Box>
-    );
-  }
-
   return (
-    <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-        Reset your password
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Enter your email and we'll send you a reset link.
-      </Typography>
+    <Box sx={{ overflow: 'hidden' }}>
+      <AnimatePresence mode="wait" initial={false}>
+        {!sent ? (
+          <motion.div
+            key="form"
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <EmailIcon color="primary" />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Reset your password
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Enter the email address linked to your account. If it exists, we'll send a reset link.
+            </Typography>
 
-      <Stack spacing={2}>
-        <TextField
-          {...register('email')}
-          label="Email address"
-          type="email"
-          fullWidth
-          autoFocus
-          error={!!errors.email}
-          helperText={errors.email?.message}
-        />
-        <TextField {...register('tenantSlug')} label="Tenant slug (optional)" fullWidth />
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={isLoading}
-          startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : undefined}
-        >
-          {isLoading ? 'Sending…' : 'Send reset link'}
-        </Button>
-      </Stack>
+            <FormBuilder
+              schema={schema}
+              fields={fields}
+              onSubmit={onSubmit}
+              submitText={isLoading ? 'Sending…' : 'Send reset link'}
+              sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+            />
 
-      <Box sx={{ mt: 2.5, textAlign: 'center' }}>
-        <Link component={RouterLink} to="/login" variant="body2">
-          ← Back to sign in
-        </Link>
-      </Box>
+            <Box sx={{ textAlign: 'center', mt: 1 }}>
+              <Button
+                component={Link}
+                to="/login"
+                variant="text"
+                size="small"
+                startIcon={<ArrowBackIcon fontSize="small" />}
+              >
+                Back to sign in
+              </Button>
+            </Box>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="sent"
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+          >
+            <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
+              <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main' }} />
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Check your inbox
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                If an account is linked to{' '}
+                <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                  {sentEmail}
+                </Box>
+                , a reset link has been sent. Check your spam folder if you don't see it.
+              </Typography>
+              <Button
+                component={Link}
+                to="/login"
+                variant="contained"
+                fullWidth
+                size="large"
+                sx={{ mt: 1 }}
+              >
+                Back to sign in
+              </Button>
+              <Button variant="text" size="small" onClick={() => setSent(false)}>
+                Try a different email
+              </Button>
+            </Stack>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Box>
   );
 }

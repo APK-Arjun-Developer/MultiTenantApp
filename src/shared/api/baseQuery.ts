@@ -2,9 +2,8 @@ import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 import { Mutex } from 'async-mutex';
 import { axiosInstance } from './axiosInstance';
-import { logout, setTokens } from '@/features/auth/slices/authSlice';
-import type { RootState } from '@/app/store';
-import type { ApiError, ApiResponse, RefreshTokenResponse } from '@/types/api';
+import { logout } from '@/features/auth/slices/authSlice';
+import type { ApiError, ApiResponse } from '@/types/api';
 
 export interface AxiosBaseQueryArgs {
   url: string;
@@ -16,21 +15,20 @@ export interface AxiosBaseQueryArgs {
 
 const mutex = new Mutex();
 
-const rawBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async (
-  { url, method = 'GET', data, params, headers },
-  { getState },
-) => {
+const rawBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async ({
+  url,
+  method = 'GET',
+  data,
+  params,
+  headers,
+}) => {
   try {
-    const accessToken = (getState() as RootState).auth.accessToken;
     const result = await axiosInstance.request<ApiResponse<unknown>>({
       url,
       method,
       data,
       params,
-      headers: {
-        ...headers,
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      },
+      headers,
     });
     return { data: result.data?.data };
   } catch (err) {
@@ -59,22 +57,15 @@ export const baseQueryWithReauth: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiEr
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
-        const refreshToken = (api.getState() as RootState).auth.refreshToken;
-        if (!refreshToken) {
-          api.dispatch(logout());
-          return result;
-        }
-
+        // No body needed — the refresh token cookie is sent automatically via withCredentials
         const refreshResult = await rawBaseQuery(
-          { url: '/api/v1/auth/refresh', method: 'POST', data: { refreshToken } },
+          { url: '/api/v1/auth/refresh', method: 'POST' },
           api,
           extraOptions,
         );
 
         if (refreshResult.data) {
-          const { accessToken, refreshToken: newRefreshToken } =
-            refreshResult.data as RefreshTokenResponse;
-          api.dispatch(setTokens({ accessToken, refreshToken: newRefreshToken }));
+          // Server has already set the new access + refresh cookies; retry the original request
           result = await rawBaseQuery(args, api, extraOptions);
         } else {
           api.dispatch(logout());

@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthLayout } from '@/shared/layouts/AuthLayout';
 import { DashboardLayout } from '@/shared/layouts/DashboardLayout';
 import { AuthGuard } from '@/shared/components/AuthGuard';
+import { ErrorPage } from '@/shared/components/ErrorPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
@@ -13,49 +14,39 @@ const ForgotPasswordPage = lazy(() =>
 const ResetPasswordPage = lazy(() =>
   import('@/pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
 );
+const InvitationPage = lazy(() =>
+  import('@/pages/InvitationPage').then((m) => ({ default: m.InvitationPage })),
+);
+const AccountSetupPage = lazy(() =>
+  import('@/pages/AccountSetupPage').then((m) => ({ default: m.AccountSetupPage })),
+);
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 );
-const TenantsPage = lazy(() =>
-  import('@/pages/TenantsPage').then((m) => ({ default: m.TenantsPage })),
-);
-const UsersPage = lazy(() => import('@/pages/UsersPage').then((m) => ({ default: m.UsersPage })));
-const RolesPage = lazy(() => import('@/pages/RolesPage').then((m) => ({ default: m.RolesPage })));
-const ProductsPage = lazy(() =>
-  import('@/pages/ProductsPage').then((m) => ({ default: m.ProductsPage })),
-);
-const ReportsPage = lazy(() =>
-  import('@/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })),
-);
 
 export const router = createBrowserRouter([
-  // Public auth routes — no guard, centered card layout
   {
     element: <AuthLayout />,
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/invitation/accept', element: <InvitationPage /> },
+      { path: '/account-setup', element: <AccountSetupPage /> },
     ],
   },
-  // Protected routes — AuthGuard redirects unauthenticated to /login
   {
     element: <AuthGuard />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <DashboardLayout />,
         children: [
           { path: '/', element: <Navigate to="/dashboard" replace /> },
           { path: '/dashboard', element: <DashboardPage /> },
-          { path: '/tenants', element: <TenantsPage /> },
-          { path: '/users', element: <UsersPage /> },
-          { path: '/roles', element: <RolesPage /> },
-          { path: '/products', element: <ProductsPage /> },
-          { path: '/reports', element: <ReportsPage /> },
         ],
       },
     ],
   },
-  // Catch-all 404
   { path: '*', element: <NotFoundPage /> },
 ]);
