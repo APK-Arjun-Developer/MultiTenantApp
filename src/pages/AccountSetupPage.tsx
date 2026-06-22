@@ -104,7 +104,7 @@ function SetupSuccess({ result }: { result: SetPasswordResponse }) {
       </Typography>
       <Button
         component={Link}
-        to="/login"
+        to={result.tenantSlug ? `/login?slug=${result.tenantSlug}` : '/login'}
         variant="contained"
         fullWidth
         size="large"

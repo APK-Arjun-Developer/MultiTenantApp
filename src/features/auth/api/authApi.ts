@@ -37,12 +37,12 @@ export const authApi = apiSlice.injectEndpoints({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          // Server returns a flat response; id comes from /auth/me on the next load.
           const user: AuthUser = {
             id: '',
             email: data.email,
             fullName: data.fullName,
             roles: data.roles,
+            systemRole: data.systemRole,
             tenantSlug: null,
           };
           dispatch(login(user));

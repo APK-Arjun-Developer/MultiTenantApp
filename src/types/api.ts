@@ -100,11 +100,14 @@ export interface ResendEmailOtpRequest {
   tenantSlug?: string | null;
 }
 
+export type SystemRole = 'SystemAdmin' | 'TenantAdmin' | 'TenantUser';
+
 export interface AuthUser {
   id: UUID;
   email: string;
   fullName: string;
   roles: string[];
+  systemRole?: SystemRole | null;
   tenantSlug?: string | null;
 }
 
@@ -115,11 +118,13 @@ export interface LoginResponse {
   email: string;
   fullName: string;
   roles: string[];
+  systemRole: SystemRole;
 }
 
 export interface ValidateResetTokenResponse {
   isValid: boolean;
   email?: string | null;
+  tenantSlug?: string | null;
   errorMessage?: string | null;
 }
 
@@ -245,7 +250,6 @@ export interface TenantDto {
 export interface OnboardUserDetails {
   fullName: string;
   email: string;
-  password: string;
 }
 
 export interface OnboardTenantDetails {
@@ -299,7 +303,6 @@ export interface CreateTenantAdminRequest {
   tenantSlug: string;
   fullName: string;
   email: string;
-  roleNames?: string[];
 }
 
 export interface UpdateTenantAdminRequest {
@@ -315,7 +318,6 @@ export interface UpdateTenantAdminRequest {
 export interface InviteTenantAdminRequest {
   tenantSlug: string;
   email: string;
-  roleIds?: UUID[];
 }
 
 // ---------- Users (in-tenant users) ----------

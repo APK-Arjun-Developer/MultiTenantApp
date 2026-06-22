@@ -11,24 +11,31 @@ export interface AxiosBaseQueryArgs {
   data?: unknown;
   params?: unknown;
   headers?: AxiosRequestConfig['headers'];
+  /** Skip injecting X-Tenant-Id — use for platform-level calls that must not be tenant-scoped. */
+  skipTenantHeader?: boolean;
 }
 
 const mutex = new Mutex();
 
-const rawBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async ({
-  url,
-  method = 'GET',
-  data,
-  params,
-  headers,
-}) => {
+const rawBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async (
+  { url, method = 'GET', data, params, headers, skipTenantHeader },
+  api,
+) => {
+  const state = api.getState() as { ui: { selectedTenantId: string | null } };
+  const selectedTenantId = !skipTenantHeader ? state.ui.selectedTenantId : null;
+
+  const requestHeaders = {
+    ...headers,
+    ...(selectedTenantId ? { 'X-Tenant-Id': selectedTenantId } : {}),
+  };
+
   try {
     const result = await axiosInstance.request<ApiResponse<unknown>>({
       url,
       method,
       data,
       params,
-      headers,
+      headers: requestHeaders,
     });
     return { data: result.data?.data };
   } catch (err) {
@@ -57,15 +64,13 @@ export const baseQueryWithReauth: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiEr
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
-        // No body needed — the refresh token cookie is sent automatically via withCredentials
         const refreshResult = await rawBaseQuery(
-          { url: '/api/v1/auth/refresh', method: 'POST' },
+          { url: '/api/v1/auth/refresh', method: 'POST', skipTenantHeader: true },
           api,
           extraOptions,
         );
 
         if (refreshResult.data) {
-          // Server has already set the new access + refresh cookies; retry the original request
           result = await rawBaseQuery(args, api, extraOptions);
         } else {
           api.dispatch(logout());

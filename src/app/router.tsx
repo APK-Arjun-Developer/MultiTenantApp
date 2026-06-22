@@ -4,6 +4,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthLayout } from '@/shared/layouts/AuthLayout';
 import { DashboardLayout } from '@/shared/layouts/DashboardLayout';
 import { AuthGuard } from '@/shared/components/AuthGuard';
+import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { ErrorPage } from '@/shared/components/ErrorPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -22,6 +23,17 @@ const AccountSetupPage = lazy(() =>
 );
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const UsersPage = lazy(() => import('@/pages/UsersPage').then((m) => ({ default: m.UsersPage })));
+const RolesPage = lazy(() => import('@/pages/RolesPage').then((m) => ({ default: m.RolesPage })));
+const ProductsPage = lazy(() =>
+  import('@/pages/ProductsPage').then((m) => ({ default: m.ProductsPage })),
+);
+const TenantsPage = lazy(() =>
+  import('@/pages/TenantsPage').then((m) => ({ default: m.TenantsPage })),
+);
+const TenantAdminsPage = lazy(() =>
+  import('@/pages/TenantAdminsPage').then((m) => ({ default: m.TenantAdminsPage })),
 );
 
 export const router = createBrowserRouter([
@@ -44,6 +56,36 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <Navigate to="/dashboard" replace /> },
           { path: '/dashboard', element: <DashboardPage /> },
+
+          // Tenant-scoped pages — require a tenant selection for SystemAdmin
+          {
+            path: '/users',
+            element: (
+              <TenantContextGuard>
+                <UsersPage />
+              </TenantContextGuard>
+            ),
+          },
+          {
+            path: '/roles',
+            element: (
+              <TenantContextGuard>
+                <RolesPage />
+              </TenantContextGuard>
+            ),
+          },
+          {
+            path: '/products',
+            element: (
+              <TenantContextGuard>
+                <ProductsPage />
+              </TenantContextGuard>
+            ),
+          },
+
+          // Platform-level pages — no tenant context needed
+          { path: '/tenants', element: <TenantsPage /> },
+          { path: '/tenant-admins', element: <TenantAdminsPage /> },
         ],
       },
     ],

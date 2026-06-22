@@ -2,10 +2,12 @@ import { useState, Suspense } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/shared/components/PageTransition';
+import { TenantPicker } from '@/shared/components/TenantPicker';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
+import type { SystemRole } from '@/types/api';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -23,15 +25,65 @@ import MenuItem from '@mui/material/MenuItem';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import InventoryIcon from '@mui/icons-material/Inventory2';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import MenuIcon from '@mui/icons-material/Menu';
+import PeopleIcon from '@mui/icons-material/People';
 
 const DRAWER_WIDTH = 240;
 
-const NAV_ITEMS = [{ text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' }];
+interface NavItem {
+  text: string;
+  icon: React.ReactElement;
+  path: string;
+  allowedRoles?: SystemRole[];
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    text: 'Dashboard',
+    icon: <DashboardIcon />,
+    path: '/dashboard',
+  },
+  // Tenant management (TenantAdmin + SystemAdmin acting as a tenant)
+  {
+    text: 'Users',
+    icon: <PeopleIcon />,
+    path: '/users',
+    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+  },
+  {
+    text: 'Roles',
+    icon: <AdminPanelSettingsIcon />,
+    path: '/roles',
+    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+  },
+  {
+    text: 'Products',
+    icon: <InventoryIcon />,
+    path: '/products',
+    allowedRoles: ['TenantAdmin', 'TenantUser', 'SystemAdmin'],
+  },
+  // Platform management (SystemAdmin only)
+  {
+    text: 'Tenants',
+    icon: <BusinessIcon />,
+    path: '/tenants',
+    allowedRoles: ['SystemAdmin'],
+  },
+  {
+    text: 'Tenant Admins',
+    icon: <ManageAccountsIcon />,
+    path: '/tenant-admins',
+    allowedRoles: ['SystemAdmin'],
+  },
+];
 
 function PageLoader() {
   return (
@@ -48,9 +100,15 @@ export function DashboardLayout() {
   const user = useAppSelector(selectCurrentUser);
   const themeMode = useAppSelector(selectThemeMode);
   const [logoutMutation] = useLogoutMutation();
-  const visibleNavItems = NAV_ITEMS;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const isSystemAdmin = user?.systemRole === 'SystemAdmin';
+
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) =>
+      !item.allowedRoles || (user?.systemRole && item.allowedRoles.includes(user.systemRole)),
+  );
 
   const handleThemeToggle = () => dispatch(toggleTheme());
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -124,22 +182,27 @@ export function DashboardLayout() {
           color: 'text.primary',
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ gap: 1 }}>
           <IconButton
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{ mr: 1, display: { md: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
+
+          {/* Tenant picker — SystemAdmin only */}
+          {isSystemAdmin && <TenantPicker />}
+
           <Box sx={{ flex: 1 }} />
+
           <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
             <IconButton onClick={handleThemeToggle}>
               {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
           </Tooltip>
           <Tooltip title={user?.fullName ?? user?.email ?? 'Account'}>
-            <IconButton onClick={handleAvatarClick} sx={{ ml: 1 }}>
+            <IconButton onClick={handleAvatarClick} sx={{ ml: 0.5 }}>
               <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 13 }}>
                 {initials}
               </Avatar>
@@ -156,6 +219,11 @@ export function DashboardLayout() {
           <Typography variant="caption" color="text.secondary">
             {user?.email}
           </Typography>
+          {user?.systemRole && (
+            <Typography variant="caption" color="primary.main" sx={{ fontWeight: 500 }}>
+              {user.systemRole}
+            </Typography>
+          )}
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout}>
