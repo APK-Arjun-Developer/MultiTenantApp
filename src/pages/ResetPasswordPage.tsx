@@ -130,7 +130,7 @@ export function ResetPasswordPage() {
       }).unwrap();
       setDone(true);
       snackbar.success('Password reset successfully!');
-      const loginPath = validation.tenantSlug ? `/login?slug=${validation.tenantSlug}` : '/login';
+      const loginPath = validation?.tenantSlug ? `/login?slug=${validation.tenantSlug}` : '/login';
       setTimeout(() => navigate(loginPath), 2000);
     } catch (err) {
       const error = err as ApiError;

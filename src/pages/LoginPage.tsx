@@ -181,7 +181,7 @@ export function LoginPage() {
   }, [cooldown]);
 
   useEffect(() => {
-    if (slugFromUrl) loginRef.current?.reset({ tenantSlug: slugFromUrl });
+    if (slugFromUrl) loginRef.current?.reset();
   }, [slugFromUrl]);
 
   const goToVerify = (email: string, tenantSlug?: string) => {

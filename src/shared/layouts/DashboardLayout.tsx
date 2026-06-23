@@ -85,6 +85,9 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+// Pages where SystemAdmin needs the TenantPicker to select a tenant context
+const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/products'];
+
 function PageLoader() {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, py: 8 }}>
@@ -109,6 +112,13 @@ export function DashboardLayout() {
     (item) =>
       !item.allowedRoles || (user?.systemRole && item.allowedRoles.includes(user.systemRole)),
   );
+
+  // Show TenantPicker only on pages that need a tenant context
+  const showTenantPicker =
+    isSystemAdmin &&
+    TENANT_CONTEXT_PATHS.some(
+      (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
+    );
 
   const handleThemeToggle = () => dispatch(toggleTheme());
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -191,8 +201,8 @@ export function DashboardLayout() {
             <MenuIcon />
           </IconButton>
 
-          {/* Tenant picker — SystemAdmin only */}
-          {isSystemAdmin && <TenantPicker />}
+          {/* Tenant picker — SystemAdmin on tenant-scoped pages only */}
+          {showTenantPicker && <TenantPicker />}
 
           <Box sx={{ flex: 1 }} />
 

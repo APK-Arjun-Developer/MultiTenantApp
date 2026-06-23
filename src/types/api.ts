@@ -242,9 +242,22 @@ export interface TenantDto {
   name: string;
   isActive: boolean;
   profileFileId?: UUID | null;
-  profileImageUrl?: string | null;
+  profileUrl?: string | null;
   address?: AddressDto | null;
-  createdAt: string;
+}
+
+export interface CreatedRoleSummary {
+  id: UUID;
+  name: string;
+}
+
+export interface OnboardTenantResponse {
+  tenantId: UUID;
+  name: string;
+  slug: string;
+  adminUserId: UUID;
+  adminEmail: string;
+  roles: CreatedRoleSummary[];
 }
 
 export interface OnboardUserDetails {
@@ -286,17 +299,25 @@ export interface DeleteTenantRequest {
 
 // ---------- Tenant admins (super-admin managing admins across tenants) ----------
 
+export interface TenantAdminTenantDetails {
+  id: UUID;
+  name: string;
+  slug: string;
+  isActive: boolean;
+}
+
 export interface TenantAdminDto {
   id: UUID;
-  email: string;
   fullName: string;
-  roleNames: string[];
+  email: string;
   tenantId: UUID;
-  tenantSlug?: string;
+  systemRole: SystemRole;
   isActive: boolean;
-  profileImageUrl?: string | null;
+  roles: string[];
+  profileFileId?: UUID | null;
+  profileUrl?: string | null;
   address?: AddressDto | null;
-  createdAt: string;
+  tenant?: TenantAdminTenantDetails | null;
 }
 
 export interface CreateTenantAdminRequest {
@@ -305,10 +326,20 @@ export interface CreateTenantAdminRequest {
   email: string;
 }
 
+export interface CreateTenantAdminResponse {
+  userId: UUID;
+  fullName: string;
+  email: string;
+  tenantId: UUID;
+  tenantSlug: string;
+  roles: string[];
+  isActive: boolean;
+}
+
 export interface UpdateTenantAdminRequest {
   userId: UUID;
-  fullName?: string;
-  roleName?: string;
+  fullName: string;
+  roleId?: UUID | null;
   profileFileId?: UUID | null;
   clearProfileImage?: boolean;
   address?: AddressRequest;
@@ -318,6 +349,27 @@ export interface UpdateTenantAdminRequest {
 export interface InviteTenantAdminRequest {
   tenantSlug: string;
   email: string;
+}
+
+export interface InviteTenantAdminResponse {
+  id: UUID;
+  email: string;
+  tenantSlug: string;
+}
+
+export interface TenantAdminInvitationDto {
+  id: UUID;
+  email: string;
+  tenantId: UUID;
+  tenantName?: string | null;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  revokedAt?: string | null;
+  isExpired: boolean;
+  isAccepted: boolean;
+  isRevoked: boolean;
+  status: string;
+  createdAt: string;
 }
 
 // ---------- Users (in-tenant users) ----------
@@ -336,7 +388,6 @@ export interface UserDto {
 export interface CreateUserRequest {
   fullName: string;
   email: string;
-  password: string;
   roleName?: string;
 }
 

@@ -45,6 +45,13 @@ export function buildTheme(mode: 'light' | 'dark') {
           },
         },
       },
+      MuiSelect: {
+        styleOverrides: {
+          select: {
+            padding: '10px 12px',
+          },
+        },
+      },
       MuiCard: {
         styleOverrides: {
           root: {

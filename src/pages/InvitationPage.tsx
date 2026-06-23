@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { z } from 'zod';
 import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
@@ -134,7 +134,10 @@ export function InvitationPage() {
   const [result, setResult] = useState<AcceptInvitationResponse | null>(null);
 
   const isSubmitting = isAcceptingAdmin || isAcceptingUser;
-  const isAdmin = validation?.invitationType === 'TenantAdmin';
+  // Server may return 'TenantAdmin' (string, with JsonStringEnumConverter) or 1 (integer,
+  // legacy/unconfigured). Handle both so the UI works regardless of server build state.
+  const rawInvType: unknown = validation?.invitationType;
+  const isAdmin = rawInvType === 'TenantAdmin' || rawInvType === 1;
 
   const inviteFields = useMemo<FieldConfig[]>(
     () => [
@@ -204,8 +207,12 @@ export function InvitationPage() {
   const onSubmit = async (values: FormValues) => {
     try {
       let response: AcceptInvitationResponse;
+      // The form only mounts after validation loads (early-return guards above ensure this),
+      // so validation in this closure is always the fully-loaded value.
+      const currentType: unknown = validation?.invitationType;
+      const submitAsAdmin = currentType === 'TenantAdmin' || currentType === 1;
 
-      if (isAdmin) {
+      if (submitAsAdmin) {
         response = await acceptAdmin({
           token,
           fullName: values.fullName,
