@@ -225,13 +225,19 @@ export interface FileDto {
 export interface PermissionDto {
   id: UUID;
   name: string;
-  description?: string;
-  group?: string;
+  module: string;
+  description: string;
+  scope: string;
 }
 
-export interface PermissionGroup {
-  group: string;
+export interface PermissionModuleGroup {
+  module: string;
   permissions: PermissionDto[];
+}
+
+export interface PermissionCatalogResponse {
+  items: PermissionDto[];
+  byModule?: PermissionModuleGroup[] | null;
 }
 
 // ---------- Tenants ----------
@@ -374,28 +380,78 @@ export interface TenantAdminInvitationDto {
 
 // ---------- Users (in-tenant users) ----------
 
-export interface UserDto {
+export interface UserTenantDetails {
   id: UUID;
-  email: string;
-  fullName: string;
-  roleName: string;
+  name: string;
+  slug: string;
   isActive: boolean;
-  profileImageUrl?: string | null;
+  profileFileId?: UUID | null;
+  profileUrl?: string | null;
   address?: AddressDto | null;
-  createdAt: string;
 }
 
-export interface CreateUserRequest {
+export interface UserDto {
+  id: UUID;
   fullName: string;
   email: string;
-  roleName?: string;
+  tenantId: UUID;
+  systemRole: SystemRole;
+  isActive: boolean;
+  roles: string[];
+  profileFileId?: UUID | null;
+  profileUrl?: string | null;
+  address?: AddressDto | null;
+  tenant?: UserTenantDetails | null;
+}
+
+export interface CreateTenantUserRequest {
+  fullName: string;
+  email: string;
+  roleIds?: UUID[];
+}
+
+export interface CreateTenantUserResponse {
+  userId: UUID;
+  fullName: string;
+  email: string;
+  tenantId: UUID;
+  roles: string[];
+  isActive: boolean;
+}
+
+export interface InviteTenantUserRequest {
+  email: string;
+  roleIds?: UUID[];
+}
+
+export interface InviteUserResponse {
+  invitationId: UUID;
+  invitationType: InvitationType;
+  expiresAt: string;
+}
+
+export interface UserInvitationDto {
+  id: UUID;
+  email: string;
+  invitationType: InvitationType;
+  tenantId: UUID;
+  tenantName?: string | null;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  revokedAt?: string | null;
+  isExpired: boolean;
+  isAccepted: boolean;
+  isRevoked: boolean;
+  status: string;
+  createdAt: string;
+  invitedByUserId: UUID;
 }
 
 /** PUT /api/v1/users has no {id} segment — the user being updated is identified by email. */
 export interface UpdateUserRequest {
   email: string;
-  fullName?: string;
-  roleName?: string;
+  fullName: string;
+  roleId?: UUID | null;
   password?: string;
   profileFileId?: UUID | null;
   clearProfileImage?: boolean;
@@ -422,25 +478,15 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
-export interface CreateTenantUserRequest {
-  fullName: string;
-  email: string;
-  roleNames?: string[];
-}
-
-export interface InviteTenantUserRequest {
-  email: string;
-  roleIds?: UUID[];
-}
-
 // ---------- Roles ----------
 
 export interface RoleDto {
   id: UUID;
   name: string;
-  description?: string;
-  permissions: PermissionDto[];
-  createdAt: string;
+  description?: string | null;
+  tenantId: UUID;
+  permissionIds: UUID[];
+  permissionNames: string[];
 }
 
 export interface CreateRoleRequest {
@@ -461,6 +507,7 @@ export interface ProductDto {
   id: UUID;
   name: string;
   price: number;
+  tenantId: UUID;
   createdAt: string;
 }
 

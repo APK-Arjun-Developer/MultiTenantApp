@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { z } from 'zod';
 import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
@@ -41,10 +41,6 @@ const inviteSchema = z
     phone: z.string().optional(),
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
-    showCompanyInfo: z.boolean().optional(),
-    companyName: z.string().optional(),
-    companyWebsite: z.string().optional(),
-    companyIndustry: z.string().optional(),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords don't match",
@@ -139,70 +135,35 @@ export function InvitationPage() {
   const rawInvType: unknown = validation?.invitationType;
   const isAdmin = rawInvType === 'TenantAdmin' || rawInvType === 1;
 
-  const inviteFields = useMemo<FieldConfig[]>(
-    () => [
-      {
-        name: 'fullName',
-        label: 'Full name',
-        type: FIELD_TYPE.TEXT,
-        required: true,
-        muiProps: { autoComplete: 'name', autoFocus: true },
-      },
-      {
-        name: 'phone',
-        label: 'Phone (optional)',
-        type: FIELD_TYPE.TEXT,
-        muiProps: { autoComplete: 'tel' },
-      },
-      {
-        name: 'password',
-        label: 'Password',
-        type: PASSWORD_FIELD,
-        required: true,
-        muiProps: { autoComplete: 'new-password' },
-      },
-      {
-        name: 'confirmPassword',
-        label: 'Confirm password',
-        type: PASSWORD_FIELD,
-        required: true,
-        muiProps: { autoComplete: 'new-password' },
-      },
-      ...(isAdmin
-        ? ([
-            {
-              name: 'showCompanyInfo',
-              label: 'Add company information (optional)',
-              type: FIELD_TYPE.CHECKBOX,
-              section: 'Company details',
-            },
-            {
-              name: 'companyName',
-              label: 'Company name',
-              type: FIELD_TYPE.TEXT,
-              section: 'Company details',
-              visibleIf: (v) => !!v.showCompanyInfo,
-            },
-            {
-              name: 'companyWebsite',
-              label: 'Website',
-              type: FIELD_TYPE.TEXT,
-              section: 'Company details',
-              visibleIf: (v) => !!v.showCompanyInfo,
-              muiProps: { autoComplete: 'url' },
-            },
-            {
-              name: 'companyIndustry',
-              label: 'Industry',
-              type: FIELD_TYPE.TEXT,
-              section: 'Company details',
-              visibleIf: (v) => !!v.showCompanyInfo,
-            },
-          ] satisfies FieldConfig[])
-        : []),
-    ],
-    [isAdmin],
-  );
+  const inviteFields: FieldConfig[] = [
+    {
+      name: 'fullName',
+      label: 'Full name',
+      type: FIELD_TYPE.TEXT,
+      required: true,
+      muiProps: { autoComplete: 'name', autoFocus: true },
+    },
+    {
+      name: 'phone',
+      label: 'Phone (optional)',
+      type: FIELD_TYPE.TEXT,
+      muiProps: { autoComplete: 'tel' },
+    },
+    {
+      name: 'password',
+      label: 'Password',
+      type: PASSWORD_FIELD,
+      required: true,
+      muiProps: { autoComplete: 'new-password' },
+    },
+    {
+      name: 'confirmPassword',
+      label: 'Confirm password',
+      type: PASSWORD_FIELD,
+      required: true,
+      muiProps: { autoComplete: 'new-password' },
+    },
+  ];
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -212,29 +173,18 @@ export function InvitationPage() {
       const currentType: unknown = validation?.invitationType;
       const submitAsAdmin = currentType === 'TenantAdmin' || currentType === 1;
 
+      const payload = {
+        token,
+        fullName: values.fullName,
+        phone: values.phone || undefined,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+      };
+
       if (submitAsAdmin) {
-        response = await acceptAdmin({
-          token,
-          fullName: values.fullName,
-          phone: values.phone || undefined,
-          password: values.password,
-          confirmPassword: values.confirmPassword,
-          company: values.companyName
-            ? {
-                name: values.companyName,
-                website: values.companyWebsite || undefined,
-                industry: values.companyIndustry || undefined,
-              }
-            : undefined,
-        }).unwrap();
+        response = await acceptAdmin(payload).unwrap();
       } else {
-        response = await acceptUser({
-          token,
-          fullName: values.fullName,
-          phone: values.phone || undefined,
-          password: values.password,
-          confirmPassword: values.confirmPassword,
-        }).unwrap();
+        response = await acceptUser(payload).unwrap();
       }
 
       setResult(response);
