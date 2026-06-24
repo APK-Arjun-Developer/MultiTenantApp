@@ -109,6 +109,7 @@ export interface AuthUser {
   roles: string[];
   systemRole?: SystemRole | null;
   tenantSlug?: string | null;
+  permissions?: string[];
 }
 
 export interface LoginResponse {
@@ -464,8 +465,7 @@ export interface DeleteUserRequest {
 }
 
 export interface UpdateCurrentUserRequest {
-  fullName?: string;
-  password?: string;
+  fullName: string;
   profileFileId?: UUID | null;
   clearProfileImage?: boolean;
   address?: AddressRequest;
@@ -525,7 +525,18 @@ export interface UpdateProductRequest {
 
 // ---------- Reports ----------
 
-/** No request/response schema in Swagger at all — refine once the endpoint is exercised. */
-export interface ReportsSummary {
-  [key: string]: unknown;
+export interface ReportSummaryDto {
+  userCount: number;
+  roleCount: number;
+  productCount: number;
+  activityLogCount: number;
+  generatedAtUtc: string;
+}
+
+export interface PlatformSummaryDto {
+  tenantCount: number;
+  totalUserCount: number;
+  totalProductCount: number;
+  totalActivityLogCount: number;
+  generatedAtUtc: string;
 }

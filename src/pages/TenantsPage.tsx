@@ -23,6 +23,7 @@ import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { usePermission } from '@/shared/hooks/usePermission';
 import {
   useGetTenantsQuery,
   useOnboardTenantMutation,
@@ -217,6 +218,11 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
 
 export function TenantsPage() {
   const snackbar = useSnackbar();
+
+  const canCreate = usePermission('Tenants.Create');
+  const canEdit = usePermission('Tenants.Edit');
+  const canDelete = usePermission('Tenants.Delete');
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -281,16 +287,20 @@ export function TenantsPage() {
       header: '',
       cell: ({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-          <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => setEditTenant(row.original)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton size="small" color="error" onClick={() => setDeleteTenant(row.original)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {canEdit && (
+            <Tooltip title="Edit">
+              <IconButton size="small" onClick={() => setEditTenant(row.original)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {canDelete && (
+            <Tooltip title="Delete">
+              <IconButton size="small" color="error" onClick={() => setDeleteTenant(row.original)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       ),
     },
@@ -306,9 +316,11 @@ export function TenantsPage() {
             Tenants
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOnboardOpen(true)}>
-          New Tenant
-        </Button>
+        {canCreate && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOnboardOpen(true)}>
+            New Tenant
+          </Button>
+        )}
       </Box>
 
       {/* Search */}

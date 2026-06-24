@@ -33,6 +33,7 @@ import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { usePermission } from '@/shared/hooks/usePermission';
 import { useGetTenantsQuery } from '@/features/tenants/api/tenantsApi';
 import {
   useGetTenantAdminsQuery,
@@ -272,6 +273,16 @@ type ActionType = 'delete' | 'activate' | 'deactivate';
 
 export function TenantAdminsPage() {
   const snackbar = useSnackbar();
+
+  const canCreate = usePermission('Onboarding.Create');
+  const canInvite = usePermission('Onboarding.Invite');
+  const canEdit = usePermission('Tenants.Edit');
+  const canDelete = usePermission('Tenants.Delete');
+  const canActivate = usePermission('Onboarding.Activate');
+  const canDeactivate = usePermission('Onboarding.Deactivate');
+  const canResend = usePermission('Onboarding.Resend');
+  const canRevoke = usePermission('Onboarding.Revoke');
+
   const [tab, setTab] = useState(0);
 
   // Admins tab
@@ -415,45 +426,51 @@ export function TenantAdminsPage() {
       header: '',
       cell: ({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-          <Tooltip title="Edit">
-            <IconButton size="small" onClick={() => setEditAdmin(row.original)}>
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {!row.original.isActive && (
+          {canEdit && (
+            <Tooltip title="Edit">
+              <IconButton size="small" onClick={() => setEditAdmin(row.original)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {canResend && !row.original.isActive && (
             <Tooltip title="Resend setup email">
               <IconButton size="small" color="info" onClick={() => handleResend(row.original)}>
                 <EmailIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip title={row.original.isActive ? 'Deactivate' : 'Activate'}>
-            <IconButton
-              size="small"
-              color={row.original.isActive ? 'warning' : 'success'}
-              onClick={() =>
-                setPendingAction({
-                  type: row.original.isActive ? 'deactivate' : 'activate',
-                  admin: row.original,
-                })
-              }
-            >
-              {row.original.isActive ? (
-                <BlockIcon fontSize="small" />
-              ) : (
-                <CheckCircleIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => setPendingAction({ type: 'delete', admin: row.original })}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {(canActivate || canDeactivate) && (
+            <Tooltip title={row.original.isActive ? 'Deactivate' : 'Activate'}>
+              <IconButton
+                size="small"
+                color={row.original.isActive ? 'warning' : 'success'}
+                onClick={() =>
+                  setPendingAction({
+                    type: row.original.isActive ? 'deactivate' : 'activate',
+                    admin: row.original,
+                  })
+                }
+              >
+                {row.original.isActive ? (
+                  <BlockIcon fontSize="small" />
+                ) : (
+                  <CheckCircleIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
+          {canDelete && (
+            <Tooltip title="Delete">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => setPendingAction({ type: 'delete', admin: row.original })}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       ),
     },
@@ -488,7 +505,10 @@ export function TenantAdminsPage() {
       id: 'actions',
       header: '',
       cell: ({ row }) =>
-        !row.original.isRevoked && !row.original.isAccepted && !row.original.isExpired ? (
+        canRevoke &&
+        !row.original.isRevoked &&
+        !row.original.isAccepted &&
+        !row.original.isExpired ? (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Tooltip title="Revoke invitation">
               <IconButton size="small" color="error" onClick={() => setPendingRevoke(row.original)}>
@@ -525,12 +545,16 @@ export function TenantAdminsPage() {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<SendIcon />} onClick={() => setInviteOpen(true)}>
-            Invite Admin
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-            Create Admin
-          </Button>
+          {canInvite && (
+            <Button variant="outlined" startIcon={<SendIcon />} onClick={() => setInviteOpen(true)}>
+              Invite Admin
+            </Button>
+          )}
+          {canCreate && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+              Create Admin
+            </Button>
+          )}
         </Box>
       </Box>
 

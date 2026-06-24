@@ -1,5 +1,5 @@
 import { apiSlice } from '@/shared/api/apiSlice';
-import { login, logout } from '@/features/auth/slices/authSlice';
+import { login, logout, setPermissions } from '@/features/auth/slices/authSlice';
 import type {
   AcceptInvitationResponse,
   AcceptTenantAdminInvitationRequest,
@@ -21,11 +21,12 @@ import type {
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getMe: builder.query<AuthUser, void>({
-      query: () => ({ url: '/api/v1/auth/me', method: 'GET' }),
+      query: () => ({ url: '/api/v1/auth/me', method: 'GET', skipTenantHeader: true }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
           dispatch(login(data));
+          dispatch(setPermissions(data.permissions ?? []));
         } catch {
           // 401 handled by baseQueryWithReauth — it will dispatch logout() automatically
         }

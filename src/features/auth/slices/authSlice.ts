@@ -6,6 +6,7 @@ import type { AuthUser } from '@/types/api';
 interface AuthState {
   user: AuthUser | null;
   permissions: string[];
+  permissionsLoaded: boolean;
   isAuthenticated: boolean;
 }
 
@@ -25,6 +26,7 @@ const storedUser = readUser();
 const initialState: AuthState = {
   user: storedUser,
   permissions: [],
+  permissionsLoaded: false,
   isAuthenticated: Boolean(storedUser),
 };
 
@@ -40,11 +42,13 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.permissions = [];
+      state.permissionsLoaded = false;
       state.isAuthenticated = false;
       localStorage.removeItem(USER_KEY);
     },
     setPermissions: (state, action: PayloadAction<string[]>) => {
       state.permissions = action.payload;
+      state.permissionsLoaded = true;
     },
   },
 });
@@ -55,3 +59,4 @@ export default authSlice.reducer;
 export const selectCurrentUser = (state: RootState) => state.auth.user;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectPermissions = (state: RootState) => state.auth.permissions;
+export const selectPermissionsLoaded = (state: RootState) => state.auth.permissionsLoaded;

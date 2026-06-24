@@ -8,6 +8,8 @@ import type {
   InviteTenantUserRequest,
   InviteUserResponse,
   UpdateUserRequest,
+  UpdateCurrentUserRequest,
+  ChangePasswordRequest,
   DeleteUserRequest,
 } from '@/types/api';
 
@@ -122,6 +124,30 @@ export const usersApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Invitation'],
     }),
+
+    getCurrentUser: builder.query<UserDto, void>({
+      query: () => ({ url: '/api/v1/users/current', skipTenantHeader: true }),
+      providesTags: ['User'],
+    }),
+
+    updateCurrentUser: builder.mutation<UserDto, UpdateCurrentUserRequest>({
+      query: (body) => ({
+        url: '/api/v1/users/current',
+        method: 'PUT',
+        data: body,
+        skipTenantHeader: true,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    changePassword: builder.mutation<void, ChangePasswordRequest>({
+      query: (body) => ({
+        url: '/api/v1/users/current/change-password',
+        method: 'POST',
+        data: body,
+        skipTenantHeader: true,
+      }),
+    }),
   }),
 });
 
@@ -136,4 +162,7 @@ export const {
   useDeactivateUserMutation,
   useGetUserInvitationsQuery,
   useRevokeUserInvitationMutation,
+  useGetCurrentUserQuery,
+  useUpdateCurrentUserMutation,
+  useChangePasswordMutation,
 } = usersApi;

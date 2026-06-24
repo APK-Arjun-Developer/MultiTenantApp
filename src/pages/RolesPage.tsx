@@ -24,6 +24,7 @@ import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { usePermission } from '@/shared/hooks/usePermission';
 import {
   useGetRolesQuery,
   useCreateRoleMutation,
@@ -204,6 +205,10 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
 export function RolesPage() {
   const snackbar = useSnackbar();
 
+  const canCreate = usePermission('Roles.Create');
+  const canEdit = usePermission('Roles.Edit');
+  const canDelete = usePermission('Roles.Delete');
+
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
@@ -284,21 +289,29 @@ export function RolesPage() {
         id: 'actions',
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <Tooltip title="Edit">
-              <IconButton size="small" onClick={() => setEditRole(row.original)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => setDeleteTarget(row.original)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {canEdit && (
+              <Tooltip title="Edit">
+                <IconButton size="small" onClick={() => setEditRole(row.original)}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip title="Delete">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setDeleteTarget(row.original)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         ),
       },
     ],
-    [],
+    [canEdit, canDelete, setEditRole, setDeleteTarget],
   );
 
   return (
@@ -312,9 +325,11 @@ export function RolesPage() {
               Roles
             </Typography>
           </Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-            Create role
-          </Button>
+          {canCreate && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+              Create role
+            </Button>
+          )}
         </Box>
 
         {/* Search */}

@@ -23,6 +23,7 @@ import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { usePermission } from '@/shared/hooks/usePermission';
 import {
   useGetProductsQuery,
   useCreateProductMutation,
@@ -178,6 +179,10 @@ const formatPrice = (price: number) =>
 export function ProductsPage() {
   const snackbar = useSnackbar();
 
+  const canCreate = usePermission('Products.Create');
+  const canEdit = usePermission('Products.Edit');
+  const canDelete = usePermission('Products.Delete');
+
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
@@ -238,21 +243,29 @@ export function ProductsPage() {
         id: 'actions',
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <Tooltip title="Edit">
-              <IconButton size="small" onClick={() => setEditProduct(row.original)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => setDeleteTarget(row.original)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {canEdit && (
+              <Tooltip title="Edit">
+                <IconButton size="small" onClick={() => setEditProduct(row.original)}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip title="Delete">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setDeleteTarget(row.original)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         ),
       },
     ],
-    [],
+    [canEdit, canDelete, setEditProduct, setDeleteTarget],
   );
 
   return (
@@ -266,9 +279,11 @@ export function ProductsPage() {
               Products
             </Typography>
           </Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-            Create product
-          </Button>
+          {canCreate && (
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+              Create product
+            </Button>
+          )}
         </Box>
 
         {/* Search */}

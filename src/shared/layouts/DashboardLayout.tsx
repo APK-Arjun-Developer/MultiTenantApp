@@ -1,10 +1,14 @@
 import { useState, Suspense } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/shared/components/PageTransition';
 import { TenantPicker } from '@/shared/components/TenantPicker';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { selectCurrentUser } from '@/features/auth/slices/authSlice';
+import {
+  selectCurrentUser,
+  selectPermissions,
+  selectPermissionsLoaded,
+} from '@/features/auth/slices/authSlice';
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
 import type { SystemRole } from '@/types/api';
@@ -31,6 +35,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import InventoryIcon from '@mui/icons-material/Inventory2';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -43,6 +48,7 @@ interface NavItem {
   icon: React.ReactElement;
   path: string;
   allowedRoles?: SystemRole[];
+  permission?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -57,18 +63,21 @@ const NAV_ITEMS: NavItem[] = [
     icon: <PeopleIcon />,
     path: '/users',
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+    permission: 'Users.View',
   },
   {
     text: 'Roles',
     icon: <AdminPanelSettingsIcon />,
     path: '/roles',
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+    permission: 'Roles.View',
   },
   {
     text: 'Products',
     icon: <InventoryIcon />,
     path: '/products',
     allowedRoles: ['TenantAdmin', 'TenantUser', 'SystemAdmin'],
+    permission: 'Products.View',
   },
   // Platform management (SystemAdmin only)
   {
@@ -76,12 +85,14 @@ const NAV_ITEMS: NavItem[] = [
     icon: <BusinessIcon />,
     path: '/tenants',
     allowedRoles: ['SystemAdmin'],
+    permission: 'Tenants.View',
   },
   {
     text: 'Tenant Admins',
     icon: <ManageAccountsIcon />,
     path: '/tenant-admins',
     allowedRoles: ['SystemAdmin'],
+    permission: 'Tenants.View',
   },
 ];
 
@@ -106,12 +117,17 @@ export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
+  const permissions = useAppSelector(selectPermissions);
+  const permissionsLoaded = useAppSelector(selectPermissionsLoaded);
   const isSystemAdmin = user?.systemRole === 'SystemAdmin';
 
-  const visibleNavItems = NAV_ITEMS.filter(
-    (item) =>
-      !item.allowedRoles || (user?.systemRole && item.allowedRoles.includes(user.systemRole)),
-  );
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (item.allowedRoles && (!user?.systemRole || !item.allowedRoles.includes(user.systemRole)))
+      return false;
+    if (item.permission && permissionsLoaded && !permissions.includes(item.permission))
+      return false;
+    return true;
+  });
 
   // Show TenantPicker only on pages that need a tenant context
   const showTenantPicker =
@@ -236,6 +252,10 @@ export function DashboardLayout() {
           )}
         </MenuItem>
         <Divider />
+        <MenuItem component={Link} to="/profile" onClick={handleMenuClose}>
+          <AccountCircleIcon fontSize="small" sx={{ mr: 1.5 }} />
+          Profile
+        </MenuItem>
         <MenuItem onClick={handleLogout}>
           <LogoutIcon fontSize="small" sx={{ mr: 1.5 }} />
           Sign out

@@ -35,6 +35,9 @@ const TenantsPage = lazy(() =>
 const TenantAdminsPage = lazy(() =>
   import('@/pages/TenantAdminsPage').then((m) => ({ default: m.TenantAdminsPage })),
 );
+const ProfilePage = lazy(() =>
+  import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
+);
 
 export const router = createBrowserRouter([
   {
@@ -86,6 +89,9 @@ export const router = createBrowserRouter([
           // Platform-level pages — no tenant context needed
           { path: '/tenants', element: <TenantsPage /> },
           { path: '/tenant-admins', element: <TenantAdminsPage /> },
+
+          // User-scoped — accessible regardless of tenant selection
+          { path: '/profile', element: <ProfilePage /> },
         ],
       },
     ],

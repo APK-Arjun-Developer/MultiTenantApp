@@ -8,8 +8,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 export function AuthGuard() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
-  // Verify the session cookie is still valid on every cold load.
-  // baseQueryWithReauth handles 401 → refresh; on double failure it dispatches logout().
+  // Verifies session and populates user + permissions via onQueryStarted.
+  // Children don't render until isLoading is false, so permissions are set
+  // before any page component mounts.
   const { isLoading } = useGetMeQuery(undefined, { skip: !isAuthenticated });
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;

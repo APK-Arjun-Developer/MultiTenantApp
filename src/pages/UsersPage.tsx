@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -33,6 +33,7 @@ import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { usePermission } from '@/shared/hooks/usePermission';
 import { useGetRolesQuery } from '@/features/roles/api/rolesApi';
 import {
   useGetUsersQuery,
@@ -332,6 +333,15 @@ interface PendingAction {
 export function UsersPage() {
   const snackbar = useSnackbar();
 
+  const canCreate = usePermission('Onboarding.Create');
+  const canInvite = usePermission('Onboarding.Invite');
+  const canEdit = usePermission('Users.Edit');
+  const canDelete = usePermission('Users.Delete');
+  const canActivate = usePermission('Onboarding.Activate');
+  const canDeactivate = usePermission('Onboarding.Deactivate');
+  const canResend = usePermission('Onboarding.Resend');
+  const canRevoke = usePermission('Onboarding.Revoke');
+
   // Tabs
   const [tab, setTab] = useState(0);
 
@@ -379,14 +389,17 @@ export function UsersPage() {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleResend = async (user: UserDto) => {
-    try {
-      await resendSetup(user.id).unwrap();
-      snackbar.success(`Setup email resent to ${user.email}.`);
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to resend setup email.');
-    }
-  };
+  const handleResend = useCallback(
+    async (user: UserDto) => {
+      try {
+        await resendSetup(user.id).unwrap();
+        snackbar.success(`Setup email resent to ${user.email}.`);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to resend setup email.');
+      }
+    },
+    [resendSetup, snackbar],
+  );
 
   const handleConfirmAction = async () => {
     if (!pendingAction) return;
@@ -460,48 +473,62 @@ export function UsersPage() {
           const user = row.original;
           return (
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => setEditUser(user)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              {!user.isActive && (
+              {canEdit && (
+                <Tooltip title="Edit">
+                  <IconButton size="small" onClick={() => setEditUser(user)}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {canResend && !user.isActive && (
                 <Tooltip title="Resend setup email">
                   <IconButton size="small" onClick={() => handleResend(user)}>
                     <SendIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
-              <Tooltip title={user.isActive ? 'Deactivate' : 'Activate'}>
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    setPendingAction({ type: user.isActive ? 'deactivate' : 'activate', user })
-                  }
-                >
-                  {user.isActive ? (
-                    <BlockIcon fontSize="small" />
-                  ) : (
-                    <CheckCircleIcon fontSize="small" />
-                  )}
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Delete">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => setPendingAction({ type: 'delete', user })}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              {(canActivate || canDeactivate) && (
+                <Tooltip title={user.isActive ? 'Deactivate' : 'Activate'}>
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      setPendingAction({ type: user.isActive ? 'deactivate' : 'activate', user })
+                    }
+                  >
+                    {user.isActive ? (
+                      <BlockIcon fontSize="small" />
+                    ) : (
+                      <CheckCircleIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )}
+              {canDelete && (
+                <Tooltip title="Delete">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => setPendingAction({ type: 'delete', user })}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
           );
         },
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [
+      canEdit,
+      canResend,
+      canActivate,
+      canDeactivate,
+      canDelete,
+      setEditUser,
+      setPendingAction,
+      handleResend,
+    ],
   );
 
   const invitationColumns = useMemo<ColumnDef<UserInvitationDto>[]>(
@@ -530,8 +557,8 @@ export function UsersPage() {
         id: 'actions',
         cell: ({ row }) => {
           const inv = row.original;
-          const canRevoke = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-          if (!canRevoke) return null;
+          const canRevokeRow = canRevoke && !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+          if (!canRevokeRow) return null;
           return (
             <Tooltip title="Revoke invitation">
               <IconButton size="small" color="error" onClick={() => setRevokeTarget(inv)}>
@@ -542,7 +569,7 @@ export function UsersPage() {
         },
       },
     ],
-    [],
+    [canRevoke, setRevokeTarget],
   );
 
   // ── Confirm dialog copy ───────────────────────────────────────────────────────
@@ -573,12 +600,24 @@ export function UsersPage() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="outlined" startIcon={<SendIcon />} onClick={() => setInviteOpen(true)}>
-              Invite
-            </Button>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-              Create user
-            </Button>
+            {canInvite && (
+              <Button
+                variant="outlined"
+                startIcon={<SendIcon />}
+                onClick={() => setInviteOpen(true)}
+              >
+                Invite
+              </Button>
+            )}
+            {canCreate && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setCreateOpen(true)}
+              >
+                Create user
+              </Button>
+            )}
           </Box>
         </Box>
 
