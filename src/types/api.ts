@@ -135,6 +135,8 @@ export interface SetPasswordRequest {
   token: string;
   password: string;
   confirmPassword: string;
+  fullName?: string;
+  address?: AddressRequest;
 }
 
 // ---------- Invitations (generic accept flow) ----------
@@ -189,6 +191,7 @@ export interface AcceptTenantAdminInvitationRequest {
   password: string;
   confirmPassword: string;
   company?: CompanyInfo;
+  address?: AddressRequest;
 }
 
 export interface AcceptTenantUserInvitationRequest {
@@ -197,6 +200,7 @@ export interface AcceptTenantUserInvitationRequest {
   phone?: string | null;
   password: string;
   confirmPassword: string;
+  address?: AddressRequest;
 }
 
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
@@ -300,6 +304,11 @@ export interface UpdateTenantRequest {
   clearAddress?: boolean;
 }
 
+export interface UpdateCurrentTenantAddressRequest {
+  address?: AddressRequest;
+  clearAddress?: boolean;
+}
+
 export interface DeleteTenantRequest {
   slug: string;
 }
@@ -331,6 +340,7 @@ export interface CreateTenantAdminRequest {
   tenantSlug: string;
   fullName: string;
   email: string;
+  address?: AddressRequest;
 }
 
 export interface CreateTenantAdminResponse {
@@ -409,6 +419,7 @@ export interface CreateTenantUserRequest {
   fullName: string;
   email: string;
   roleIds?: UUID[];
+  address?: AddressRequest;
 }
 
 export interface CreateTenantUserResponse {

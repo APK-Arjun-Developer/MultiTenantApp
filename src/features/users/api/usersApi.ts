@@ -148,6 +148,30 @@ export const usersApi = apiSlice.injectEndpoints({
         skipTenantHeader: true,
       }),
     }),
+
+    uploadCurrentUserAvatar: builder.mutation<UserDto, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        return {
+          url: '/api/v1/users/current/avatar',
+          method: 'POST',
+          data: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+          skipTenantHeader: true,
+        };
+      },
+      invalidatesTags: ['User'],
+    }),
+
+    removeCurrentUserAvatar: builder.mutation<UserDto, void>({
+      query: () => ({
+        url: '/api/v1/users/current/avatar',
+        method: 'DELETE',
+        skipTenantHeader: true,
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -165,4 +189,10 @@ export const {
   useGetCurrentUserQuery,
   useUpdateCurrentUserMutation,
   useChangePasswordMutation,
+  useUploadCurrentUserAvatarMutation,
+  useRemoveCurrentUserAvatarMutation,
 } = usersApi;
+
+export function getUserAvatarUrl(userId: string): string {
+  return `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${userId}/avatar`;
+}

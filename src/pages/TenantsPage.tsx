@@ -25,6 +25,11 @@ import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
 import {
+  addressZodShape,
+  getAddressFields,
+  buildAddressPayload,
+} from '@/shared/forms/addressFields';
+import {
   useGetTenantsQuery,
   useOnboardTenantMutation,
   useUpdateTenantMutation,
@@ -137,6 +142,7 @@ const editSchema = z.object({
     .optional()
     .or(z.literal('')),
   isActive: z.boolean(),
+  ...addressZodShape,
 });
 type EditValues = z.infer<typeof editSchema>;
 
@@ -174,6 +180,7 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
         type: FIELD_TYPE.CHECKBOX,
         defaultValue: tenant?.isActive ?? true,
       },
+      ...getAddressFields(tenant?.address, 'Address'),
     ],
     [tenant],
   );
@@ -186,6 +193,7 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
         name: values.name,
         newSlug: values.newSlug || undefined,
         isActive: values.isActive,
+        ...buildAddressPayload(values),
       }).unwrap();
       snackbar.success('Tenant updated.');
       onClose();
@@ -198,7 +206,7 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
   return (
     <Dialog open={!!tenant} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Tenant</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <FormBuilder
           key={tenant?.id}
           schema={editSchema}

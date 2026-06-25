@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
@@ -9,10 +9,15 @@ import Typography from '@mui/material/Typography';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import { FormBuilder, type FieldConfig, type FormBuilderHandle } from 'mui-schema-form-builder';
+import { FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
 import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import {
+  addressZodShape,
+  getAddressFields,
+  buildAddressPayload,
+} from '@/shared/forms/addressFields';
 import type { ApiError, SetPasswordResponse } from '@/types/api';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -24,33 +29,19 @@ const passwordRule = z
   .regex(/[0-9]/, 'Must include a number')
   .regex(/[^A-Za-z0-9]/, 'Must include a special character');
 
-const schema = z
+const setupSchema = z
   .object({
+    fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
+    ...addressZodShape,
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords don't match",
     path: ['confirmPassword'],
   });
-type FormValues = z.infer<typeof schema>;
 
-const setupFields: FieldConfig[] = [
-  {
-    name: 'password',
-    label: 'New password',
-    type: PASSWORD_FIELD,
-    required: true,
-    muiProps: { autoComplete: 'new-password', autoFocus: true },
-  },
-  {
-    name: 'confirmPassword',
-    label: 'Confirm password',
-    type: PASSWORD_FIELD,
-    required: true,
-    muiProps: { autoComplete: 'new-password' },
-  },
-];
+type SetupValues = z.infer<typeof setupSchema>;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -119,7 +110,6 @@ function SetupSuccess({ result }: { result: SetPasswordResponse }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function AccountSetupPage() {
-  const formRef = useRef<FormBuilderHandle>(null);
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -127,21 +117,51 @@ export function AccountSetupPage() {
   const { data: validation, isLoading: isValidating } = useValidateAccountSetupQuery(token, {
     skip: !token,
   });
-  const [setPassword, { isLoading: isSetting }] = useSetPasswordMutation();
+  const [setPassword] = useSetPasswordMutation();
 
   const [result, setResult] = useState<SetPasswordResponse | null>(null);
 
-  const onSubmit = async (values: FormValues) => {
+  const accountFields: FieldConfig[] = [
+    {
+      name: 'fullName',
+      label: 'Full name',
+      type: FIELD_TYPE.TEXT,
+      required: true,
+      defaultValue: validation?.fullName ?? '',
+      muiProps: { autoComplete: 'name', autoFocus: true },
+    },
+    {
+      name: 'password',
+      label: 'New password',
+      type: PASSWORD_FIELD,
+      required: true,
+      muiProps: { autoComplete: 'new-password' },
+    },
+    {
+      name: 'confirmPassword',
+      label: 'Confirm password',
+      type: PASSWORD_FIELD,
+      required: true,
+      muiProps: { autoComplete: 'new-password' },
+    },
+  ];
+
+  const addressFields: FieldConfig[] = getAddressFields();
+
+  const onSubmit = async (values: SetupValues) => {
     try {
       const response = await setPassword({
         token,
         password: values.password,
         confirmPassword: values.confirmPassword,
+        fullName: values.fullName,
+        ...buildAddressPayload(values),
       }).unwrap();
       setResult(response);
     } catch (err) {
-      const error = err as ApiError;
-      snackbar.error(error.message || 'Failed to set password. The link may have expired.');
+      snackbar.error(
+        (err as ApiError).message || 'Failed to set password. The link may have expired.',
+      );
     }
   };
 
@@ -161,41 +181,39 @@ export function AccountSetupPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
         <AccountCircleIcon color="primary" />
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Set your password
+          Set up your account
         </Typography>
       </Box>
 
-      {(validation.fullName || validation.email) && (
-        <Box sx={{ mb: 2 }}>
-          {validation.fullName && (
-            <Typography variant="body2" color="text.secondary">
-              Welcome,{' '}
-              <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                {validation.fullName}
-              </Box>
-              .
-            </Typography>
-          )}
-          {validation.email && (
-            <Typography variant="body2" color="text.secondary">
-              Setting up account for{' '}
-              <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                {validation.email}
-              </Box>
-            </Typography>
-          )}
-        </Box>
+      {validation.email && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Setting up account for{' '}
+          <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+            {validation.email}
+          </Box>
+        </Typography>
       )}
 
-      <FormBuilder
-        ref={formRef}
-        schema={schema}
-        fields={setupFields}
+      <FormWizard
+        key={token}
+        schema={setupSchema}
+        steps={[
+          {
+            label: 'Your account',
+            description: 'Set your name and password',
+            fields: accountFields,
+          },
+          {
+            label: 'Address',
+            description: 'Optional — you can add this later',
+            fields: addressFields,
+          },
+        ]}
         onSubmit={onSubmit}
-        submitText={isSetting ? 'Saving…' : 'Set password & activate account'}
+        submitText="Activate account"
         sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
       />
     </Box>

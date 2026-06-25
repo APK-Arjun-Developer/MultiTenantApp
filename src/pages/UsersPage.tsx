@@ -34,6 +34,13 @@ import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
+import {
+  addressZodShape,
+  getAddressFields,
+  getSameAsCompanyField,
+  buildAddressPayload,
+} from '@/shared/forms/addressFields';
+import { useGetCurrentUserQuery } from '@/features/users/api/usersApi';
 import { useGetRolesQuery } from '@/features/roles/api/rolesApi';
 import {
   useGetUsersQuery,
@@ -56,6 +63,8 @@ const createSchema = z.object({
   email: z.string().email('Invalid email address'),
   // AUTOCOMPLETE multiple returns option objects { value, label }, not plain strings
   roleIds: z.array(z.any()).min(1, 'At least one role is required'),
+  sameAsCompany: z.boolean().default(false),
+  ...addressZodShape,
 });
 type CreateValues = z.infer<typeof createSchema>;
 
@@ -68,6 +77,8 @@ type InviteValues = z.infer<typeof inviteSchema>;
 const editSchema = z.object({
   fullName: z.string().min(1, 'Full name is required').max(200),
   roleId: z.string().optional(),
+  sameAsCompany: z.boolean().default(false),
+  ...addressZodShape,
 });
 type EditValues = z.infer<typeof editSchema>;
 
@@ -114,6 +125,8 @@ interface CreateUserDialogProps {
 function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps) {
   const [createUser] = useCreateUserMutation();
   const snackbar = useSnackbar();
+  const { data: currentUser } = useGetCurrentUserQuery();
+  const tenantAddress = currentUser?.tenant?.address ?? null;
 
   const fields = useMemo<FieldConfig[]>(
     () => [
@@ -139,18 +152,29 @@ function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps)
         defaultValue: [],
         muiProps: { multiple: true },
       },
+      ...(tenantAddress ? [getSameAsCompanyField('Address')] : []),
+      ...getAddressFields(undefined, 'Address').map((f) => ({
+        ...f,
+        ...(tenantAddress ? { visibleIf: (v: Record<string, unknown>) => !v.sameAsCompany } : {}),
+      })),
     ],
-    [roleOptions],
+    [roleOptions, tenantAddress],
   );
 
   const onSubmit = async (values: CreateValues) => {
     try {
+      const addressPayload =
+        values.sameAsCompany && tenantAddress
+          ? { address: tenantAddress }
+          : buildAddressPayload(values);
+
       const result = await createUser({
         fullName: values.fullName,
         email: values.email,
         roleIds: values.roleIds.map((r: unknown) =>
           typeof r === 'string' ? r : (r as { value: string }).value,
         ),
+        ...addressPayload,
       }).unwrap();
       snackbar.success(`User "${result.fullName}" created. Setup email sent to ${result.email}.`);
       onClose();
@@ -258,6 +282,8 @@ interface EditUserDialogProps {
 function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProps) {
   const [updateUser] = useUpdateUserMutation();
   const snackbar = useSnackbar();
+  const { data: currentUser } = useGetCurrentUserQuery();
+  const tenantAddress = currentUser?.tenant?.address ?? null;
 
   const currentRoleId = useMemo(() => {
     if (!user || !roleOptions.length) return undefined;
@@ -281,17 +307,28 @@ function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProp
         options: roleOptions,
         defaultValue: currentRoleId,
       },
+      ...(tenantAddress ? [getSameAsCompanyField('Address')] : []),
+      ...getAddressFields(user?.address, 'Address').map((f) => ({
+        ...f,
+        ...(tenantAddress ? { visibleIf: (v: Record<string, unknown>) => !v.sameAsCompany } : {}),
+      })),
     ],
-    [user, roleOptions, currentRoleId],
+    [user, roleOptions, currentRoleId, tenantAddress],
   );
 
   const onSubmit = async (values: EditValues) => {
     if (!user) return;
     try {
+      const addressPayload =
+        values.sameAsCompany && tenantAddress
+          ? { address: tenantAddress }
+          : buildAddressPayload(values);
+
       await updateUser({
         email: user.email,
         fullName: values.fullName,
         roleId: values.roleId || null,
+        ...addressPayload,
       }).unwrap();
       snackbar.success('User updated.');
       onClose();
@@ -303,7 +340,7 @@ function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProp
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit User</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <FormBuilder
           key={user?.id}
           schema={editSchema}

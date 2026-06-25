@@ -34,7 +34,15 @@ import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
-import { useGetTenantsQuery } from '@/features/tenants/api/tenantsApi';
+import {
+  addressZodShape,
+  getAddressFields,
+  buildAddressPayload,
+  tenantAddressZodShape,
+  getTenantAddressFields,
+  buildTenantAddressPayload,
+} from '@/shared/forms/addressFields';
+import { useGetTenantsQuery, useUpdateTenantMutation } from '@/features/tenants/api/tenantsApi';
 import {
   useGetTenantAdminsQuery,
   useCreateTenantAdminMutation,
@@ -47,7 +55,7 @@ import {
   useGetTenantAdminInvitationsQuery,
   useRevokeInvitationMutation,
 } from '@/features/tenantAdmins/api/tenantAdminsApi';
-import type { TenantAdminDto, TenantAdminInvitationDto, ApiError } from '@/types/api';
+import type { TenantAdminDto, TenantAdminInvitationDto, AddressDto, ApiError } from '@/types/api';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +63,8 @@ const createSchema = z.object({
   tenantSlug: z.string().min(1, 'Tenant is required'),
   fullName: z.string().min(1, 'Full name is required').max(200),
   email: z.string().email('Invalid email address'),
+  ...addressZodShape,
+  ...tenantAddressZodShape,
 });
 type CreateValues = z.infer<typeof createSchema>;
 
@@ -66,6 +76,8 @@ type InviteValues = z.infer<typeof inviteSchema>;
 
 const editSchema = z.object({
   fullName: z.string().min(1, 'Full name is required').max(200),
+  ...addressZodShape,
+  ...tenantAddressZodShape,
 });
 type EditValues = z.infer<typeof editSchema>;
 
@@ -79,6 +91,7 @@ interface CreateAdminDialogProps {
 
 function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogProps) {
   const [createTenantAdmin] = useCreateTenantAdminMutation();
+  const [updateTenant] = useUpdateTenantMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -103,13 +116,22 @@ function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogPr
         required: true,
         muiProps: { type: 'email', helperText: 'Account setup email will be sent here' },
       },
+      ...getAddressFields(undefined, 'User Address'),
+      ...getTenantAddressFields(undefined, 'Company Address'),
     ],
     [tenantOptions],
   );
 
   const onSubmit = async (values: CreateValues) => {
     try {
-      const result = await createTenantAdmin(values).unwrap();
+      const { tenantSlug, fullName, email, ...rest } = values;
+      const result = await createTenantAdmin({
+        tenantSlug,
+        fullName,
+        email,
+        ...buildAddressPayload(rest),
+      }).unwrap();
+      await updateTenant({ slug: tenantSlug, ...buildTenantAddressPayload(rest) });
       snackbar.success(`Admin "${result.fullName}" created. Setup email sent to ${result.email}.`);
       onClose();
     } catch (err) {
@@ -120,7 +142,7 @@ function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogPr
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create Tenant Admin</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <FormBuilder
           key={open ? 'open' : 'closed'}
           schema={createSchema}
@@ -201,11 +223,13 @@ function InviteAdminDialog({ open, onClose, tenantOptions }: InviteAdminDialogPr
 
 interface EditAdminDialogProps {
   admin: TenantAdminDto | null;
+  tenantAddress: AddressDto | null;
   onClose: () => void;
 }
 
-function EditAdminDialog({ admin, onClose }: EditAdminDialogProps) {
+function EditAdminDialog({ admin, tenantAddress, onClose }: EditAdminDialogProps) {
   const [updateTenantAdmin] = useUpdateTenantAdminMutation();
+  const [updateTenant] = useUpdateTenantMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -218,14 +242,23 @@ function EditAdminDialog({ admin, onClose }: EditAdminDialogProps) {
         defaultValue: admin?.fullName ?? '',
         muiProps: { autoFocus: true },
       },
+      ...getAddressFields(admin?.address, 'User Address'),
+      ...getTenantAddressFields(tenantAddress, 'Company Address'),
     ],
-    [admin],
+    [admin, tenantAddress],
   );
 
   const onSubmit = async (values: EditValues) => {
     if (!admin) return;
     try {
-      await updateTenantAdmin({ userId: admin.id, fullName: values.fullName }).unwrap();
+      await updateTenantAdmin({
+        userId: admin.id,
+        fullName: values.fullName,
+        ...buildAddressPayload(values),
+      }).unwrap();
+      if (admin.tenant?.slug) {
+        await updateTenant({ slug: admin.tenant.slug, ...buildTenantAddressPayload(values) });
+      }
       snackbar.success('Tenant admin updated.');
       onClose();
     } catch (err) {
@@ -234,9 +267,9 @@ function EditAdminDialog({ admin, onClose }: EditAdminDialogProps) {
   };
 
   return (
-    <Dialog open={!!admin} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={!!admin} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Tenant Admin</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <FormBuilder
           key={admin?.id}
           schema={editSchema}
@@ -334,6 +367,11 @@ export function TenantAdminsPage() {
     () => tenantsData?.items.map((t) => ({ value: t.slug, label: t.name })) ?? [],
     [tenantsData],
   );
+
+  const editTenantAddress = useMemo<AddressDto | null>(() => {
+    if (!editAdmin || !tenantsData) return null;
+    return tenantsData.items.find((t) => t.id === editAdmin.tenantId)?.address ?? null;
+  }, [editAdmin, tenantsData]);
 
   const handleResend = async (admin: TenantAdminDto) => {
     try {
@@ -684,7 +722,11 @@ export function TenantAdminsPage() {
         onClose={() => setInviteOpen(false)}
         tenantOptions={tenantSlugOptions}
       />
-      <EditAdminDialog admin={editAdmin} onClose={() => setEditAdmin(null)} />
+      <EditAdminDialog
+        admin={editAdmin}
+        tenantAddress={editTenantAddress}
+        onClose={() => setEditAdmin(null)}
+      />
 
       <ConfirmDialog
         open={!!pendingAction}

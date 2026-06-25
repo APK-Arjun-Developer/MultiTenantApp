@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
@@ -11,12 +11,7 @@ import Typography from '@mui/material/Typography';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import {
-  FormBuilder,
-  FIELD_TYPE,
-  type FieldConfig,
-  type FormBuilderHandle,
-} from 'mui-schema-form-builder';
+import { FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import {
   useValidateInvitationQuery,
   useAcceptTenantAdminInvitationMutation,
@@ -24,6 +19,11 @@ import {
 } from '@/features/auth/api/authApi';
 import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import {
+  addressZodShape,
+  getAddressFields,
+  buildAddressPayload,
+} from '@/shared/forms/addressFields';
 import type { AcceptInvitationResponse, ApiError } from '@/types/api';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -41,11 +41,13 @@ const inviteSchema = z
     phone: z.string().optional(),
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
+    ...addressZodShape,
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords don't match",
     path: ['confirmPassword'],
   });
+
 type FormValues = z.infer<typeof inviteSchema>;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -115,7 +117,6 @@ function InvitationSuccess({ result }: { result: AcceptInvitationResponse }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function InvitationPage() {
-  const formRef = useRef<FormBuilderHandle>(null);
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -135,7 +136,7 @@ export function InvitationPage() {
   const rawInvType: unknown = validation?.invitationType;
   const isAdmin = rawInvType === 'TenantAdmin' || rawInvType === 1;
 
-  const inviteFields: FieldConfig[] = [
+  const profileFields: FieldConfig[] = [
     {
       name: 'fullName',
       label: 'Full name',
@@ -165,22 +166,24 @@ export function InvitationPage() {
     },
   ];
 
+  const addressFields: FieldConfig[] = getAddressFields();
+
   const onSubmit = async (values: FormValues) => {
     try {
-      let response: AcceptInvitationResponse;
-      // The form only mounts after validation loads (early-return guards above ensure this),
-      // so validation in this closure is always the fully-loaded value.
       const currentType: unknown = validation?.invitationType;
       const submitAsAdmin = currentType === 'TenantAdmin' || currentType === 1;
 
+      const addressPayload = buildAddressPayload(values);
       const payload = {
         token,
         fullName: values.fullName,
         phone: values.phone || undefined,
         password: values.password,
         confirmPassword: values.confirmPassword,
+        ...addressPayload,
       };
 
+      let response: AcceptInvitationResponse;
       if (submitAsAdmin) {
         response = await acceptAdmin(payload).unwrap();
       } else {
@@ -189,8 +192,9 @@ export function InvitationPage() {
 
       setResult(response);
     } catch (err) {
-      const error = err as ApiError;
-      snackbar.error(error.message || 'Failed to accept invitation. The link may have expired.');
+      snackbar.error(
+        (err as ApiError).message || 'Failed to accept invitation. The link may have expired.',
+      );
     }
   };
 
@@ -241,10 +245,21 @@ export function InvitationPage() {
         slotProps={{ input: { readOnly: true } }}
       />
 
-      <FormBuilder
-        ref={formRef}
+      <FormWizard
+        key={token}
         schema={inviteSchema}
-        fields={inviteFields}
+        steps={[
+          {
+            label: 'Your profile',
+            description: 'Name and password',
+            fields: profileFields,
+          },
+          {
+            label: 'Address',
+            description: 'Optional — you can add this later',
+            fields: addressFields,
+          },
+        ]}
         onSubmit={onSubmit}
         submitText={isSubmitting ? 'Creating account…' : 'Create account'}
         sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}

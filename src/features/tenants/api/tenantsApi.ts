@@ -5,6 +5,7 @@ import type {
   OnboardTenantRequest,
   OnboardTenantResponse,
   UpdateTenantRequest,
+  UpdateCurrentTenantAddressRequest,
   DeleteTenantRequest,
 } from '@/types/api';
 
@@ -53,6 +54,15 @@ export const tenantsApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Tenant'],
     }),
 
+    updateCurrentTenantAddress: builder.mutation<TenantDto, UpdateCurrentTenantAddressRequest>({
+      query: (body) => ({
+        url: '/api/v1/tenants/current/address',
+        method: 'PUT',
+        data: body,
+      }),
+      invalidatesTags: ['Tenant'],
+    }),
+
     deleteTenant: builder.mutation<void, DeleteTenantRequest>({
       query: (body) => ({
         url: '/api/v1/tenants',
@@ -69,5 +79,6 @@ export const {
   useGetTenantsQuery,
   useOnboardTenantMutation,
   useUpdateTenantMutation,
+  useUpdateCurrentTenantAddressMutation,
   useDeleteTenantMutation,
 } = tenantsApi;
