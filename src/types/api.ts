@@ -141,7 +141,7 @@ export interface SetPasswordRequest {
 
 // ---------- Invitations (generic accept flow) ----------
 
-export type InvitationType = 'TenantAdmin' | 'TenantUser';
+export type InvitationType = 'TenantAdmin' | 'TenantUser' | 'NewTenant';
 
 export interface ValidateInvitationResponse {
   isValid: boolean;
@@ -192,6 +192,18 @@ export interface AcceptTenantAdminInvitationRequest {
   confirmPassword: string;
   company?: CompanyInfo;
   address?: AddressRequest;
+}
+
+export interface AcceptTenantCreationInvitationRequest {
+  token: string;
+  fullName: string;
+  phone?: string | null;
+  password: string;
+  confirmPassword: string;
+  tenantName: string;
+  tenantSlug: string;
+  tenantAddress?: AddressRequest;
+  userAddress?: AddressRequest;
 }
 
 export interface AcceptTenantUserInvitationRequest {
@@ -274,11 +286,13 @@ export interface OnboardTenantResponse {
 export interface OnboardUserDetails {
   fullName: string;
   email: string;
+  address?: AddressRequest;
 }
 
 export interface OnboardTenantDetails {
   name: string;
   slug: string;
+  address?: AddressRequest;
 }
 
 export interface OnboardRoleDetails {
@@ -313,6 +327,29 @@ export interface DeleteTenantRequest {
   slug: string;
 }
 
+export interface InviteResponse {
+  invitationId: UUID;
+  invitationType: InvitationType;
+  expiresAt: string;
+}
+
+export interface InviteTenantRequest {
+  email: string;
+}
+
+export interface TenantCreationInvitationDto {
+  id: UUID;
+  email: string;
+  status: string;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  revokedAt?: string | null;
+  isExpired: boolean;
+  isAccepted: boolean;
+  isRevoked: boolean;
+  createdAt: string;
+}
+
 // ---------- Tenant admins (super-admin managing admins across tenants) ----------
 
 export interface TenantAdminTenantDetails {
@@ -334,6 +371,7 @@ export interface TenantAdminDto {
   profileUrl?: string | null;
   address?: AddressDto | null;
   tenant?: TenantAdminTenantDetails | null;
+  hasPendingSetup: boolean;
 }
 
 export interface CreateTenantAdminRequest {
@@ -413,6 +451,7 @@ export interface UserDto {
   profileUrl?: string | null;
   address?: AddressDto | null;
   tenant?: UserTenantDetails | null;
+  hasPendingSetup: boolean;
 }
 
 export interface CreateTenantUserRequest {

@@ -24,6 +24,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import EmailIcon from '@mui/icons-material/Email';
 import PeopleIcon from '@mui/icons-material/People';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
@@ -36,6 +37,7 @@ import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
 import {
   addressZodShape,
+  requiredAddressZodShape,
   getAddressFields,
   getSameAsCompanyField,
   buildAddressPayload,
@@ -53,6 +55,7 @@ import {
   useDeactivateUserMutation,
   useGetUserInvitationsQuery,
   useRevokeUserInvitationMutation,
+  useResendUserInvitationMutation,
 } from '@/features/users/api/usersApi';
 import type { UserDto, UserInvitationDto, ApiError } from '@/types/api';
 
@@ -63,8 +66,7 @@ const createSchema = z.object({
   email: z.string().email('Invalid email address'),
   // AUTOCOMPLETE multiple returns option objects { value, label }, not plain strings
   roleIds: z.array(z.any()).min(1, 'At least one role is required'),
-  sameAsCompany: z.boolean().default(false),
-  ...addressZodShape,
+  ...requiredAddressZodShape,
 });
 type CreateValues = z.infer<typeof createSchema>;
 
@@ -125,8 +127,6 @@ interface CreateUserDialogProps {
 function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps) {
   const [createUser] = useCreateUserMutation();
   const snackbar = useSnackbar();
-  const { data: currentUser } = useGetCurrentUserQuery();
-  const tenantAddress = currentUser?.tenant?.address ?? null;
 
   const fields = useMemo<FieldConfig[]>(
     () => [
@@ -152,29 +152,20 @@ function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps)
         defaultValue: [],
         muiProps: { multiple: true },
       },
-      ...(tenantAddress ? [getSameAsCompanyField('Address')] : []),
-      ...getAddressFields(undefined, 'Address').map((f) => ({
-        ...f,
-        ...(tenantAddress ? { visibleIf: (v: Record<string, unknown>) => !v.sameAsCompany } : {}),
-      })),
+      ...getAddressFields(undefined, 'Address', true),
     ],
-    [roleOptions, tenantAddress],
+    [roleOptions],
   );
 
   const onSubmit = async (values: CreateValues) => {
     try {
-      const addressPayload =
-        values.sameAsCompany && tenantAddress
-          ? { address: tenantAddress }
-          : buildAddressPayload(values);
-
       const result = await createUser({
         fullName: values.fullName,
         email: values.email,
         roleIds: values.roleIds.map((r: unknown) =>
           typeof r === 'string' ? r : (r as { value: string }).value,
         ),
-        ...addressPayload,
+        ...buildAddressPayload(values),
       }).unwrap();
       snackbar.success(`User "${result.fullName}" created. Setup email sent to ${result.email}.`);
       onClose();
@@ -302,7 +293,7 @@ function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProp
       },
       {
         name: 'roleId',
-        label: 'Role (optional)',
+        label: 'Role',
         type: FIELD_TYPE.SELECT,
         options: roleOptions,
         defaultValue: currentRoleId,
@@ -418,6 +409,7 @@ export function UsersPage() {
   const [deactivateUser] = useDeactivateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
   const [revokeInvitation] = useRevokeUserInvitationMutation();
+  const [resendInvitation] = useResendUserInvitationMutation();
 
   const roleOptions = useMemo(
     () => (rolesData?.items ?? []).map((r) => ({ value: r.id, label: r.name })),
@@ -471,6 +463,18 @@ export function UsersPage() {
     }
   };
 
+  const handleResendInvitation = useCallback(
+    async (inv: UserInvitationDto) => {
+      try {
+        await resendInvitation(inv.id).unwrap();
+        snackbar.success(`Invitation resent to ${inv.email}.`);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to resend invitation.');
+      }
+    },
+    [resendInvitation, snackbar],
+  );
+
   // ── Table columns ────────────────────────────────────────────────────────────
 
   const userColumns = useMemo<ColumnDef<UserDto>[]>(
@@ -517,7 +521,7 @@ export function UsersPage() {
                   </IconButton>
                 </Tooltip>
               )}
-              {canResend && !user.isActive && (
+              {canResend && user.hasPendingSetup && (
                 <Tooltip title="Resend setup email">
                   <IconButton size="small" onClick={() => handleResend(user)}>
                     <SendIcon fontSize="small" />
@@ -594,19 +598,32 @@ export function UsersPage() {
         id: 'actions',
         cell: ({ row }) => {
           const inv = row.original;
-          const canRevokeRow = canRevoke && !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-          if (!canRevokeRow) return null;
+          const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+          const canRevokeRow = canRevoke && isPending;
+          const canResendRow = canResend && isPending;
+          if (!canRevokeRow && !canResendRow) return null;
           return (
-            <Tooltip title="Revoke invitation">
-              <IconButton size="small" color="error" onClick={() => setRevokeTarget(inv)}>
-                <ClearIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              {canResendRow && (
+                <Tooltip title="Resend invitation">
+                  <IconButton size="small" color="info" onClick={() => handleResendInvitation(inv)}>
+                    <EmailIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {canRevokeRow && (
+                <Tooltip title="Revoke invitation">
+                  <IconButton size="small" color="error" onClick={() => setRevokeTarget(inv)}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           );
         },
       },
     ],
-    [canRevoke, setRevokeTarget],
+    [canRevoke, canResend, setRevokeTarget, handleResendInvitation],
   );
 
   // ── Confirm dialog copy ───────────────────────────────────────────────────────

@@ -125,6 +125,13 @@ export const usersApi = apiSlice.injectEndpoints({
       invalidatesTags: ['Invitation'],
     }),
 
+    resendUserInvitation: builder.mutation<void, string>({
+      query: (invitationId) => ({
+        url: `/api/v1/users/invitations/${invitationId}/resend`,
+        method: 'POST',
+      }),
+    }),
+
     getCurrentUser: builder.query<UserDto, void>({
       query: () => ({ url: '/api/v1/users/current', skipTenantHeader: true }),
       providesTags: ['User'],
@@ -186,6 +193,7 @@ export const {
   useDeactivateUserMutation,
   useGetUserInvitationsQuery,
   useRevokeUserInvitationMutation,
+  useResendUserInvitationMutation,
   useGetCurrentUserQuery,
   useUpdateCurrentUserMutation,
   useChangePasswordMutation,

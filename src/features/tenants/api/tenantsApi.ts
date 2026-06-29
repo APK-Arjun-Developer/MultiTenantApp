@@ -7,6 +7,9 @@ import type {
   UpdateTenantRequest,
   UpdateCurrentTenantAddressRequest,
   DeleteTenantRequest,
+  InviteTenantRequest,
+  TenantCreationInvitationDto,
+  InviteResponse,
 } from '@/types/api';
 
 export interface GetTenantsParams {
@@ -72,6 +75,49 @@ export const tenantsApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Tenant'],
     }),
+
+    getTenantCreationInvitations: builder.query<
+      PaginatedResponse<TenantCreationInvitationDto>,
+      { page?: number; pageSize?: number; status?: string } | void
+    >({
+      query: (params) => ({
+        url: '/api/v1/tenants/invitations',
+        params: {
+          page: params?.page ?? 1,
+          pageSize: params?.pageSize ?? 20,
+          status: params?.status,
+        },
+        skipTenantHeader: true,
+      }),
+      providesTags: ['Tenant'],
+    }),
+
+    inviteTenant: builder.mutation<InviteResponse, InviteTenantRequest>({
+      query: (body) => ({
+        url: '/api/v1/tenants/invite',
+        method: 'POST',
+        data: body,
+        skipTenantHeader: true,
+      }),
+      invalidatesTags: ['Tenant'],
+    }),
+
+    revokeTenantInvitation: builder.mutation<void, string>({
+      query: (invitationId) => ({
+        url: `/api/v1/tenants/invitations/${invitationId}/revoke`,
+        method: 'POST',
+        skipTenantHeader: true,
+      }),
+      invalidatesTags: ['Tenant'],
+    }),
+
+    resendTenantInvitation: builder.mutation<void, string>({
+      query: (invitationId) => ({
+        url: `/api/v1/tenants/invitations/${invitationId}/resend`,
+        method: 'POST',
+        skipTenantHeader: true,
+      }),
+    }),
   }),
 });
 
@@ -81,4 +127,8 @@ export const {
   useUpdateTenantMutation,
   useUpdateCurrentTenantAddressMutation,
   useDeleteTenantMutation,
+  useGetTenantCreationInvitationsQuery,
+  useInviteTenantMutation,
+  useRevokeTenantInvitationMutation,
+  useResendTenantInvitationMutation,
 } = tenantsApi;

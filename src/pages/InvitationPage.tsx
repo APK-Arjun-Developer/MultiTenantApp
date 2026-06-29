@@ -16,17 +16,21 @@ import {
   useValidateInvitationQuery,
   useAcceptTenantAdminInvitationMutation,
   useAcceptTenantUserInvitationMutation,
+  useAcceptTenantCreationInvitationMutation,
 } from '@/features/auth/api/authApi';
 import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
-  addressZodShape,
+  requiredAddressZodShape,
   getAddressFields,
   buildAddressPayload,
+  requiredTenantAddressZodShape,
+  getTenantAddressFields,
+  buildTenantAddressPayload,
 } from '@/shared/forms/addressFields';
 import type { AcceptInvitationResponse, ApiError } from '@/types/api';
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const passwordRule = z
   .string()
@@ -41,7 +45,7 @@ const inviteSchema = z
     phone: z.string().optional(),
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
-    ...addressZodShape,
+    ...requiredAddressZodShape,
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords don't match",
@@ -49,6 +53,31 @@ const inviteSchema = z
   });
 
 type FormValues = z.infer<typeof inviteSchema>;
+
+const tenantCreationSchema = z
+  .object({
+    fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+    phone: z.string().optional(),
+    password: passwordRule,
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    tenantName: z.string().min(1, 'Tenant name is required').max(200),
+    tenantSlug: z
+      .string()
+      .min(1, 'Slug is required')
+      .max(100)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        'Lowercase letters, digits and hyphens only (e.g. my-company)',
+      ),
+    ...requiredTenantAddressZodShape,
+    ...requiredAddressZodShape,
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+type TenantCreationValues = z.infer<typeof tenantCreationSchema>;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -127,14 +156,18 @@ export function InvitationPage() {
 
   const [acceptAdmin, { isLoading: isAcceptingAdmin }] = useAcceptTenantAdminInvitationMutation();
   const [acceptUser, { isLoading: isAcceptingUser }] = useAcceptTenantUserInvitationMutation();
+  const [acceptNewTenant, { isLoading: isAcceptingNewTenant }] =
+    useAcceptTenantCreationInvitationMutation();
 
   const [result, setResult] = useState<AcceptInvitationResponse | null>(null);
 
-  const isSubmitting = isAcceptingAdmin || isAcceptingUser;
-  // Server may return 'TenantAdmin' (string, with JsonStringEnumConverter) or 1 (integer,
-  // legacy/unconfigured). Handle both so the UI works regardless of server build state.
+  const isSubmitting = isAcceptingAdmin || isAcceptingUser || isAcceptingNewTenant;
+
   const rawInvType: unknown = validation?.invitationType;
   const isAdmin = rawInvType === 'TenantAdmin' || rawInvType === 1;
+  const isNewTenant = rawInvType === 'NewTenant' || rawInvType === 3;
+
+  // ── Fields for admin / user flows ────────────────────────────────────────
 
   const profileFields: FieldConfig[] = [
     {
@@ -146,7 +179,7 @@ export function InvitationPage() {
     },
     {
       name: 'phone',
-      label: 'Phone (optional)',
+      label: 'Phone',
       type: FIELD_TYPE.TEXT,
       muiProps: { autoComplete: 'tel' },
     },
@@ -166,7 +199,62 @@ export function InvitationPage() {
     },
   ];
 
-  const addressFields: FieldConfig[] = getAddressFields();
+  const addressFields: FieldConfig[] = getAddressFields(undefined, undefined, true);
+
+  // ── Fields for new-tenant flow ────────────────────────────────────────────
+
+  const newTenantAccountFields: FieldConfig[] = [
+    {
+      name: 'fullName',
+      label: 'Full name',
+      type: FIELD_TYPE.TEXT,
+      required: true,
+      muiProps: { autoComplete: 'name', autoFocus: true },
+    },
+    {
+      name: 'phone',
+      label: 'Phone',
+      type: FIELD_TYPE.TEXT,
+      muiProps: { autoComplete: 'tel' },
+    },
+    {
+      name: 'password',
+      label: 'Password',
+      type: PASSWORD_FIELD,
+      required: true,
+      muiProps: { autoComplete: 'new-password' },
+    },
+    {
+      name: 'confirmPassword',
+      label: 'Confirm password',
+      type: PASSWORD_FIELD,
+      required: true,
+      muiProps: { autoComplete: 'new-password' },
+    },
+  ];
+
+  const newTenantDetailsFields: FieldConfig[] = [
+    {
+      name: 'tenantName',
+      label: 'Company / tenant name',
+      type: FIELD_TYPE.TEXT,
+      required: true,
+    },
+    {
+      name: 'tenantSlug',
+      label: 'Slug',
+      type: FIELD_TYPE.TEXT,
+      required: true,
+      muiProps: {
+        helperText: 'URL-safe identifier — lowercase letters, digits and hyphens (e.g. my-company)',
+      },
+    },
+    ...getTenantAddressFields(undefined, undefined, true),
+  ];
+
+  const newTenantUserAddressFields: FieldConfig[] = getAddressFields(undefined, undefined, true);
+
+  // ── Submit handlers ───────────────────────────────────────────────────────
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -198,6 +286,31 @@ export function InvitationPage() {
     }
   };
 
+  const onSubmitNewTenant = async (values: TenantCreationValues) => {
+    try {
+      const tenantAddressPayload = buildTenantAddressPayload(values);
+      const userAddressPayload = buildAddressPayload(values);
+
+      const response = await acceptNewTenant({
+        token,
+        fullName: values.fullName,
+        phone: values.phone || undefined,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+        tenantName: values.tenantName,
+        tenantSlug: values.tenantSlug,
+        ...(tenantAddressPayload.address ? { tenantAddress: tenantAddressPayload.address } : {}),
+        ...(userAddressPayload.address ? { userAddress: userAddressPayload.address } : {}),
+      }).unwrap();
+
+      setResult(response);
+    } catch (err) {
+      snackbar.error(
+        (err as ApiError).message || 'Failed to accept invitation. The link may have expired.',
+      );
+    }
+  };
+
   if (!token) return <InvitationInvalid message="No invitation token found in the link." />;
 
   if (isValidating) {
@@ -211,6 +324,60 @@ export function InvitationPage() {
   if (!validation?.isValid) return <InvitationInvalid message={validation?.errorMessage} />;
 
   if (result) return <InvitationSuccess result={result} />;
+
+  // ── New Tenant invitation UI ──────────────────────────────────────────────
+
+  if (isNewTenant) {
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <PersonAddIcon color="primary" />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Create your tenant account
+          </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          You've been invited to set up a new tenant on this platform.
+        </Typography>
+
+        <TextField
+          label="Email address"
+          value={validation.email ?? ''}
+          fullWidth
+          disabled
+          sx={{ mb: 2 }}
+          slotProps={{ input: { readOnly: true } }}
+        />
+
+        <FormWizard
+          key={token}
+          schema={tenantCreationSchema}
+          steps={[
+            {
+              label: 'Your account',
+              description: 'Name and password',
+              fields: newTenantAccountFields,
+            },
+            {
+              label: 'Tenant details',
+              description: 'Company name and slug',
+              fields: newTenantDetailsFields,
+            },
+            {
+              label: 'Your address',
+              description: 'Personal address',
+              fields: newTenantUserAddressFields,
+            },
+          ]}
+          onSubmit={onSubmitNewTenant}
+          submitText={isSubmitting ? 'Creating account…' : 'Create tenant & account'}
+          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+        />
+      </Box>
+    );
+  }
+
+  // ── Admin / User invitation UI ────────────────────────────────────────────
 
   return (
     <Box>
@@ -235,7 +402,6 @@ export function InvitationPage() {
         />
       </Box>
 
-      {/* Pre-filled email — display only, not part of the submitted form */}
       <TextField
         label="Email address"
         value={validation.email ?? ''}
@@ -256,7 +422,7 @@ export function InvitationPage() {
           },
           {
             label: 'Address',
-            description: 'Optional — you can add this later',
+            description: 'Personal address',
             fields: addressFields,
           },
         ]}

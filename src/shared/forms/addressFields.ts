@@ -3,6 +3,7 @@ import { FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import type { AddressDto, AddressRequest } from '@/types/api';
 
 const optStr = (max: number) => z.string().max(max).optional().or(z.literal(''));
+const reqStr = (max: number) => z.string().min(1, 'Required').max(max);
 
 export const addressZodShape = {
   addressLine1: optStr(200),
@@ -13,12 +14,17 @@ export const addressZodShape = {
   addressCountry: optStr(100),
 };
 
-export function getAddressFields(address?: AddressDto | null, section?: string): FieldConfig[] {
+export function getAddressFields(
+  address?: AddressDto | null,
+  section?: string,
+  required?: boolean,
+): FieldConfig[] {
   return [
     {
       name: 'addressLine1',
       label: 'Address line 1',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.line1 ?? '',
       section,
     },
@@ -33,6 +39,7 @@ export function getAddressFields(address?: AddressDto | null, section?: string):
       name: 'addressCity',
       label: 'City',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.city ?? '',
       section,
     },
@@ -47,6 +54,7 @@ export function getAddressFields(address?: AddressDto | null, section?: string):
       name: 'addressPostalCode',
       label: 'Postal code',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.postalCode ?? '',
       section,
     },
@@ -54,11 +62,21 @@ export function getAddressFields(address?: AddressDto | null, section?: string):
       name: 'addressCountry',
       label: 'Country',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.country ?? '',
       section,
     },
   ];
 }
+
+export const requiredAddressZodShape = {
+  addressLine1: reqStr(200),
+  addressLine2: optStr(200),
+  addressCity: reqStr(100),
+  addressState: optStr(100),
+  addressPostalCode: reqStr(20),
+  addressCountry: reqStr(100),
+};
 
 export function getSameAsCompanyField(section?: string): FieldConfig {
   return {
@@ -111,12 +129,14 @@ export const tenantAddressZodShape = {
 export function getTenantAddressFields(
   address?: AddressDto | null,
   section?: string,
+  required?: boolean,
 ): FieldConfig[] {
   return [
     {
       name: 'tenantAddressLine1',
       label: 'Address line 1',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.line1 ?? '',
       section,
     },
@@ -131,6 +151,7 @@ export function getTenantAddressFields(
       name: 'tenantAddressCity',
       label: 'City',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.city ?? '',
       section,
     },
@@ -145,6 +166,7 @@ export function getTenantAddressFields(
       name: 'tenantAddressPostalCode',
       label: 'Postal code',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.postalCode ?? '',
       section,
     },
@@ -152,11 +174,21 @@ export function getTenantAddressFields(
       name: 'tenantAddressCountry',
       label: 'Country',
       type: FIELD_TYPE.TEXT,
+      required: required ?? false,
       defaultValue: address?.country ?? '',
       section,
     },
   ];
 }
+
+export const requiredTenantAddressZodShape = {
+  tenantAddressLine1: reqStr(200),
+  tenantAddressLine2: optStr(200),
+  tenantAddressCity: reqStr(100),
+  tenantAddressState: optStr(100),
+  tenantAddressPostalCode: reqStr(20),
+  tenantAddressCountry: reqStr(100),
+};
 
 interface TenantAddressValues {
   tenantAddressLine1?: string;

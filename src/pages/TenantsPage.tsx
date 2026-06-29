@@ -7,17 +7,26 @@ import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
+import BlockIcon from '@mui/icons-material/Block';
 import BusinessIcon from '@mui/icons-material/Business';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import SearchIcon from '@mui/icons-material/Search';
+import SendIcon from '@mui/icons-material/Send';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
@@ -26,16 +35,25 @@ import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
 import {
   addressZodShape,
+  requiredAddressZodShape,
   getAddressFields,
   buildAddressPayload,
+  tenantAddressZodShape,
+  requiredTenantAddressZodShape,
+  getTenantAddressFields,
+  buildTenantAddressPayload,
 } from '@/shared/forms/addressFields';
 import {
   useGetTenantsQuery,
   useOnboardTenantMutation,
   useUpdateTenantMutation,
   useDeleteTenantMutation,
+  useGetTenantCreationInvitationsQuery,
+  useInviteTenantMutation,
+  useRevokeTenantInvitationMutation,
+  useResendTenantInvitationMutation,
 } from '@/features/tenants/api/tenantsApi';
-import type { TenantDto, ApiError } from '@/types/api';
+import type { TenantDto, TenantCreationInvitationDto, ApiError } from '@/types/api';
 
 // ─── Onboard dialog ───────────────────────────────────────────────────────────
 
@@ -51,41 +69,10 @@ const onboardSchema = z.object({
     ),
   adminFullName: z.string().min(1, 'Admin full name is required').max(200),
   adminEmail: z.string().email('Invalid email address'),
+  ...requiredTenantAddressZodShape,
+  ...requiredAddressZodShape,
 });
 type OnboardValues = z.infer<typeof onboardSchema>;
-
-const onboardFields: FieldConfig[] = [
-  {
-    name: 'tenantName',
-    label: 'Tenant name',
-    type: FIELD_TYPE.TEXT,
-    section: 'Tenant details',
-    required: true,
-  },
-  {
-    name: 'tenantSlug',
-    label: 'Slug',
-    type: FIELD_TYPE.TEXT,
-    section: 'Tenant details',
-    required: true,
-    muiProps: { helperText: 'URL-safe identifier — lowercase letters, digits and hyphens' },
-  },
-  {
-    name: 'adminFullName',
-    label: 'Full name',
-    type: FIELD_TYPE.TEXT,
-    section: 'Admin Details',
-    required: true,
-  },
-  {
-    name: 'adminEmail',
-    label: 'Email address',
-    type: FIELD_TYPE.TEXT,
-    section: 'Admin Details',
-    required: true,
-    muiProps: { type: 'email', helperText: 'Account setup email will be sent here' },
-  },
-];
 
 interface OnboardDialogProps {
   open: boolean;
@@ -96,11 +83,60 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
   const [onboardTenant] = useOnboardTenantMutation();
   const snackbar = useSnackbar();
 
+  const fields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'tenantName',
+        label: 'Tenant name',
+        type: FIELD_TYPE.TEXT,
+        section: 'Tenant details',
+        required: true,
+      },
+      {
+        name: 'tenantSlug',
+        label: 'Slug',
+        type: FIELD_TYPE.TEXT,
+        section: 'Tenant details',
+        required: true,
+        muiProps: { helperText: 'URL-safe identifier — lowercase letters, digits and hyphens' },
+      },
+      ...getTenantAddressFields(undefined, 'Company Address', true),
+      {
+        name: 'adminFullName',
+        label: 'Full name',
+        type: FIELD_TYPE.TEXT,
+        section: 'Admin Details',
+        required: true,
+      },
+      {
+        name: 'adminEmail',
+        label: 'Email address',
+        type: FIELD_TYPE.TEXT,
+        section: 'Admin Details',
+        required: true,
+        muiProps: { type: 'email', helperText: 'Account setup email will be sent here' },
+      },
+      ...getAddressFields(undefined, 'Admin Address', true),
+    ],
+    [],
+  );
+
   const onSubmit = async (values: OnboardValues) => {
     try {
+      const tenantAddressPayload = buildTenantAddressPayload(values);
+      const userAddressPayload = buildAddressPayload(values);
+
       const result = await onboardTenant({
-        tenant: { name: values.tenantName, slug: values.tenantSlug },
-        user: { fullName: values.adminFullName, email: values.adminEmail },
+        tenant: {
+          name: values.tenantName,
+          slug: values.tenantSlug,
+          ...(tenantAddressPayload.address ? { address: tenantAddressPayload.address } : {}),
+        },
+        user: {
+          fullName: values.adminFullName,
+          email: values.adminEmail,
+          ...(userAddressPayload.address ? { address: userAddressPayload.address } : {}),
+        },
       }).unwrap();
       snackbar.success(
         `Tenant "${result.name}" created. Setup email sent to ${result.adminEmail}.`,
@@ -115,14 +151,73 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>New Tenant</DialogTitle>
-      <DialogContent>
+      <DialogContent dividers>
         <FormBuilder
           key={open ? 'open' : 'closed'}
           schema={onboardSchema}
-          fields={onboardFields}
+          fields={fields}
           onSubmit={onSubmit}
           onCancel={onClose}
           submitText="Create tenant"
+          cancelText="Cancel"
+          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Invite dialog ────────────────────────────────────────────────────────────
+
+const inviteSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+type InviteValues = z.infer<typeof inviteSchema>;
+
+interface InviteDialogProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
+  const [inviteTenant] = useInviteTenantMutation();
+  const snackbar = useSnackbar();
+
+  const fields: FieldConfig[] = [
+    {
+      name: 'email',
+      label: 'Email address',
+      type: FIELD_TYPE.TEXT,
+      required: true,
+      muiProps: {
+        type: 'email',
+        helperText:
+          'The invited user will set up their tenant name, address, and password via the invitation link.',
+      },
+    },
+  ];
+
+  const onSubmit = async (values: InviteValues) => {
+    try {
+      await inviteTenant({ email: values.email }).unwrap();
+      snackbar.success(`Invitation sent to ${values.email}.`);
+      onClose();
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to send invitation.');
+    }
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Invite New Tenant</DialogTitle>
+      <DialogContent>
+        <FormBuilder
+          key={open ? 'open' : 'closed'}
+          schema={inviteSchema}
+          fields={fields}
+          onSubmit={onSubmit}
+          onCancel={onClose}
+          submitText="Send invitation"
           cancelText="Cancel"
           sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
         />
@@ -222,6 +317,21 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
   );
 }
 
+// ─── Invitation status chip ───────────────────────────────────────────────────
+
+function InvitationStatusChip({ status }: { status: string }) {
+  const lower = status.toLowerCase();
+  const color =
+    lower === 'accepted'
+      ? 'success'
+      : lower === 'pending'
+        ? 'primary'
+        : lower === 'expired'
+          ? 'warning'
+          : 'error';
+  return <Chip label={status} color={color} size="small" variant="outlined" />;
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function TenantsPage() {
@@ -231,22 +341,42 @@ export function TenantsPage() {
   const canEdit = usePermission('Tenants.Edit');
   const canDelete = usePermission('Tenants.Delete');
 
+  const [tab, setTab] = useState(0);
+
+  // Tenants tab
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const debouncedSearch = useDebounce(search, 300);
 
   const [onboardOpen, setOnboardOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [editTenant, setEditTenant] = useState<TenantDto | null>(null);
   const [deleteTenant, setDeleteTenant] = useState<TenantDto | null>(null);
 
+  // Invitations tab
+  const [invPage, setInvPage] = useState(0);
+  const [invPageSize, setInvPageSize] = useState(20);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [pendingRevoke, setPendingRevoke] = useState<TenantCreationInvitationDto | null>(null);
+
+  // Data
   const { data, isLoading } = useGetTenantsQuery({
     page: page + 1,
     pageSize,
     search: debouncedSearch || undefined,
   });
 
+  const { data: invitationsData, isLoading: isLoadingInvitations } =
+    useGetTenantCreationInvitationsQuery({
+      page: invPage + 1,
+      pageSize: invPageSize,
+      status: statusFilter || undefined,
+    });
+
   const [deleteTenantMutation, { isLoading: isDeleting }] = useDeleteTenantMutation();
+  const [revokeTenantInvitation, { isLoading: isRevoking }] = useRevokeTenantInvitationMutation();
+  const [resendTenantInvitation] = useResendTenantInvitationMutation();
 
   const tenants = data?.items ?? [];
   const totalCount = data?.totalCount ?? 0;
@@ -263,7 +393,27 @@ export function TenantsPage() {
     }
   };
 
-  const columns: ColumnDef<TenantDto>[] = [
+  const handleRevokeInvitation = async () => {
+    if (!pendingRevoke) return;
+    try {
+      await revokeTenantInvitation(pendingRevoke.id).unwrap();
+      snackbar.success('Invitation revoked.');
+      setPendingRevoke(null);
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to revoke invitation.');
+    }
+  };
+
+  const handleResendInvitation = async (inv: TenantCreationInvitationDto) => {
+    try {
+      await resendTenantInvitation(inv.id).unwrap();
+      snackbar.success(`Invitation resent to ${inv.email}.`);
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to resend invitation.');
+    }
+  };
+
+  const tenantColumns: ColumnDef<TenantDto>[] = [
     {
       accessorKey: 'name',
       header: 'Name',
@@ -314,6 +464,51 @@ export function TenantsPage() {
     },
   ];
 
+  const invitationColumns: ColumnDef<TenantCreationInvitationDto>[] = [
+    {
+      accessorKey: 'email',
+      header: 'Email',
+      cell: ({ row }) => <Typography variant="body2">{row.original.email}</Typography>,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: ({ row }) => <InvitationStatusChip status={row.original.status} />,
+    },
+    {
+      accessorKey: 'expiresAt',
+      header: 'Expires',
+      cell: ({ row }) => (
+        <Typography variant="body2" color="text.secondary">
+          {new Date(row.original.expiresAt).toLocaleDateString()}
+        </Typography>
+      ),
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => {
+        const inv = row.original;
+        const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+        if (!canCreate || !isPending) return null;
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+            <Tooltip title="Resend invitation">
+              <IconButton size="small" color="info" onClick={() => handleResendInvitation(inv)}>
+                <ForwardToInboxIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Revoke invitation">
+              <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
+                <BlockIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        );
+      },
+    },
+  ];
+
   return (
     <Box>
       {/* Header */}
@@ -325,60 +520,123 @@ export function TenantsPage() {
           </Typography>
         </Box>
         {canCreate && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setOnboardOpen(true)}>
-            New Tenant
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button variant="outlined" startIcon={<SendIcon />} onClick={() => setInviteOpen(true)}>
+              Invite Tenant
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOnboardOpen(true)}
+            >
+              New Tenant
+            </Button>
+          </Box>
         )}
       </Box>
 
-      {/* Search */}
-      <Box sx={{ mb: 2, maxWidth: 360 }}>
-        <TextField
-          size="small"
-          fullWidth
-          placeholder="Search tenants…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: search ? (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => setSearch('')}>
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ) : null,
-            },
-          }}
-        />
-      </Box>
+      {/* Tabs */}
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+      >
+        <Tab label="Tenants" />
+        <Tab label="Invitations" />
+      </Tabs>
 
-      {/* Table */}
-      <DataTable
-        data={tenants}
-        columns={columns}
-        isLoading={isLoading}
-        totalCount={totalCount}
-        page={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(0);
-        }}
-      />
+      {/* Tenants tab */}
+      {tab === 0 && (
+        <Box>
+          <Box sx={{ mb: 2, maxWidth: 360 }}>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="Search tenants…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: search ? (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setSearch('')}>
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
+                },
+              }}
+            />
+          </Box>
+
+          <DataTable
+            data={tenants}
+            columns={tenantColumns}
+            isLoading={isLoading}
+            totalCount={totalCount}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(0);
+            }}
+          />
+        </Box>
+      )}
+
+      {/* Invitations tab */}
+      {tab === 1 && (
+        <Box>
+          <Box sx={{ mb: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Filter by status</InputLabel>
+              <Select
+                value={statusFilter}
+                label="Filter by status"
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setInvPage(0);
+                }}
+              >
+                <MenuItem value="">All statuses</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
+                <MenuItem value="Accepted">Accepted</MenuItem>
+                <MenuItem value="Expired">Expired</MenuItem>
+                <MenuItem value="Revoked">Revoked</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <DataTable
+            data={invitationsData?.items ?? []}
+            columns={invitationColumns}
+            isLoading={isLoadingInvitations}
+            totalCount={invitationsData?.totalCount ?? 0}
+            page={invPage}
+            pageSize={invPageSize}
+            onPageChange={setInvPage}
+            onPageSizeChange={(size) => {
+              setInvPageSize(size);
+              setInvPage(0);
+            }}
+          />
+        </Box>
+      )}
 
       {/* Dialogs */}
       <OnboardTenantDialog open={onboardOpen} onClose={() => setOnboardOpen(false)} />
+      <InviteTenantDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <EditTenantDialog tenant={editTenant} onClose={() => setEditTenant(null)} />
+
       <ConfirmDialog
         open={!!deleteTenant}
         title={`Delete "${deleteTenant?.name}"?`}
@@ -388,6 +646,17 @@ export function TenantsPage() {
         loading={isDeleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTenant(null)}
+      />
+
+      <ConfirmDialog
+        open={!!pendingRevoke}
+        title={`Revoke invitation for "${pendingRevoke?.email}"?`}
+        description="The invitation link will be invalidated immediately."
+        confirmLabel="Revoke"
+        danger
+        loading={isRevoking}
+        onConfirm={handleRevokeInvitation}
+        onCancel={() => setPendingRevoke(null)}
       />
     </Box>
   );

@@ -25,6 +25,7 @@ import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
+import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
@@ -36,6 +37,7 @@ import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
 import {
   addressZodShape,
+  requiredAddressZodShape,
   getAddressFields,
   buildAddressPayload,
   tenantAddressZodShape,
@@ -54,6 +56,7 @@ import {
   useDeactivateTenantAdminMutation,
   useGetTenantAdminInvitationsQuery,
   useRevokeInvitationMutation,
+  useResendInvitationMutation,
 } from '@/features/tenantAdmins/api/tenantAdminsApi';
 import type { TenantAdminDto, TenantAdminInvitationDto, AddressDto, ApiError } from '@/types/api';
 
@@ -63,8 +66,7 @@ const createSchema = z.object({
   tenantSlug: z.string().min(1, 'Tenant is required'),
   fullName: z.string().min(1, 'Full name is required').max(200),
   email: z.string().email('Invalid email address'),
-  ...addressZodShape,
-  ...tenantAddressZodShape,
+  ...requiredAddressZodShape,
 });
 type CreateValues = z.infer<typeof createSchema>;
 
@@ -91,7 +93,6 @@ interface CreateAdminDialogProps {
 
 function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogProps) {
   const [createTenantAdmin] = useCreateTenantAdminMutation();
-  const [updateTenant] = useUpdateTenantMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -116,8 +117,7 @@ function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogPr
         required: true,
         muiProps: { type: 'email', helperText: 'Account setup email will be sent here' },
       },
-      ...getAddressFields(undefined, 'User Address'),
-      ...getTenantAddressFields(undefined, 'Company Address'),
+      ...getAddressFields(undefined, 'User Address', true),
     ],
     [tenantOptions],
   );
@@ -131,7 +131,6 @@ function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogPr
         email,
         ...buildAddressPayload(rest),
       }).unwrap();
-      await updateTenant({ slug: tenantSlug, ...buildTenantAddressPayload(rest) });
       snackbar.success(`Admin "${result.fullName}" created. Setup email sent to ${result.email}.`);
       onClose();
     } catch (err) {
@@ -360,6 +359,7 @@ export function TenantAdminsPage() {
   const [deactivateTenantAdmin, { isLoading: isDeactivating }] = useDeactivateTenantAdminMutation();
   const [resendSetup] = useResendTenantAdminSetupMutation();
   const [revokeInvitation, { isLoading: isRevoking }] = useRevokeInvitationMutation();
+  const [resendInvitationMutation] = useResendInvitationMutation();
 
   const isActioning = isDeleting || isActivating || isDeactivating;
 
@@ -410,6 +410,15 @@ export function TenantAdminsPage() {
       setPendingRevoke(null);
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to revoke invitation.');
+    }
+  };
+
+  const handleResendInvitation = async (inv: TenantAdminInvitationDto) => {
+    try {
+      await resendInvitationMutation(inv.id).unwrap();
+      snackbar.success(`Invitation resent to ${inv.email}.`);
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to resend invitation.');
     }
   };
 
@@ -471,7 +480,7 @@ export function TenantAdminsPage() {
               </IconButton>
             </Tooltip>
           )}
-          {canResend && !row.original.isActive && (
+          {canResend && row.original.hasPendingSetup && (
             <Tooltip title="Resend setup email">
               <IconButton size="small" color="info" onClick={() => handleResend(row.original)}>
                 <EmailIcon fontSize="small" />
@@ -542,19 +551,31 @@ export function TenantAdminsPage() {
     {
       id: 'actions',
       header: '',
-      cell: ({ row }) =>
-        canRevoke &&
-        !row.original.isRevoked &&
-        !row.original.isAccepted &&
-        !row.original.isExpired ? (
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Tooltip title="Revoke invitation">
-              <IconButton size="small" color="error" onClick={() => setPendingRevoke(row.original)}>
-                <BlockIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+      cell: ({ row }) => {
+        const inv = row.original;
+        const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+        const canRevokeRow = canRevoke && isPending;
+        const canResendRow = canResend && isPending;
+        if (!canRevokeRow && !canResendRow) return null;
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+            {canResendRow && (
+              <Tooltip title="Resend invitation">
+                <IconButton size="small" color="info" onClick={() => handleResendInvitation(inv)}>
+                  <ForwardToInboxIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canRevokeRow && (
+              <Tooltip title="Revoke invitation">
+                <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
+                  <BlockIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
-        ) : null,
+        );
+      },
     },
   ];
 

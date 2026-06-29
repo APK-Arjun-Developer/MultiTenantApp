@@ -14,7 +14,7 @@ import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features
 import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
-  addressZodShape,
+  requiredAddressZodShape,
   getAddressFields,
   buildAddressPayload,
 } from '@/shared/forms/addressFields';
@@ -34,7 +34,7 @@ const setupSchema = z
     fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
-    ...addressZodShape,
+    ...requiredAddressZodShape,
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords don't match",
@@ -146,7 +146,7 @@ export function AccountSetupPage() {
     },
   ];
 
-  const addressFields: FieldConfig[] = getAddressFields();
+  const addressFields: FieldConfig[] = getAddressFields(undefined, undefined, true);
 
   const onSubmit = async (values: SetupValues) => {
     try {
@@ -208,7 +208,7 @@ export function AccountSetupPage() {
           },
           {
             label: 'Address',
-            description: 'Optional — you can add this later',
+            description: 'Personal address',
             fields: addressFields,
           },
         ]}

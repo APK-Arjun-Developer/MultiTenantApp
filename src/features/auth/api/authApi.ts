@@ -3,6 +3,7 @@ import { login, logout, setPermissions } from '@/features/auth/slices/authSlice'
 import type {
   AcceptInvitationResponse,
   AcceptTenantAdminInvitationRequest,
+  AcceptTenantCreationInvitationRequest,
   AcceptTenantUserInvitationRequest,
   AuthUser,
   ForgotPasswordRequest,
@@ -110,6 +111,17 @@ export const authApi = apiSlice.injectEndpoints({
       }),
     }),
 
+    acceptTenantCreationInvitation: builder.mutation<
+      AcceptInvitationResponse,
+      AcceptTenantCreationInvitationRequest
+    >({
+      query: (body) => ({
+        url: '/api/v1/invitations/accept/new-tenant',
+        method: 'POST',
+        data: body,
+      }),
+    }),
+
     validateAccountSetup: builder.query<ValidateAccountSetupResponse, string>({
       query: (token) => ({ url: '/api/v1/account-setup/validate', params: { token } }),
     }),
@@ -132,6 +144,7 @@ export const {
   useValidateInvitationQuery,
   useAcceptTenantAdminInvitationMutation,
   useAcceptTenantUserInvitationMutation,
+  useAcceptTenantCreationInvitationMutation,
   useValidateAccountSetupQuery,
   useSetPasswordMutation,
 } = authApi;

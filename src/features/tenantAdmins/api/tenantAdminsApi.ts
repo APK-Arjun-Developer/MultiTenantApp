@@ -131,6 +131,14 @@ export const tenantAdminsApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Invitation'],
     }),
+
+    resendInvitation: builder.mutation<void, string>({
+      query: (invitationId) => ({
+        url: `/api/v1/tenant-admins/invitations/${invitationId}/resend`,
+        method: 'POST',
+        skipTenantHeader: true,
+      }),
+    }),
   }),
 });
 
@@ -145,4 +153,5 @@ export const {
   useDeactivateTenantAdminMutation,
   useGetTenantAdminInvitationsQuery,
   useRevokeInvitationMutation,
+  useResendInvitationMutation,
 } = tenantAdminsApi;

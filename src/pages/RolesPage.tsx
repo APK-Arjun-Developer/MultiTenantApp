@@ -78,7 +78,7 @@ function CreateRoleDialog({ open, onClose, permissionOptions }: CreateRoleDialog
       },
       {
         name: 'description',
-        label: 'Description (optional)',
+        label: 'Description',
         type: FIELD_TYPE.TEXT,
       },
       {
@@ -149,7 +149,7 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
     () => [
       {
         name: 'description',
-        label: 'Description (optional)',
+        label: 'Description',
         type: FIELD_TYPE.TEXT,
         defaultValue: role?.description ?? '',
       },
