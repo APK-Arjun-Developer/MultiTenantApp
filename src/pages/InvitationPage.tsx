@@ -18,7 +18,6 @@ import {
   useAcceptTenantUserInvitationMutation,
   useAcceptTenantCreationInvitationMutation,
 } from '@/features/auth/api/authApi';
-import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
   requiredAddressZodShape,
@@ -186,14 +185,14 @@ export function InvitationPage() {
     {
       name: 'password',
       label: 'Password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },
     {
       name: 'confirmPassword',
       label: 'Confirm password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },
@@ -220,14 +219,14 @@ export function InvitationPage() {
     {
       name: 'password',
       label: 'Password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },
     {
       name: 'confirmPassword',
       label: 'Confirm password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },

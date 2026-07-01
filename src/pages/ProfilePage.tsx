@@ -11,7 +11,6 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LockIcon from '@mui/icons-material/Lock';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { AvatarUpload } from '@/shared/components/AvatarUpload';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
@@ -105,21 +104,21 @@ export function ProfilePage() {
     {
       name: 'currentPassword',
       label: 'Current password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'current-password' },
     },
     {
       name: 'newPassword',
       label: 'New password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },
     {
       name: 'confirmPassword',
       label: 'Confirm new password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },

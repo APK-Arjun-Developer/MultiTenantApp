@@ -11,7 +11,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
-import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
   requiredAddressZodShape,
@@ -133,14 +132,14 @@ export function AccountSetupPage() {
     {
       name: 'password',
       label: 'New password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },
     {
       name: 'confirmPassword',
       label: 'Confirm password',
-      type: PASSWORD_FIELD,
+      type: FIELD_TYPE.PASSWORD,
       required: true,
       muiProps: { autoComplete: 'new-password' },
     },

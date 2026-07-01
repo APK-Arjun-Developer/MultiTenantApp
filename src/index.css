@@ -4,6 +4,13 @@
   box-sizing: border-box;
 }
 
+/* Suppress the browser's native password-reveal button (Edge/Chrome on Windows)
+   so it doesn't double up with the library's own visibility toggle. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 body {
   margin: 0;
 }

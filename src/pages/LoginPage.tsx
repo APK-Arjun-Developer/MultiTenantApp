@@ -24,7 +24,6 @@ import {
   useVerifyEmailMutation,
   useResendVerificationMutation,
 } from '@/features/auth/api/authApi';
-import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
@@ -48,7 +47,7 @@ const loginFields: FieldConfig[] = [
   {
     name: 'password',
     label: 'Password',
-    type: PASSWORD_FIELD,
+    type: FIELD_TYPE.PASSWORD,
     required: true,
     muiProps: { autoComplete: 'current-password' },
   },

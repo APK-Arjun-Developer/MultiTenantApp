@@ -9,9 +9,13 @@ import Typography from '@mui/material/Typography';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import LockResetIcon from '@mui/icons-material/LockReset';
-import { FormBuilder, type FieldConfig, type FormBuilderHandle } from 'mui-schema-form-builder';
+import {
+  FormBuilder,
+  FIELD_TYPE,
+  type FieldConfig,
+  type FormBuilderHandle,
+} from 'mui-schema-form-builder';
 import { useValidateResetTokenQuery, useResetPasswordMutation } from '@/features/auth/api/authApi';
-import { PASSWORD_FIELD } from '@/shared/components/PasswordField';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
@@ -39,14 +43,14 @@ const resetFields: FieldConfig[] = [
   {
     name: 'password',
     label: 'New password',
-    type: PASSWORD_FIELD,
+    type: FIELD_TYPE.PASSWORD,
     required: true,
     muiProps: { autoComplete: 'new-password', autoFocus: true },
   },
   {
     name: 'confirmPassword',
     label: 'Confirm new password',
-    type: PASSWORD_FIELD,
+    type: FIELD_TYPE.PASSWORD,
     required: true,
     muiProps: { autoComplete: 'new-password' },
   },

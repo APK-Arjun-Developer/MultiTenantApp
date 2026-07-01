@@ -38,7 +38,6 @@ import {
   requiredAddressZodShape,
   getAddressFields,
   buildAddressPayload,
-  tenantAddressZodShape,
   requiredTenantAddressZodShape,
   getTenantAddressFields,
   buildTenantAddressPayload,
