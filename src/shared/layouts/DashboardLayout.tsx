@@ -34,7 +34,6 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import InventoryIcon from '@mui/icons-material/Inventory2';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
@@ -72,13 +71,6 @@ const NAV_ITEMS: NavItem[] = [
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
     permission: 'Roles.View',
   },
-  {
-    text: 'Products',
-    icon: <InventoryIcon />,
-    path: '/products',
-    allowedRoles: ['TenantAdmin', 'TenantUser', 'SystemAdmin'],
-    permission: 'Products.View',
-  },
   // Platform management (SystemAdmin only)
   {
     text: 'Tenants',
@@ -97,7 +89,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 // Pages where SystemAdmin needs the TenantPicker to select a tenant context
-const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/products'];
+const TENANT_CONTEXT_PATHS = ['/users', '/roles'];
 
 function PageLoader() {
   return (

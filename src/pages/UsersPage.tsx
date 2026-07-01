@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+﻿import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -376,7 +376,7 @@ export function UsersPage() {
   // Users tab state
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
-  const [usersPage, setUsersPage] = useState(1);
+  const [usersPage, setUsersPage] = useState(0);
 
   // Dialogs
   const [createOpen, setCreateOpen] = useState(false);
@@ -386,18 +386,18 @@ export function UsersPage() {
 
   // Invitations tab state
   const [invStatusFilter, setInvStatusFilter] = useState('');
-  const [invitationsPage, setInvitationsPage] = useState(1);
+  const [invitationsPage, setInvitationsPage] = useState(0);
   const [revokeTarget, setRevokeTarget] = useState<UserInvitationDto | null>(null);
 
   // API
   const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
-    page: usersPage,
+    page: usersPage + 1,
     pageSize: 20,
     search: debouncedSearch || undefined,
   });
 
   const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
-    page: invitationsPage,
+    page: invitationsPage + 1,
     pageSize: 20,
     status: invStatusFilter || undefined,
   });
@@ -498,7 +498,7 @@ export function UsersPage() {
         accessorKey: 'roles',
         cell: ({ row }) => (
           <Typography variant="body2">
-            {row.original.roles.length > 0 ? row.original.roles.join(', ') : '—'}
+            {row.original.roles.length > 0 ? row.original.roles.join(', ') : '-'}
           </Typography>
         ),
       },
@@ -687,11 +687,11 @@ export function UsersPage() {
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
               <TextField
                 size="small"
-                placeholder="Search users…"
+                placeholder="Search users"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setUsersPage(1);
+                  setUsersPage(0);
                 }}
                 slotProps={{
                   input: {
@@ -735,7 +735,7 @@ export function UsersPage() {
                   label="Status"
                   onChange={(e) => {
                     setInvStatusFilter(e.target.value);
-                    setInvitationsPage(1);
+                    setInvitationsPage(0);
                   }}
                 >
                   <MenuItem value="">All</MenuItem>

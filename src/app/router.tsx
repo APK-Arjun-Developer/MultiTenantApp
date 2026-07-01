@@ -26,9 +26,6 @@ const DashboardPage = lazy(() =>
 );
 const UsersPage = lazy(() => import('@/pages/UsersPage').then((m) => ({ default: m.UsersPage })));
 const RolesPage = lazy(() => import('@/pages/RolesPage').then((m) => ({ default: m.RolesPage })));
-const ProductsPage = lazy(() =>
-  import('@/pages/ProductsPage').then((m) => ({ default: m.ProductsPage })),
-);
 const TenantsPage = lazy(() =>
   import('@/pages/TenantsPage').then((m) => ({ default: m.TenantsPage })),
 );
@@ -77,15 +74,6 @@ export const router = createBrowserRouter([
               </TenantContextGuard>
             ),
           },
-          {
-            path: '/products',
-            element: (
-              <TenantContextGuard>
-                <ProductsPage />
-              </TenantContextGuard>
-            ),
-          },
-
           // Platform-level pages — no tenant context needed
           { path: '/tenants', element: <TenantsPage /> },
           { path: '/tenant-admins', element: <TenantAdminsPage /> },

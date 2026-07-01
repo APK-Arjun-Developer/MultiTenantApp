@@ -1,6 +1,7 @@
 import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 import { Mutex } from 'async-mutex';
+import toast from 'react-hot-toast';
 import { axiosInstance } from './axiosInstance';
 import { logout } from '@/features/auth/slices/authSlice';
 import type { ApiError, ApiResponse } from '@/types/api';
@@ -61,6 +62,15 @@ export const baseQueryWithReauth: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiEr
   let result = await rawBaseQuery(args, api, extraOptions);
 
   if (result.error?.status === 401) {
+    const errorCode = result.error.code;
+
+    // Inactive user or tenant — token refresh won't help; show message and sign out immediately.
+    if (errorCode === 'user_inactive' || errorCode === 'tenant_inactive') {
+      toast.error(result.error.message || 'Your account has been deactivated.');
+      api.dispatch(logout());
+      return result;
+    }
+
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {

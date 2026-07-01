@@ -52,6 +52,18 @@ export function buildTheme(mode: 'light' | 'dark') {
           },
         },
       },
+      MuiAutocomplete: {
+        styleOverrides: {
+          // Normalize height to match MuiTextField size="small" (padding: 10px 12px)
+          inputRoot: {
+            paddingTop: '0 !important',
+            paddingBottom: '0 !important',
+          },
+          input: {
+            padding: '10px 4px !important',
+          },
+        },
+      },
       MuiCard: {
         styleOverrides: {
           root: {

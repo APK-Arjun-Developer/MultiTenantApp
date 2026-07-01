@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
-import { FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@/shared/forms/addressFields';
 import type { ApiError, SetPasswordResponse } from '@/types/api';
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const passwordRule = z
   .string()
@@ -28,7 +28,18 @@ const passwordRule = z
   .regex(/[0-9]/, 'Must include a number')
   .regex(/[^A-Za-z0-9]/, 'Must include a special character');
 
-const setupSchema = z
+const passwordOnlySchema = z
+  .object({
+    fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
+    password: passwordRule,
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+const fullSetupSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
     password: passwordRule,
@@ -40,7 +51,8 @@ const setupSchema = z
     path: ['confirmPassword'],
   });
 
-type SetupValues = z.infer<typeof setupSchema>;
+type PasswordOnlyValues = z.infer<typeof passwordOnlySchema>;
+type FullSetupValues = z.infer<typeof fullSetupSchema>;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -147,7 +159,23 @@ export function AccountSetupPage() {
 
   const addressFields: FieldConfig[] = getAddressFields(undefined, undefined, true);
 
-  const onSubmit = async (values: SetupValues) => {
+  const onSubmitPasswordOnly = async (values: PasswordOnlyValues) => {
+    try {
+      const response = await setPassword({
+        token,
+        password: values.password,
+        confirmPassword: values.confirmPassword,
+        fullName: values.fullName,
+      }).unwrap();
+      setResult(response);
+    } catch (err) {
+      snackbar.error(
+        (err as ApiError).message || 'Failed to set password. The link may have expired.',
+      );
+    }
+  };
+
+  const onSubmitFull = async (values: FullSetupValues) => {
     try {
       const response = await setPassword({
         token,
@@ -178,7 +206,7 @@ export function AccountSetupPage() {
 
   if (result) return <SetupSuccess result={result} />;
 
-  return (
+  const header = (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
         <AccountCircleIcon color="primary" />
@@ -186,7 +214,6 @@ export function AccountSetupPage() {
           Set up your account
         </Typography>
       </Box>
-
       {validation.email && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Setting up account for{' '}
@@ -195,10 +222,33 @@ export function AccountSetupPage() {
           </Box>
         </Typography>
       )}
+    </Box>
+  );
 
+  // Direct-creation flow: address was already provided by the admin.
+  if (validation.hasAddress) {
+    return (
+      <Box>
+        {header}
+        <FormBuilder
+          key={token}
+          schema={passwordOnlySchema}
+          fields={accountFields}
+          onSubmit={onSubmitPasswordOnly}
+          submitText="Activate account"
+          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+        />
+      </Box>
+    );
+  }
+
+  // Invitation flow: user needs to provide address too.
+  return (
+    <Box>
+      {header}
       <FormWizard
         key={token}
-        schema={setupSchema}
+        schema={fullSetupSchema}
         steps={[
           {
             label: 'Your account',
@@ -211,7 +261,7 @@ export function AccountSetupPage() {
             fields: addressFields,
           },
         ]}
-        onSubmit={onSubmit}
+        onSubmit={onSubmitFull}
         submitText="Activate account"
         sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
       />

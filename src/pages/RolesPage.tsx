@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -183,7 +183,7 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Edit Role — {role?.name}</DialogTitle>
+      <DialogTitle>Edit Role - {role?.name}</DialogTitle>
       <DialogContent>
         <FormBuilder
           key={role?.id}
@@ -211,14 +211,14 @@ export function RolesPage() {
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editRole, setEditRole] = useState<RoleDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RoleDto | null>(null);
 
   const { data: rolesData, isLoading } = useGetRolesQuery({
-    page,
+    page: page + 1,
     pageSize: 20,
     search: debouncedSearch || undefined,
   });
@@ -260,7 +260,7 @@ export function RolesPage() {
         accessorKey: 'description',
         cell: ({ row }) => (
           <Typography variant="body2" color="text.secondary">
-            {row.original.description || '—'}
+            {row.original.description || '-'}
           </Typography>
         ),
       },
@@ -269,7 +269,7 @@ export function RolesPage() {
         accessorKey: 'permissionNames',
         cell: ({ row }) => {
           const names = row.original.permissionNames;
-          if (names.length === 0) return <Typography variant="body2">—</Typography>;
+          if (names.length === 0) return <Typography variant="body2">-</Typography>;
           const shown = names.slice(0, 3);
           const rest = names.length - shown.length;
           return (
@@ -336,11 +336,11 @@ export function RolesPage() {
         <Box sx={{ mb: 2 }}>
           <TextField
             size="small"
-            placeholder="Search roles…"
+            placeholder="Search roles"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(1);
+              setPage(0);
             }}
             slotProps={{
               input: {

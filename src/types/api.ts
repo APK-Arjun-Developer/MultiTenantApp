@@ -169,6 +169,7 @@ export interface ValidateAccountSetupResponse {
   fullName?: string | null;
   tenantSlug?: string | null;
   errorMessage?: string | null;
+  hasAddress: boolean;
 }
 
 export interface SetPasswordResponse {
@@ -549,44 +550,4 @@ export interface UpdateRoleRequest {
   name: string;
   description?: string | null;
   permissions?: UUID[];
-}
-
-// ---------- Products ----------
-
-export interface ProductDto {
-  id: UUID;
-  name: string;
-  price: number;
-  tenantId: UUID;
-  createdAt: string;
-}
-
-export interface CreateProductRequest {
-  name: string;
-  price: number;
-}
-
-/** PUT /api/v1/products renames by sending the current name + newName. */
-export interface UpdateProductRequest {
-  name: string;
-  newName?: string;
-  price: number;
-}
-
-// ---------- Reports ----------
-
-export interface ReportSummaryDto {
-  userCount: number;
-  roleCount: number;
-  productCount: number;
-  activityLogCount: number;
-  generatedAtUtc: string;
-}
-
-export interface PlatformSummaryDto {
-  tenantCount: number;
-  totalUserCount: number;
-  totalProductCount: number;
-  totalActivityLogCount: number;
-  generatedAtUtc: string;
 }
