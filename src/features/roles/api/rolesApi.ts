@@ -56,7 +56,9 @@ export const rolesApi = apiSlice.injectEndpoints({
     getPermissions: builder.query<PermissionCatalogResponse, void>({
       query: () => ({
         url: '/api/v1/permissions',
-        params: { grouped: true },
+        // Custom roles are capped at the TenantUser ceiling for every caller
+        // (including SystemAdmin), so only show assignable permissions.
+        params: { grouped: true, scope: 'TenantUser' },
       }),
       providesTags: ['Permission'],
     }),

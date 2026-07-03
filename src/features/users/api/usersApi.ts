@@ -19,6 +19,8 @@ export interface GetUsersParams {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  isActive?: boolean;
+  createdVia?: 'Direct' | 'Invitation';
 }
 
 export interface GetUserInvitationsParams {
@@ -38,6 +40,8 @@ export const usersApi = apiSlice.injectEndpoints({
           search: params?.search,
           sortBy: params?.sortBy,
           sortOrder: params?.sortOrder,
+          isActive: params?.isActive,
+          createdVia: params?.createdVia,
         },
       }),
       providesTags: ['User'],

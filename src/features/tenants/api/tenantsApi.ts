@@ -18,6 +18,8 @@ export interface GetTenantsParams {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  isActive?: boolean;
+  createdVia?: 'Direct' | 'Invitation';
 }
 
 export const tenantsApi = apiSlice.injectEndpoints({
@@ -31,6 +33,8 @@ export const tenantsApi = apiSlice.injectEndpoints({
           search: params?.search,
           sortBy: params?.sortBy,
           sortOrder: params?.sortOrder,
+          isActive: params?.isActive,
+          createdVia: params?.createdVia,
         },
         skipTenantHeader: true,
       }),

@@ -102,6 +102,8 @@ export interface ResendEmailOtpRequest {
 
 export type SystemRole = 'SystemAdmin' | 'TenantAdmin' | 'TenantUser';
 
+export type UserCreatedVia = 'Direct' | 'Invitation';
+
 export interface AuthUser {
   id: UUID;
   email: string;
@@ -238,6 +240,17 @@ export interface FileDto {
   uploadedAt: string;
 }
 
+// ---------- Dashboard ----------
+
+export interface DashboardStatsDto {
+  /** SystemAdmin only — null for tenant callers. */
+  totalTenants: number | null;
+  /** SystemAdmin only — null for tenant callers. */
+  totalTenantAdmins: number | null;
+  /** Platform-wide for SystemAdmin; own tenant only for TenantAdmin. */
+  totalTenantUsers: number;
+}
+
 // ---------- Permissions ----------
 
 export interface PermissionDto {
@@ -265,6 +278,7 @@ export interface TenantDto {
   slug: string;
   name: string;
   isActive: boolean;
+  createdVia: UserCreatedVia;
   profileFileId?: UUID | null;
   profileUrl?: string | null;
   address?: AddressDto | null;
@@ -372,6 +386,7 @@ export interface TenantAdminDto {
   profileUrl?: string | null;
   address?: AddressDto | null;
   tenant?: TenantAdminTenantDetails | null;
+  createdVia: UserCreatedVia;
   hasPendingSetup: boolean;
 }
 
@@ -452,6 +467,7 @@ export interface UserDto {
   profileUrl?: string | null;
   address?: AddressDto | null;
   tenant?: UserTenantDetails | null;
+  createdVia: UserCreatedVia;
   hasPendingSetup: boolean;
 }
 
@@ -548,6 +564,7 @@ export interface CreateRoleRequest {
 
 export interface UpdateRoleRequest {
   name: string;
+  newName?: string | null;
   description?: string | null;
   permissions?: UUID[];
 }

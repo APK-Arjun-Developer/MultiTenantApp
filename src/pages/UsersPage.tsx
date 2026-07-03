@@ -31,6 +31,7 @@ import SendIcon from '@mui/icons-material/Send';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
@@ -384,6 +385,9 @@ export function UsersPage() {
   const [editUser, setEditUser] = useState<UserDto | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
+  const [statusFilter, setStatusFilter] = useState('');
+  const [createdViaFilter, setCreatedViaFilter] = useState('');
+
   // Invitations tab state
   const [invStatusFilter, setInvStatusFilter] = useState('');
   const [invitationsPage, setInvitationsPage] = useState(0);
@@ -394,6 +398,8 @@ export function UsersPage() {
     page: usersPage + 1,
     pageSize: 20,
     search: debouncedSearch || undefined,
+    isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
+    createdVia: (createdViaFilter as 'Direct' | 'Invitation') || undefined,
   });
 
   const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
@@ -501,6 +507,11 @@ export function UsersPage() {
             {row.original.roles.length > 0 ? row.original.roles.join(', ') : '-'}
           </Typography>
         ),
+      },
+      {
+        header: 'Created via',
+        accessorKey: 'createdVia',
+        cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
       },
       {
         header: 'Status',
@@ -684,7 +695,7 @@ export function UsersPage() {
         {/* ── Users tab ── */}
         {tab === 0 && (
           <Box>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
               <TextField
                 size="small"
                 placeholder="Search users"
@@ -709,8 +720,38 @@ export function UsersPage() {
                     ) : null,
                   },
                 }}
-                sx={{ width: 280 }}
+                sx={{ width: 240 }}
               />
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  label="Status"
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setUsersPage(0);
+                  }}
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
+                <InputLabel>Created via</InputLabel>
+                <Select
+                  value={createdViaFilter}
+                  label="Created via"
+                  onChange={(e) => {
+                    setCreatedViaFilter(e.target.value);
+                    setUsersPage(0);
+                  }}
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="Direct">Direct</MenuItem>
+                  <MenuItem value="Invitation">Invitation</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
             <DataTable
               columns={userColumns}

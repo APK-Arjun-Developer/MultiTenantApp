@@ -15,6 +15,8 @@ export interface GetTenantAdminsParams {
   pageSize?: number;
   search?: string;
   tenantId?: string;
+  isActive?: boolean;
+  createdVia?: 'Direct' | 'Invitation';
 }
 
 export interface GetTenantAdminInvitationsParams {
@@ -36,6 +38,8 @@ export const tenantAdminsApi = apiSlice.injectEndpoints({
           pageSize: params?.pageSize ?? 20,
           search: params?.search,
           tenantId: params?.tenantId,
+          isActive: params?.isActive,
+          createdVia: params?.createdVia,
         },
         skipTenantHeader: true,
       }),

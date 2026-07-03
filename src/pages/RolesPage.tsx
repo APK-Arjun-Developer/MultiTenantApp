@@ -45,6 +45,7 @@ const createSchema = z.object({
 type CreateValues = z.infer<typeof createSchema>;
 
 const editSchema = z.object({
+  name: z.string().min(1, 'Role name is required').max(100),
   description: z.string().optional(),
   permissions: z.array(z.any()).min(1, 'At least one permission is required'),
 });
@@ -148,6 +149,13 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
   const fields = useMemo<FieldConfig[]>(
     () => [
       {
+        name: 'name',
+        label: 'Role name',
+        type: FIELD_TYPE.TEXT,
+        required: true,
+        defaultValue: role?.name ?? '',
+      },
+      {
         name: 'description',
         label: 'Description',
         type: FIELD_TYPE.TEXT,
@@ -169,12 +177,14 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
   const onSubmit = async (values: EditValues) => {
     if (!role) return;
     try {
+      const newName = values.name.trim();
       await updateRole({
         name: role.name,
+        newName: newName !== role.name ? newName : undefined,
         description: values.description || null,
         permissions: extractPermissionIds(values.permissions),
       }).unwrap();
-      snackbar.success(`Role "${role.name}" updated.`);
+      snackbar.success(`Role "${newName}" updated.`);
       onClose();
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to update role.');

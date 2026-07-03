@@ -29,6 +29,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
+import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
@@ -359,11 +360,17 @@ export function TenantsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [pendingRevoke, setPendingRevoke] = useState<TenantCreationInvitationDto | null>(null);
 
+  const [isActiveFilter, setIsActiveFilter] = useState('');
+  const [createdViaFilter, setCreatedViaFilter] = useState('');
+
   // Data
   const { data, isLoading } = useGetTenantsQuery({
     page: page + 1,
     pageSize,
     search: debouncedSearch || undefined,
+    isActive:
+      isActiveFilter === 'active' ? true : isActiveFilter === 'inactive' ? false : undefined,
+    createdVia: (createdViaFilter as 'Direct' | 'Invitation') || undefined,
   });
 
   const { data: invitationsData, isLoading: isLoadingInvitations } =
@@ -426,6 +433,11 @@ export function TenantsPage() {
           </Typography>
         </Box>
       ),
+    },
+    {
+      accessorKey: 'createdVia',
+      header: 'Created via',
+      cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
     },
     {
       accessorKey: 'isActive',
@@ -547,10 +559,9 @@ export function TenantsPage() {
       {/* Tenants tab */}
       {tab === 0 && (
         <Box>
-          <Box sx={{ mb: 2, maxWidth: 360 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
             <TextField
               size="small"
-              fullWidth
               placeholder="Search tenants…"
               value={search}
               onChange={(e) => {
@@ -573,7 +584,38 @@ export function TenantsPage() {
                   ) : null,
                 },
               }}
+              sx={{ width: 240 }}
             />
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={isActiveFilter}
+                label="Status"
+                onChange={(e) => {
+                  setIsActiveFilter(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Created via</InputLabel>
+              <Select
+                value={createdViaFilter}
+                label="Created via"
+                onChange={(e) => {
+                  setCreatedViaFilter(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="Direct">Direct</MenuItem>
+                <MenuItem value="Invitation">Invitation</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
 
           <DataTable

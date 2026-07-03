@@ -32,6 +32,7 @@ import SendIcon from '@mui/icons-material/Send';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
@@ -322,6 +323,8 @@ export function TenantAdminsPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [tenantIdFilter, setTenantIdFilter] = useState('');
+  const [adminsStatusFilter, setAdminsStatusFilter] = useState('');
+  const [adminsCreatedViaFilter, setAdminsCreatedViaFilter] = useState('');
   const debouncedSearch = useDebounce(search, 300);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -345,6 +348,13 @@ export function TenantAdminsPage() {
     pageSize,
     search: debouncedSearch || undefined,
     tenantId: tenantIdFilter || undefined,
+    isActive:
+      adminsStatusFilter === 'active'
+        ? true
+        : adminsStatusFilter === 'inactive'
+          ? false
+          : undefined,
+    createdVia: (adminsCreatedViaFilter as 'Direct' | 'Invitation') || undefined,
   });
   const { data: invitationsData, isLoading: isLoadingInvitations } =
     useGetTenantAdminInvitationsQuery({
@@ -455,6 +465,11 @@ export function TenantAdminsPage() {
             —
           </Typography>
         ),
+    },
+    {
+      accessorKey: 'createdVia',
+      header: 'Created via',
+      cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
     },
     {
       accessorKey: 'isActive',
@@ -673,6 +688,36 @@ export function TenantAdminsPage() {
                     {t.name}
                   </MenuItem>
                 ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={adminsStatusFilter}
+                label="Status"
+                onChange={(e) => {
+                  setAdminsStatusFilter(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Created via</InputLabel>
+              <Select
+                value={adminsCreatedViaFilter}
+                label="Created via"
+                onChange={(e) => {
+                  setAdminsCreatedViaFilter(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="Direct">Direct</MenuItem>
+                <MenuItem value="Invitation">Invitation</MenuItem>
               </Select>
             </FormControl>
           </Box>
