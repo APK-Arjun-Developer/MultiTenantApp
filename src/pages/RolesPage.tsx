@@ -3,12 +3,16 @@ import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import ListItemText from '@mui/material/ListItemText';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -18,10 +22,13 @@ import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { LabelValue } from '@/shared/components/LabelValue';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
+import { ViewDialog } from '@/shared/components/ViewDialog';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
@@ -66,7 +73,7 @@ interface CreateRoleDialogProps {
 }
 
 function CreateRoleDialog({ open, onClose, permissionOptions }: CreateRoleDialogProps) {
-  const [createRole] = useCreateRoleMutation();
+  const [createRole, { isLoading }] = useCreateRoleMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -110,7 +117,7 @@ function CreateRoleDialog({ open, onClose, permissionOptions }: CreateRoleDialog
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create Role</DialogTitle>
       <DialogContent>
         <FormBuilder
@@ -138,7 +145,7 @@ interface EditRoleDialogProps {
 }
 
 function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDialogProps) {
-  const [updateRole] = useUpdateRoleMutation();
+  const [updateRole, { isLoading }] = useUpdateRoleMutation();
   const snackbar = useSnackbar();
 
   const defaultPermissions = useMemo(
@@ -192,7 +199,7 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Role - {role?.name}</DialogTitle>
       <DialogContent>
         <FormBuilder
@@ -210,32 +217,66 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
   );
 }
 
+// ─── View dialog ──────────────────────────────────────────────────────────────
+
+function ViewRoleDialog({ role, onClose }: { role: RoleDto | null; onClose: () => void }) {
+  return (
+    <ViewDialog open={!!role} title="Role details" onClose={onClose}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <LabelValue label="Name" value={role?.name} />
+        <LabelValue label="Description" value={role?.description} />
+        <LabelValue
+          label="Permissions"
+          value={
+            role?.permissionNames && role.permissionNames.length > 0
+              ? role.permissionNames.map((n) => (
+                  <Chip
+                    key={n}
+                    label={n}
+                    size="small"
+                    variant="outlined"
+                    sx={{ mr: 0.5, mb: 0.5 }}
+                  />
+                ))
+              : undefined
+          }
+        />
+      </Box>
+    </ViewDialog>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function RolesPage() {
   const snackbar = useSnackbar();
 
+  const canList = usePermission('Roles.List');
+  const canView = usePermission('Roles.View');
   const canCreate = usePermission('Roles.Create');
   const canEdit = usePermission('Roles.Edit');
   const canDelete = usePermission('Roles.Delete');
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
+  const [permissionFilter, setPermissionFilter] = useState<string[]>([]);
   const [page, setPage] = useState(0);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editRole, setEditRole] = useState<RoleDto | null>(null);
+  const [viewRole, setViewRole] = useState<RoleDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RoleDto | null>(null);
 
   const { data: rolesData, isLoading } = useGetRolesQuery({
     page: page + 1,
     pageSize: 20,
     search: debouncedSearch || undefined,
+    permissionIds: permissionFilter.length > 0 ? permissionFilter : undefined,
   });
 
   const { data: permissionsData } = useGetPermissionsQuery();
 
-  const [deleteRole] = useDeleteRoleMutation();
+  const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
   const permissionOptions = useMemo(
     () => (permissionsData?.items ?? []).map((p) => ({ value: p.id, label: p.name })),
@@ -299,6 +340,13 @@ export function RolesPage() {
         id: 'actions',
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {canView && (
+              <Tooltip title="View">
+                <IconButton size="small" onClick={() => setViewRole(row.original)}>
+                  <VisibilityIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
             {canEdit && (
               <Tooltip title="Edit">
                 <IconButton size="small" onClick={() => setEditRole(row.original)}>
@@ -321,7 +369,7 @@ export function RolesPage() {
         ),
       },
     ],
-    [canEdit, canDelete, setEditRole, setDeleteTarget],
+    [canView, canEdit, canDelete, setEditRole, setViewRole, setDeleteTarget],
   );
 
   return (
@@ -342,8 +390,8 @@ export function RolesPage() {
           )}
         </Box>
 
-        {/* Search */}
-        <Box sx={{ mb: 2 }}>
+        {/* Search + Permission filter */}
+        <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
           <TextField
             size="small"
             placeholder="Search roles"
@@ -368,20 +416,59 @@ export function RolesPage() {
                 ) : null,
               },
             }}
-            sx={{ width: 280 }}
+            sx={{ width: 260 }}
           />
+          <Select
+            multiple
+            size="small"
+            displayEmpty
+            value={permissionFilter}
+            onChange={(e) => {
+              setPermissionFilter(e.target.value as string[]);
+              setPage(0);
+            }}
+            renderValue={(selected) => {
+              if (selected.length === 0) {
+                return (
+                  <Typography variant="body2" color="text.disabled">
+                    Filter by permission
+                  </Typography>
+                );
+              }
+              return <Chip label={`${selected.length} selected`} size="small" />;
+            }}
+            sx={{ width: 320 }}
+          >
+            {permissionOptions.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value} dense>
+                <Checkbox
+                  checked={permissionFilter.includes(opt.value)}
+                  size="small"
+                  sx={{ p: 0, mr: 1 }}
+                />
+                <ListItemText primary={opt.label} />
+              </MenuItem>
+            ))}
+          </Select>
         </Box>
 
-        <DataTable
-          columns={columns}
-          data={rolesData?.items ?? []}
-          isLoading={isLoading}
-          page={page}
-          pageSize={20}
-          totalCount={rolesData?.totalCount ?? 0}
-          onPageChange={setPage}
-        />
+        {!canList ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Typography color="text.secondary">You don't have permission to list roles.</Typography>
+          </Box>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={rolesData?.items ?? []}
+            isLoading={isLoading}
+            page={page}
+            pageSize={20}
+            totalCount={rolesData?.totalCount ?? 0}
+            onPageChange={setPage}
+          />
+        )}
 
+        <ViewRoleDialog role={viewRole} onClose={() => setViewRole(null)} />
         <CreateRoleDialog
           open={createOpen}
           onClose={() => setCreateOpen(false)}
@@ -401,6 +488,7 @@ export function RolesPage() {
           description="This role will be permanently removed. Roles assigned to users cannot be deleted."
           confirmLabel="Delete"
           danger
+          loading={isDeleting}
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />

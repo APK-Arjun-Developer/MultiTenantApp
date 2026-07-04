@@ -45,7 +45,6 @@ export const authApi = apiSlice.injectEndpoints({
             fullName: data.fullName,
             roles: data.roles,
             systemRole: data.systemRole,
-            tenantSlug: null,
           };
           dispatch(login(user));
         } catch {

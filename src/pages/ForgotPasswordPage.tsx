@@ -16,7 +16,6 @@ import type { ApiError } from '@/types/api';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
-  tenantSlug: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -27,12 +26,6 @@ const fields: FieldConfig[] = [
     type: FIELD_TYPE.TEXT,
     required: true,
     muiProps: { type: 'email', autoComplete: 'email', autoFocus: true },
-  },
-  {
-    name: 'tenantSlug',
-    label: 'Tenant slug',
-    type: FIELD_TYPE.TEXT,
-    muiProps: { autoComplete: 'off' },
   },
 ];
 
@@ -50,10 +43,7 @@ export function ForgotPasswordPage() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await forgotPassword({
-        email: values.email,
-        tenantSlug: values.tenantSlug || undefined,
-      }).unwrap();
+      await forgotPassword({ email: values.email }).unwrap();
       setSentEmail(values.email);
       setSent(true);
     } catch (err) {

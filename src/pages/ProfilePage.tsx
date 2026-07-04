@@ -1,18 +1,24 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
-import TextField from '@mui/material/TextField';
+import Paper from '@mui/material/Paper';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import LockIcon from '@mui/icons-material/Lock';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { AvatarUpload } from '@/shared/components/AvatarUpload';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { LabelValue } from '@/shared/components/LabelValue';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { useLogoutMutation } from '@/features/auth/api/authApi';
 import {
   addressZodShape,
   getAddressFields,
@@ -68,6 +74,10 @@ type PasswordValues = z.infer<typeof passwordSchema>;
 
 export function ProfilePage() {
   const snackbar = useSnackbar();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState(0);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const { data: profile, isLoading } = useGetCurrentUserQuery();
   const [updateCurrentUser] = useUpdateCurrentUserMutation();
@@ -181,6 +191,11 @@ export function ProfilePage() {
     }
   };
 
+  const handleLogout = async () => {
+    await logoutMutation();
+    navigate('/login', { replace: true });
+  };
+
   const onPasswordSubmit = async (values: PasswordValues) => {
     try {
       await changePassword({
@@ -203,7 +218,7 @@ export function ProfilePage() {
   }
 
   return (
-    <Box sx={{ maxWidth: 560 }}>
+    <Box sx={{ maxWidth: 600 }}>
       {/* Page header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
         <AccountCircleIcon color="primary" />
@@ -212,128 +227,134 @@ export function ProfilePage() {
         </Typography>
       </Box>
 
-      {/* ── Profile information ── */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-            Profile information
+      {/* Avatar + identity summary */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+        <AvatarUpload
+          src={avatarSrc}
+          initials={initials}
+          size={64}
+          uploading={avatarUploading || avatarRemoving}
+          onFileSelect={onAvatarUpload}
+          onRemove={avatarSrc ? onAvatarRemove : undefined}
+        />
+        <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+            {profile?.fullName}
           </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {profile?.email}
+          </Typography>
+          {profile?.systemRole && (
+            <Typography variant="caption" color="primary.main" sx={{ fontWeight: 500 }}>
+              {profile.systemRole}
+            </Typography>
+          )}
+        </Box>
+      </Box>
 
-          {/* Avatar + email read-only */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-            <AvatarUpload
-              src={avatarSrc}
-              initials={initials}
-              size={64}
-              uploading={avatarUploading || avatarRemoving}
-              onFileSelect={onAvatarUpload}
-              onRemove={avatarSrc ? onAvatarRemove : undefined}
-            />
+      {/* Tabs */}
+      <Paper variant="outlined" sx={{ borderRadius: 2 }}>
+        <Tabs
+          value={tab}
+          onChange={(_e, v) => setTab(v as number)}
+          sx={{ borderBottom: 1, borderColor: 'divider', px: 1 }}
+        >
+          <Tab label="Profile" icon={<AccountCircleIcon fontSize="small" />} iconPosition="start" />
+          <Tab label="Address" icon={<LocationOnIcon fontSize="small" />} iconPosition="start" />
+          <Tab label="Security" icon={<LockIcon fontSize="small" />} iconPosition="start" />
+        </Tabs>
+
+        <Box sx={{ p: 3 }}>
+          {/* ── Tab 0: Profile ── */}
+          {tab === 0 && (
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                {profile?.fullName}
+              <LabelValue label="Email address" value={profile?.email} sx={{ mb: 2 }} />
+              <Divider sx={{ mb: 2 }} />
+              <FormBuilder
+                key={profile?.id}
+                schema={profileSchema}
+                fields={profileFields}
+                onSubmit={onProfileSubmit}
+                submitText="Save changes"
+                sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+              />
+            </Box>
+          )}
+
+          {/* ── Tab 1: Address ── */}
+          {tab === 1 && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+                {isTenantAdmin ? 'My address' : 'Address'}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {profile?.email}
-              </Typography>
-              {profile?.systemRole && (
-                <Typography variant="caption" color="primary.main" sx={{ fontWeight: 500 }}>
-                  {profile.systemRole}
-                </Typography>
+              <FormBuilder
+                key={`address-${profile?.id}`}
+                schema={addressSchema}
+                fields={addressFields}
+                onSubmit={onAddressSubmit}
+                submitText="Save address"
+                sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+              />
+
+              {isTenantAdmin && profile?.tenant && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Company address
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {profile.tenant.name}
+                    </Typography>
+                  </Box>
+                  <FormBuilder
+                    key={`tenant-address-${profile.id}`}
+                    schema={tenantAddressSchema}
+                    fields={tenantAddressFields}
+                    onSubmit={onTenantAddressSubmit}
+                    submitText="Save company address"
+                    sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+                  />
+                </>
               )}
             </Box>
-          </Box>
+          )}
 
-          <TextField
-            label="Email address"
-            value={profile?.email ?? ''}
-            fullWidth
-            disabled
-            size="small"
-            sx={{ mb: 2 }}
-            slotProps={{ input: { readOnly: true } }}
-          />
-
-          <Divider sx={{ mb: 2 }} />
-
-          <FormBuilder
-            key={profile?.id}
-            schema={profileSchema}
-            fields={profileFields}
-            onSubmit={onProfileSubmit}
-            submitText="Save changes"
-            sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
-          />
-        </CardContent>
-      </Card>
-
-      {/* ── Address (user's own) ── */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <LocationOnIcon fontSize="small" color="action" />
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {isTenantAdmin ? 'My Address' : 'Address'}
-            </Typography>
-          </Box>
-
-          <FormBuilder
-            key={`address-${profile?.id}`}
-            schema={addressSchema}
-            fields={addressFields}
-            onSubmit={onAddressSubmit}
-            submitText="Save address"
-            sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
-          />
-        </CardContent>
-      </Card>
-
-      {/* ── Company address (TenantAdmin only) ── */}
-      {isTenantAdmin && profile?.tenant?.slug && (
-        <Card sx={{ mb: 3 }}>
-          <CardContent sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <LocationOnIcon fontSize="small" color="action" />
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Company Address
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
-                {profile.tenant.name}
-              </Typography>
-            </Box>
-
+          {/* ── Tab 2: Security ── */}
+          {tab === 2 && (
             <FormBuilder
-              key={`tenant-address-${profile.id}`}
-              schema={tenantAddressSchema}
-              fields={tenantAddressFields}
-              onSubmit={onTenantAddressSubmit}
-              submitText="Save company address"
+              key="change-password"
+              schema={passwordSchema}
+              fields={passwordFields}
+              onSubmit={onPasswordSubmit}
+              submitText="Change password"
               sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
             />
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </Box>
+      </Paper>
 
-      {/* ── Change password ── */}
-      <Card>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <LockIcon fontSize="small" color="action" />
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              Change password
-            </Typography>
-          </Box>
+      {/* Sign out */}
+      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<LogoutIcon />}
+          onClick={() => setLogoutConfirmOpen(true)}
+        >
+          Sign out
+        </Button>
+      </Box>
 
-          <FormBuilder
-            key="change-password"
-            schema={passwordSchema}
-            fields={passwordFields}
-            onSubmit={onPasswordSubmit}
-            submitText="Change password"
-            sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
-          />
-        </CardContent>
-      </Card>
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        title="Sign out?"
+        description="You will be returned to the login page."
+        confirmLabel="Sign out"
+        loading={isLoggingOut}
+        onConfirm={handleLogout}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
     </Box>
   );
 }

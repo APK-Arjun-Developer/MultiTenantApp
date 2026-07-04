@@ -85,7 +85,7 @@ function TokenInvalid({ message }: { message?: string | null }) {
   );
 }
 
-function ResetSuccess({ tenantSlug }: { tenantSlug?: string | null }) {
+function ResetSuccess() {
   return (
     <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
       <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main' }} />
@@ -97,7 +97,7 @@ function ResetSuccess({ tenantSlug }: { tenantSlug?: string | null }) {
       </Typography>
       <Button
         component={Link}
-        to={tenantSlug ? `/login?slug=${tenantSlug}` : '/login'}
+        to="/login"
         variant="contained"
         fullWidth
         size="large"
@@ -134,8 +134,7 @@ export function ResetPasswordPage() {
       }).unwrap();
       setDone(true);
       snackbar.success('Password reset successfully!');
-      const loginPath = validation?.tenantSlug ? `/login?slug=${validation.tenantSlug}` : '/login';
-      setTimeout(() => navigate(loginPath), 2000);
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       const error = err as ApiError;
       snackbar.error(error.message || 'Failed to reset password. Please try again.');
@@ -154,7 +153,7 @@ export function ResetPasswordPage() {
 
   if (!validation?.isValid) return <TokenInvalid message={validation?.errorMessage} />;
 
-  if (done) return <ResetSuccess tenantSlug={validation.tenantSlug} />;
+  if (done) return <ResetSuccess />;
 
   return (
     <Box>

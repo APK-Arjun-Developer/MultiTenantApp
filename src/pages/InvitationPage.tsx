@@ -60,14 +60,6 @@ const tenantCreationSchema = z
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     tenantName: z.string().min(1, 'Tenant name is required').max(200),
-    tenantSlug: z
-      .string()
-      .min(1, 'Slug is required')
-      .max(100)
-      .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        'Lowercase letters, digits and hyphens only (e.g. my-company)',
-      ),
     ...requiredTenantAddressZodShape,
     ...requiredAddressZodShape,
   })
@@ -130,7 +122,7 @@ function InvitationSuccess({ result }: { result: AcceptInvitationResponse }) {
       </Typography>
       <Button
         component={Link}
-        to={result.tenantSlug ? `/login?slug=${result.tenantSlug}` : '/login'}
+        to="/login"
         variant="contained"
         fullWidth
         size="large"
@@ -239,15 +231,6 @@ export function InvitationPage() {
       type: FIELD_TYPE.TEXT,
       required: true,
     },
-    {
-      name: 'tenantSlug',
-      label: 'Slug',
-      type: FIELD_TYPE.TEXT,
-      required: true,
-      muiProps: {
-        helperText: 'URL-safe identifier — lowercase letters, digits and hyphens (e.g. my-company)',
-      },
-    },
     ...getTenantAddressFields(undefined, undefined, true),
   ];
 
@@ -297,7 +280,6 @@ export function InvitationPage() {
         password: values.password,
         confirmPassword: values.confirmPassword,
         tenantName: values.tenantName,
-        tenantSlug: values.tenantSlug,
         ...(tenantAddressPayload.address ? { tenantAddress: tenantAddressPayload.address } : {}),
         ...(userAddressPayload.address ? { userAddress: userAddressPayload.address } : {}),
       }).unwrap();
@@ -359,7 +341,7 @@ export function InvitationPage() {
             },
             {
               label: 'Tenant details',
-              description: 'Company name and slug',
+              description: 'Company name and address',
               fields: newTenantDetailsFields,
             },
             {

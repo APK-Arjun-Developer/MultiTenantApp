@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { z } from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import Box from '@mui/material/Box';
@@ -32,7 +32,6 @@ import type { ApiError } from '@/types/api';
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
-  tenantSlug: z.string().optional(),
 });
 type LoginValues = z.infer<typeof loginSchema>;
 
@@ -50,12 +49,6 @@ const loginFields: FieldConfig[] = [
     type: FIELD_TYPE.PASSWORD,
     required: true,
     muiProps: { autoComplete: 'current-password' },
-  },
-  {
-    name: 'tenantSlug',
-    label: 'Tenant slug',
-    type: FIELD_TYPE.TEXT,
-    muiProps: { autoComplete: 'off' },
   },
 ];
 
@@ -163,13 +156,10 @@ export function LoginPage() {
 
   const loginRef = useRef<FormBuilderHandle>(null);
   const snackbar = useSnackbar();
-  const [searchParams] = useSearchParams();
-  const slugFromUrl = searchParams.get('slug') ?? searchParams.get('tenant') ?? '';
 
   const [step, setStep] = useState<Step>('login');
   const [direction, setDirection] = useState(1);
   const [pendingEmail, setPendingEmail] = useState('');
-  const [pendingTenantSlug, setPendingTenantSlug] = useState<string | undefined>();
   const [otp, setOtp] = useState('');
   const [cooldown, setCooldown] = useState(0);
 
@@ -179,14 +169,9 @@ export function LoginPage() {
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  useEffect(() => {
-    if (slugFromUrl) loginRef.current?.reset();
-  }, [slugFromUrl]);
-
-  const goToVerify = (email: string, tenantSlug?: string) => {
+  const goToVerify = (email: string) => {
     setDirection(1);
     setPendingEmail(email);
-    setPendingTenantSlug(tenantSlug);
     setOtp('');
     setStep('verify');
   };
@@ -197,9 +182,9 @@ export function LoginPage() {
     setOtp('');
   };
 
-  const sendOtp = async (email: string, tenantSlug?: string, silent = false) => {
+  const sendOtp = async (email: string, silent = false) => {
     try {
-      await resendVerificationMutation({ email, tenantSlug }).unwrap();
+      await resendVerificationMutation({ email }).unwrap();
       setCooldown(60);
       if (!silent) snackbar.success('A new code has been sent to your email.');
     } catch {
@@ -209,16 +194,12 @@ export function LoginPage() {
 
   const onLoginSubmit = async (values: LoginValues) => {
     try {
-      await loginMutation({
-        email: values.email,
-        password: values.password,
-        tenantSlug: values.tenantSlug || undefined,
-      }).unwrap();
+      await loginMutation({ email: values.email, password: values.password }).unwrap();
     } catch (err) {
       const error = err as ApiError;
       if (error.status === 400 && error.message?.includes('not been verified')) {
-        goToVerify(values.email, values.tenantSlug || undefined);
-        await sendOtp(values.email, values.tenantSlug || undefined, true);
+        goToVerify(values.email);
+        await sendOtp(values.email, true);
       } else {
         snackbar.error(
           error.message || 'Invalid credentials. Please check your email and password.',
@@ -230,11 +211,7 @@ export function LoginPage() {
   const onVerifySubmit = async () => {
     if (otp.length !== OTP_LENGTH) return;
     try {
-      await verifyEmailMutation({
-        email: pendingEmail,
-        tenantSlug: pendingTenantSlug,
-        otp,
-      }).unwrap();
+      await verifyEmailMutation({ email: pendingEmail, otp }).unwrap();
       snackbar.success('Email verified! You can now sign in.');
       goToLogin();
     } catch (err) {
@@ -347,7 +324,7 @@ export function LoginPage() {
                       variant="text"
                       size="small"
                       disabled={isResending}
-                      onClick={() => sendOtp(pendingEmail, pendingTenantSlug)}
+                      onClick={() => sendOtp(pendingEmail)}
                       startIcon={
                         isResending ? <CircularProgress size={14} color="inherit" /> : undefined
                       }

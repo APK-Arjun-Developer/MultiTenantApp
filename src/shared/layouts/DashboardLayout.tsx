@@ -1,5 +1,6 @@
 import { useState, Suspense } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
+import { usePageTitle } from '@/shared/hooks';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from '@/shared/components/PageTransition';
 import { TenantPicker } from '@/shared/components/TenantPicker';
@@ -10,7 +11,7 @@ import {
   selectPermissionsLoaded,
 } from '@/features/auth/slices/authSlice';
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
-import { useLogoutMutation } from '@/features/auth/api/authApi';
+import { useGetCurrentUserQuery, getUserAvatarUrl } from '@/features/users/api/usersApi';
 import type { SystemRole } from '@/types/api';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
@@ -24,18 +25,15 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import LogoutIcon from '@mui/icons-material/Logout';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleIcon from '@mui/icons-material/People';
@@ -86,6 +84,12 @@ const NAV_ITEMS: NavItem[] = [
     allowedRoles: ['SystemAdmin'],
     permission: 'Tenants.View',
   },
+  // Account
+  {
+    text: 'Profile',
+    icon: <AccountCircleIcon />,
+    path: '/profile',
+  },
 ];
 
 // Pages where SystemAdmin needs the TenantPicker to select a tenant context
@@ -101,17 +105,19 @@ function PageLoader() {
 
 export function DashboardLayout() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
   const themeMode = useAppSelector(selectThemeMode);
-  const [logoutMutation] = useLogoutMutation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const permissions = useAppSelector(selectPermissions);
   const permissionsLoaded = useAppSelector(selectPermissionsLoaded);
   const isSystemAdmin = user?.systemRole === 'SystemAdmin';
+
+  usePageTitle();
+
+  const { data: profile } = useGetCurrentUserQuery();
+  const navAvatarSrc = profile?.profileFileId ? getUserAvatarUrl(profile.id) : undefined;
 
   const visibleNavItems = NAV_ITEMS.filter((item) => {
     if (item.allowedRoles && (!user?.systemRole || !item.allowedRoles.includes(user.systemRole)))
@@ -130,14 +136,6 @@ export function DashboardLayout() {
 
   const handleThemeToggle = () => dispatch(toggleTheme());
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
-  const handleAvatarClick = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
-  const handleMenuClose = () => setAnchorEl(null);
-
-  const handleLogout = async () => {
-    handleMenuClose();
-    await logoutMutation();
-    navigate('/login', { replace: true });
-  };
 
   const initials = user?.fullName
     ? user.fullName
@@ -219,40 +217,20 @@ export function DashboardLayout() {
               {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
           </Tooltip>
-          <Tooltip title={user?.fullName ?? user?.email ?? 'Account'}>
-            <IconButton onClick={handleAvatarClick} sx={{ ml: 0.5 }}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 13 }}>
-                {initials}
+
+          <Tooltip title="Profile">
+            <IconButton component={Link} to="/profile" sx={{ ml: 0.5 }}>
+              <Avatar
+                src={navAvatarSrc}
+                slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+                sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 13 }}
+              >
+                {!navAvatarSrc && initials}
               </Avatar>
             </IconButton>
           </Tooltip>
         </Toolbar>
       </AppBar>
-
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem disabled sx={{ flexDirection: 'column', alignItems: 'flex-start', opacity: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-            {user?.fullName ?? 'User'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {user?.email}
-          </Typography>
-          {user?.systemRole && (
-            <Typography variant="caption" color="primary.main" sx={{ fontWeight: 500 }}>
-              {user.systemRole}
-            </Typography>
-          )}
-        </MenuItem>
-        <Divider />
-        <MenuItem component={Link} to="/profile" onClick={handleMenuClose}>
-          <AccountCircleIcon fontSize="small" sx={{ mr: 1.5 }} />
-          Profile
-        </MenuItem>
-        <MenuItem onClick={handleLogout}>
-          <LogoutIcon fontSize="small" sx={{ mr: 1.5 }} />
-          Sign out
-        </MenuItem>
-      </Menu>
 
       <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
         <Drawer

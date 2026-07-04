@@ -69,14 +69,9 @@ export function TenantPicker() {
         </MenuItem>
         {tenants.map((tenant) => (
           <MenuItem key={tenant.id} value={tenant.id}>
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {tenant.name}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {tenant.slug}
-              </Typography>
-            </Box>
+            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+              {tenant.name}
+            </Typography>
           </MenuItem>
         ))}
       </Select>

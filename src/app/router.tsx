@@ -4,7 +4,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthLayout } from '@/shared/layouts/AuthLayout';
 import { DashboardLayout } from '@/shared/layouts/DashboardLayout';
 import { AuthGuard } from '@/shared/components/AuthGuard';
-import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
+import { SystemAdminGuard } from '@/shared/components/SystemAdminGuard';
+import { TenantAdminGuard } from '@/shared/components/TenantAdminGuard';
 import { ErrorPage } from '@/shared/components/ErrorPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -40,11 +41,23 @@ export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/forgot-password', element: <ForgotPasswordPage /> },
-      { path: '/reset-password', element: <ResetPasswordPage /> },
-      { path: '/invitation/accept', element: <InvitationPage /> },
-      { path: '/account-setup', element: <AccountSetupPage /> },
+      { path: '/login', handle: { title: 'Sign In' }, element: <LoginPage /> },
+      {
+        path: '/forgot-password',
+        handle: { title: 'Forgot Password' },
+        element: <ForgotPasswordPage />,
+      },
+      {
+        path: '/reset-password',
+        handle: { title: 'Reset Password' },
+        element: <ResetPasswordPage />,
+      },
+      {
+        path: '/invitation/accept',
+        handle: { title: 'Accept Invitation' },
+        element: <InvitationPage />,
+      },
+      { path: '/account-setup', handle: { title: 'Account Setup' }, element: <AccountSetupPage /> },
     ],
   },
   {
@@ -55,31 +68,30 @@ export const router = createBrowserRouter([
         element: <DashboardLayout />,
         children: [
           { path: '/', element: <Navigate to="/dashboard" replace /> },
-          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/dashboard', handle: { title: 'Dashboard' }, element: <DashboardPage /> },
+          { path: '/profile', handle: { title: 'Profile' }, element: <ProfilePage /> },
 
-          // Tenant-scoped pages — require a tenant selection for SystemAdmin
+          // TenantAdmin or above — TenantUser redirected to /dashboard
           {
-            path: '/users',
-            element: (
-              <TenantContextGuard>
-                <UsersPage />
-              </TenantContextGuard>
-            ),
+            element: <TenantAdminGuard />,
+            children: [
+              { path: '/users', handle: { title: 'Users' }, element: <UsersPage /> },
+              { path: '/roles', handle: { title: 'Roles' }, element: <RolesPage /> },
+            ],
           },
-          {
-            path: '/roles',
-            element: (
-              <TenantContextGuard>
-                <RolesPage />
-              </TenantContextGuard>
-            ),
-          },
-          // Platform-level pages — no tenant context needed
-          { path: '/tenants', element: <TenantsPage /> },
-          { path: '/tenant-admins', element: <TenantAdminsPage /> },
 
-          // User-scoped — accessible regardless of tenant selection
-          { path: '/profile', element: <ProfilePage /> },
+          // SystemAdmin only — others redirected to /dashboard
+          {
+            element: <SystemAdminGuard />,
+            children: [
+              { path: '/tenants', handle: { title: 'Tenants' }, element: <TenantsPage /> },
+              {
+                path: '/tenant-admins',
+                handle: { title: 'Tenant Admins' },
+                element: <TenantAdminsPage />,
+              },
+            ],
+          },
         ],
       },
     ],

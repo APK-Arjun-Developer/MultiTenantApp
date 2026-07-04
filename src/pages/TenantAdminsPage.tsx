@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -29,10 +30,14 @@ import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
+import { LabelValue } from '@/shared/components/LabelValue';
+import { ViewDialog } from '@/shared/components/ViewDialog';
+import { formatAddress } from '@/shared/utils/format';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
@@ -64,7 +69,7 @@ import type { TenantAdminDto, TenantAdminInvitationDto, AddressDto, ApiError } f
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const createSchema = z.object({
-  tenantSlug: z.string().min(1, 'Tenant is required'),
+  tenantId: z.string().min(1, 'Tenant is required'),
   fullName: z.string().min(1, 'Full name is required').max(200),
   email: z.string().email('Invalid email address'),
   ...requiredAddressZodShape,
@@ -72,7 +77,7 @@ const createSchema = z.object({
 type CreateValues = z.infer<typeof createSchema>;
 
 const inviteSchema = z.object({
-  tenantSlug: z.string().min(1, 'Tenant is required'),
+  tenantId: z.string().min(1, 'Tenant is required'),
   email: z.string().email('Invalid email address'),
 });
 type InviteValues = z.infer<typeof inviteSchema>;
@@ -93,13 +98,13 @@ interface CreateAdminDialogProps {
 }
 
 function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogProps) {
-  const [createTenantAdmin] = useCreateTenantAdminMutation();
+  const [createTenantAdmin, { isLoading }] = useCreateTenantAdminMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
     () => [
       {
-        name: 'tenantSlug',
+        name: 'tenantId',
         label: 'Tenant',
         type: FIELD_TYPE.SELECT,
         required: true,
@@ -125,9 +130,9 @@ function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogPr
 
   const onSubmit = async (values: CreateValues) => {
     try {
-      const { tenantSlug, fullName, email, ...rest } = values;
+      const { tenantId, fullName, email, ...rest } = values;
       const result = await createTenantAdmin({
-        tenantSlug,
+        tenantId,
         fullName,
         email,
         ...buildAddressPayload(rest),
@@ -140,7 +145,7 @@ function CreateAdminDialog({ open, onClose, tenantOptions }: CreateAdminDialogPr
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create Tenant Admin</DialogTitle>
       <DialogContent dividers>
         <FormBuilder
@@ -167,13 +172,13 @@ interface InviteAdminDialogProps {
 }
 
 function InviteAdminDialog({ open, onClose, tenantOptions }: InviteAdminDialogProps) {
-  const [inviteTenantAdmin] = useInviteTenantAdminMutation();
+  const [inviteTenantAdmin, { isLoading }] = useInviteTenantAdminMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
     () => [
       {
-        name: 'tenantSlug',
+        name: 'tenantId',
         label: 'Tenant',
         type: FIELD_TYPE.SELECT,
         required: true,
@@ -201,7 +206,7 @@ function InviteAdminDialog({ open, onClose, tenantOptions }: InviteAdminDialogPr
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Invite Tenant Admin</DialogTitle>
       <DialogContent>
         <FormBuilder
@@ -228,8 +233,9 @@ interface EditAdminDialogProps {
 }
 
 function EditAdminDialog({ admin, tenantAddress, onClose }: EditAdminDialogProps) {
-  const [updateTenantAdmin] = useUpdateTenantAdminMutation();
-  const [updateTenant] = useUpdateTenantMutation();
+  const [updateTenantAdmin, { isLoading: isUpdatingAdmin }] = useUpdateTenantAdminMutation();
+  const [updateTenant, { isLoading: isUpdatingTenant }] = useUpdateTenantMutation();
+  const isLoading = isUpdatingAdmin || isUpdatingTenant;
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -256,8 +262,8 @@ function EditAdminDialog({ admin, tenantAddress, onClose }: EditAdminDialogProps
         fullName: values.fullName,
         ...buildAddressPayload(values),
       }).unwrap();
-      if (admin.tenant?.slug) {
-        await updateTenant({ slug: admin.tenant.slug, ...buildTenantAddressPayload(values) });
+      if (admin.tenant?.id) {
+        await updateTenant({ id: admin.tenant.id, ...buildTenantAddressPayload(values) });
       }
       snackbar.success('Tenant admin updated.');
       onClose();
@@ -267,9 +273,10 @@ function EditAdminDialog({ admin, tenantAddress, onClose }: EditAdminDialogProps
   };
 
   return (
-    <Dialog open={!!admin} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={!!admin} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Tenant Admin</DialogTitle>
       <DialogContent dividers>
+        <LabelValue label="Email" value={admin?.email} sx={{ mb: 2 }} />
         <FormBuilder
           key={admin?.id}
           schema={editSchema}
@@ -282,6 +289,41 @@ function EditAdminDialog({ admin, tenantAddress, onClose }: EditAdminDialogProps
         />
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ─── View dialog ──────────────────────────────────────────────────────────────
+
+interface ViewAdminDialogProps {
+  admin: TenantAdminDto | null;
+  onClose: () => void;
+}
+
+function ViewAdminDialog({ admin, onClose }: ViewAdminDialogProps) {
+  return (
+    <ViewDialog open={!!admin} title="Tenant admin details" onClose={onClose}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <LabelValue label="Full name" value={admin?.fullName} />
+        <LabelValue label="Email" value={admin?.email} />
+        <LabelValue label="Tenant" value={admin?.tenant?.name} />
+        <LabelValue label="Roles" value={admin?.roles.join(', ') || '—'} />
+        <LabelValue
+          label="Status"
+          value={
+            admin && (
+              <Chip
+                label={admin.isActive ? 'Active' : 'Inactive'}
+                color={admin.isActive ? 'success' : 'default'}
+                size="small"
+                variant="outlined"
+              />
+            )
+          }
+        />
+        <LabelValue label="Created via" value={admin?.createdVia} />
+        <LabelValue label="Address" value={formatAddress(admin?.address)} />
+      </Box>
+    </ViewDialog>
   );
 }
 
@@ -307,6 +349,8 @@ type ActionType = 'delete' | 'activate' | 'deactivate';
 export function TenantAdminsPage() {
   const snackbar = useSnackbar();
 
+  const canList = usePermission('Tenants.List');
+  const canView = usePermission('Tenants.View');
   const canCreate = usePermission('Onboarding.Create');
   const canInvite = usePermission('Onboarding.Invite');
   const canEdit = usePermission('Tenants.Edit');
@@ -329,6 +373,7 @@ export function TenantAdminsPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [viewAdmin, setViewAdmin] = useState<TenantAdminDto | null>(null);
   const [editAdmin, setEditAdmin] = useState<TenantAdminDto | null>(null);
   const [pendingAction, setPendingAction] = useState<{
     type: ActionType;
@@ -367,14 +412,15 @@ export function TenantAdminsPage() {
   const [deleteTenantAdmin, { isLoading: isDeleting }] = useDeleteTenantAdminMutation();
   const [activateTenantAdmin, { isLoading: isActivating }] = useActivateTenantAdminMutation();
   const [deactivateTenantAdmin, { isLoading: isDeactivating }] = useDeactivateTenantAdminMutation();
-  const [resendSetup] = useResendTenantAdminSetupMutation();
+  const [resendSetup, { isLoading: isResendingSetup }] = useResendTenantAdminSetupMutation();
   const [revokeInvitation, { isLoading: isRevoking }] = useRevokeInvitationMutation();
-  const [resendInvitationMutation] = useResendInvitationMutation();
+  const [resendInvitationMutation, { isLoading: isResendingInvitation }] =
+    useResendInvitationMutation();
 
   const isActioning = isDeleting || isActivating || isDeactivating;
 
-  const tenantSlugOptions = useMemo(
-    () => tenantsData?.items.map((t) => ({ value: t.slug, label: t.name })) ?? [],
+  const tenantIdOptions = useMemo(
+    () => tenantsData?.items.map((t) => ({ value: t.id, label: t.name })) ?? [],
     [tenantsData],
   );
 
@@ -452,14 +498,9 @@ export function TenantAdminsPage() {
       header: 'Tenant',
       cell: ({ row }) =>
         row.original.tenant ? (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              {row.original.tenant.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {row.original.tenant.slug}
-            </Typography>
-          </Box>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {row.original.tenant.name}
+          </Typography>
         ) : (
           <Typography variant="body2" color="text.secondary">
             —
@@ -488,6 +529,13 @@ export function TenantAdminsPage() {
       header: '',
       cell: ({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+          {canView && (
+            <Tooltip title="View">
+              <IconButton size="small" onClick={() => setViewAdmin(row.original)}>
+                <VisibilityIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           {canEdit && (
             <Tooltip title="Edit">
               <IconButton size="small" onClick={() => setEditAdmin(row.original)}>
@@ -497,9 +545,20 @@ export function TenantAdminsPage() {
           )}
           {canResend && row.original.hasPendingSetup && (
             <Tooltip title="Resend setup email">
-              <IconButton size="small" color="info" onClick={() => handleResend(row.original)}>
-                <EmailIcon fontSize="small" />
-              </IconButton>
+              <span>
+                <IconButton
+                  size="small"
+                  color="info"
+                  disabled={isResendingSetup}
+                  onClick={() => handleResend(row.original)}
+                >
+                  {isResendingSetup ? (
+                    <CircularProgress size={14} />
+                  ) : (
+                    <EmailIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </span>
             </Tooltip>
           )}
           {(canActivate || canDeactivate) && (
@@ -563,35 +622,50 @@ export function TenantAdminsPage() {
         </Typography>
       ),
     },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => {
-        const inv = row.original;
-        const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-        const canRevokeRow = canRevoke && isPending;
-        const canResendRow = canResend && isPending;
-        if (!canRevokeRow && !canResendRow) return null;
-        return (
-          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-            {canResendRow && (
-              <Tooltip title="Resend invitation">
-                <IconButton size="small" color="info" onClick={() => handleResendInvitation(inv)}>
-                  <ForwardToInboxIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canRevokeRow && (
-              <Tooltip title="Revoke invitation">
-                <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
-                  <BlockIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        );
-      },
-    },
+    ...(canRevoke || canResend
+      ? ([
+          {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => {
+              const inv = row.original;
+              const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+              const canRevokeRow = canRevoke && isPending;
+              const canResendRow = canResend && isPending;
+              if (!canRevokeRow && !canResendRow) return null;
+              return (
+                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                  {canResendRow && (
+                    <Tooltip title="Resend invitation">
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="info"
+                          disabled={isResendingInvitation}
+                          onClick={() => handleResendInvitation(inv)}
+                        >
+                          {isResendingInvitation ? (
+                            <CircularProgress size={14} />
+                          ) : (
+                            <ForwardToInboxIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
+                  {canRevokeRow && (
+                    <Tooltip title="Revoke invitation">
+                      <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
+                        <BlockIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
+              );
+            },
+          },
+        ] as ColumnDef<TenantAdminInvitationDto>[])
+      : []),
   ];
 
   const confirmTitle =
@@ -643,7 +717,14 @@ export function TenantAdminsPage() {
       </Tabs>
 
       {/* Admins tab */}
-      {tab === 0 && (
+      {tab === 0 && !canList && (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Typography color="text.secondary">
+            You don't have permission to list tenant admins.
+          </Typography>
+        </Box>
+      )}
+      {tab === 0 && canList && (
         <Box>
           <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
             <TextField
@@ -739,7 +820,14 @@ export function TenantAdminsPage() {
       )}
 
       {/* Invitations tab */}
-      {tab === 1 && (
+      {tab === 1 && !canList && (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Typography color="text.secondary">
+            You don't have permission to list invitations.
+          </Typography>
+        </Box>
+      )}
+      {tab === 1 && canList && (
         <Box>
           <Box sx={{ mb: 2 }}>
             <FormControl size="small" sx={{ minWidth: 200 }}>
@@ -781,13 +869,14 @@ export function TenantAdminsPage() {
       <CreateAdminDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        tenantOptions={tenantSlugOptions}
+        tenantOptions={tenantIdOptions}
       />
       <InviteAdminDialog
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        tenantOptions={tenantSlugOptions}
+        tenantOptions={tenantIdOptions}
       />
+      <ViewAdminDialog admin={viewAdmin} onClose={() => setViewAdmin(null)} />
       <EditAdminDialog
         admin={editAdmin}
         tenantAddress={editTenantAddress}

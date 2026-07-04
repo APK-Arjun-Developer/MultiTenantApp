@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -27,10 +28,14 @@ import EditIcon from '@mui/icons-material/Edit';
 import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { LabelValue } from '@/shared/components/LabelValue';
+import { ViewDialog } from '@/shared/components/ViewDialog';
+import { formatAddress } from '@/shared/utils/format';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
@@ -59,14 +64,6 @@ import type { TenantDto, TenantCreationInvitationDto, ApiError } from '@/types/a
 
 const onboardSchema = z.object({
   tenantName: z.string().min(1, 'Tenant name is required').max(200),
-  tenantSlug: z
-    .string()
-    .min(1, 'Slug is required')
-    .max(100)
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      'Lowercase letters, digits and hyphens only (e.g. my-company)',
-    ),
   adminFullName: z.string().min(1, 'Admin full name is required').max(200),
   adminEmail: z.string().email('Invalid email address'),
   ...requiredTenantAddressZodShape,
@@ -80,7 +77,7 @@ interface OnboardDialogProps {
 }
 
 function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
-  const [onboardTenant] = useOnboardTenantMutation();
+  const [onboardTenant, { isLoading }] = useOnboardTenantMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -91,14 +88,6 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
         type: FIELD_TYPE.TEXT,
         section: 'Tenant details',
         required: true,
-      },
-      {
-        name: 'tenantSlug',
-        label: 'Slug',
-        type: FIELD_TYPE.TEXT,
-        section: 'Tenant details',
-        required: true,
-        muiProps: { helperText: 'URL-safe identifier — lowercase letters, digits and hyphens' },
       },
       ...getTenantAddressFields(undefined, 'Company Address', true),
       {
@@ -129,7 +118,6 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
       const result = await onboardTenant({
         tenant: {
           name: values.tenantName,
-          slug: values.tenantSlug,
           ...(tenantAddressPayload.address ? { address: tenantAddressPayload.address } : {}),
         },
         user: {
@@ -149,7 +137,7 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>New Tenant</DialogTitle>
       <DialogContent dividers>
         <FormBuilder
@@ -180,7 +168,7 @@ interface InviteDialogProps {
 }
 
 function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
-  const [inviteTenant] = useInviteTenantMutation();
+  const [inviteTenant, { isLoading }] = useInviteTenantMutation();
   const snackbar = useSnackbar();
 
   const fields: FieldConfig[] = [
@@ -208,7 +196,7 @@ function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Invite New Tenant</DialogTitle>
       <DialogContent>
         <FormBuilder
@@ -230,12 +218,6 @@ function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
 
 const editSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200),
-  newSlug: z
-    .string()
-    .max(100)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Lowercase letters, digits and hyphens only')
-    .optional()
-    .or(z.literal('')),
   isActive: z.boolean(),
   ...addressZodShape,
 });
@@ -247,7 +229,7 @@ interface EditDialogProps {
 }
 
 function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
-  const [updateTenant] = useUpdateTenantMutation();
+  const [updateTenant, { isLoading }] = useUpdateTenantMutation();
   const snackbar = useSnackbar();
 
   const editFields = useMemo<FieldConfig[]>(
@@ -259,15 +241,6 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
         required: true,
         defaultValue: tenant?.name ?? '',
         muiProps: { autoFocus: true },
-      },
-      {
-        name: 'newSlug',
-        label: 'New slug',
-        type: FIELD_TYPE.TEXT,
-        defaultValue: '',
-        muiProps: {
-          helperText: `Current: ${tenant?.slug ?? ''} — leave blank to keep unchanged`,
-        },
       },
       {
         name: 'isActive',
@@ -284,9 +257,8 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
     if (!tenant) return;
     try {
       await updateTenant({
-        slug: tenant.slug,
+        id: tenant.id,
         name: values.name,
-        newSlug: values.newSlug || undefined,
         isActive: values.isActive,
         ...buildAddressPayload(values),
       }).unwrap();
@@ -299,7 +271,7 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
   };
 
   return (
-    <Dialog open={!!tenant} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={!!tenant} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Tenant</DialogTitle>
       <DialogContent dividers>
         <FormBuilder
@@ -314,6 +286,42 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
         />
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ─── View dialog ──────────────────────────────────────────────────────────────
+
+interface ViewTenantDialogProps {
+  tenant: TenantDto | null;
+  onClose: () => void;
+}
+
+function ViewTenantDialog({ tenant, onClose }: ViewTenantDialogProps) {
+  return (
+    <ViewDialog open={!!tenant} title="Tenant details" onClose={onClose}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <LabelValue label="Name" value={tenant?.name} />
+        <LabelValue label="Admin email" value={tenant?.adminEmail} />
+        <LabelValue
+          label="Status"
+          value={
+            tenant && (
+              <Chip
+                label={tenant.isActive ? 'Active' : 'Inactive'}
+                color={tenant.isActive ? 'success' : 'default'}
+                size="small"
+                variant="outlined"
+              />
+            )
+          }
+        />
+        <LabelValue
+          label="Created via"
+          value={<CreatedViaChip createdVia={tenant?.createdVia ?? 'Direct'} />}
+        />
+        <LabelValue label="Address" value={formatAddress(tenant?.address)} />
+      </Box>
+    </ViewDialog>
   );
 }
 
@@ -337,6 +345,8 @@ function InvitationStatusChip({ status }: { status: string }) {
 export function TenantsPage() {
   const snackbar = useSnackbar();
 
+  const canList = usePermission('Tenants.List');
+  const canView = usePermission('Tenants.View');
   const canCreate = usePermission('Tenants.Create');
   const canEdit = usePermission('Tenants.Edit');
   const canDelete = usePermission('Tenants.Delete');
@@ -351,6 +361,7 @@ export function TenantsPage() {
 
   const [onboardOpen, setOnboardOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [viewTenant, setViewTenant] = useState<TenantDto | null>(null);
   const [editTenant, setEditTenant] = useState<TenantDto | null>(null);
   const [deleteTenant, setDeleteTenant] = useState<TenantDto | null>(null);
 
@@ -382,7 +393,8 @@ export function TenantsPage() {
 
   const [deleteTenantMutation, { isLoading: isDeleting }] = useDeleteTenantMutation();
   const [revokeTenantInvitation, { isLoading: isRevoking }] = useRevokeTenantInvitationMutation();
-  const [resendTenantInvitation] = useResendTenantInvitationMutation();
+  const [resendTenantInvitation, { isLoading: isResendingInvitation }] =
+    useResendTenantInvitationMutation();
 
   const tenants = data?.items ?? [];
   const totalCount = data?.totalCount ?? 0;
@@ -390,7 +402,7 @@ export function TenantsPage() {
   const handleDelete = async () => {
     if (!deleteTenant) return;
     try {
-      await deleteTenantMutation({ slug: deleteTenant.slug }).unwrap();
+      await deleteTenantMutation({ id: deleteTenant.id }).unwrap();
       snackbar.success(`Tenant "${deleteTenant.name}" deleted.`);
       setDeleteTenant(null);
     } catch (err) {
@@ -428,9 +440,11 @@ export function TenantsPage() {
           <Typography variant="body2" sx={{ fontWeight: 500 }}>
             {row.original.name}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {row.original.slug}
-          </Typography>
+          {row.original.adminEmail && (
+            <Typography variant="caption" color="text.secondary">
+              {row.original.adminEmail}
+            </Typography>
+          )}
         </Box>
       ),
     },
@@ -456,6 +470,13 @@ export function TenantsPage() {
       header: '',
       cell: ({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+          {canView && (
+            <Tooltip title="View">
+              <IconButton size="small" onClick={() => setViewTenant(row.original)}>
+                <VisibilityIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           {canEdit && (
             <Tooltip title="Edit">
               <IconButton size="small" onClick={() => setEditTenant(row.original)}>
@@ -495,29 +516,44 @@ export function TenantsPage() {
         </Typography>
       ),
     },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => {
-        const inv = row.original;
-        const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-        if (!canCreate || !isPending) return null;
-        return (
-          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-            <Tooltip title="Resend invitation">
-              <IconButton size="small" color="info" onClick={() => handleResendInvitation(inv)}>
-                <ForwardToInboxIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Revoke invitation">
-              <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
-                <BlockIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        );
-      },
-    },
+    ...(canCreate
+      ? ([
+          {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => {
+              const inv = row.original;
+              const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+              if (!isPending) return null;
+              return (
+                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                  <Tooltip title="Resend invitation">
+                    <span>
+                      <IconButton
+                        size="small"
+                        color="info"
+                        disabled={isResendingInvitation}
+                        onClick={() => handleResendInvitation(inv)}
+                      >
+                        {isResendingInvitation ? (
+                          <CircularProgress size={14} />
+                        ) : (
+                          <ForwardToInboxIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title="Revoke invitation">
+                    <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
+                      <BlockIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              );
+            },
+          },
+        ] as ColumnDef<TenantCreationInvitationDto>[])
+      : []),
   ];
 
   return (
@@ -557,7 +593,12 @@ export function TenantsPage() {
       </Tabs>
 
       {/* Tenants tab */}
-      {tab === 0 && (
+      {tab === 0 && !canList && (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Typography color="text.secondary">You don't have permission to list tenants.</Typography>
+        </Box>
+      )}
+      {tab === 0 && canList && (
         <Box>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
             <TextField
@@ -635,7 +676,14 @@ export function TenantsPage() {
       )}
 
       {/* Invitations tab */}
-      {tab === 1 && (
+      {tab === 1 && !canList && (
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Typography color="text.secondary">
+            You don't have permission to list invitations.
+          </Typography>
+        </Box>
+      )}
+      {tab === 1 && canList && (
         <Box>
           <Box sx={{ mb: 2 }}>
             <FormControl size="small" sx={{ minWidth: 200 }}>
@@ -676,6 +724,7 @@ export function TenantsPage() {
       {/* Dialogs */}
       <OnboardTenantDialog open={onboardOpen} onClose={() => setOnboardOpen(false)} />
       <InviteTenantDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <ViewTenantDialog tenant={viewTenant} onClose={() => setViewTenant(null)} />
       <EditTenantDialog tenant={editTenant} onClose={() => setEditTenant(null)} />
 
       <ConfirmDialog

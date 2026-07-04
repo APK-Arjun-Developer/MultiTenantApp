@@ -62,7 +62,6 @@ export type AddressDto = AddressRequest;
 export interface LoginRequest {
   email: string;
   password: string;
-  tenantSlug?: string | null;
 }
 
 export interface RefreshTokenRequest {
@@ -80,7 +79,6 @@ export interface LogoutRequest {
 
 export interface ForgotPasswordRequest {
   email: string;
-  tenantSlug?: string | null;
 }
 
 export interface ResetPasswordRequest {
@@ -91,13 +89,11 @@ export interface ResetPasswordRequest {
 
 export interface VerifyEmailOtpRequest {
   email: string;
-  tenantSlug?: string | null;
   otp: string;
 }
 
 export interface ResendEmailOtpRequest {
   email: string;
-  tenantSlug?: string | null;
 }
 
 export type SystemRole = 'SystemAdmin' | 'TenantAdmin' | 'TenantUser';
@@ -110,7 +106,6 @@ export interface AuthUser {
   fullName: string;
   roles: string[];
   systemRole?: SystemRole | null;
-  tenantSlug?: string | null;
   permissions?: string[];
 }
 
@@ -127,7 +122,6 @@ export interface LoginResponse {
 export interface ValidateResetTokenResponse {
   isValid: boolean;
   email?: string | null;
-  tenantSlug?: string | null;
   errorMessage?: string | null;
 }
 
@@ -150,7 +144,6 @@ export interface ValidateInvitationResponse {
   email?: string | null;
   invitationType?: InvitationType | null;
   tenantName?: string | null;
-  tenantSlug?: string | null;
   errorMessage?: string | null;
 }
 
@@ -159,7 +152,6 @@ export interface AcceptInvitationResponse {
   email: string;
   fullName: string;
   tenantId: UUID;
-  tenantSlug?: string | null;
   roles: string[];
   invitationType: InvitationType;
   isActive: boolean;
@@ -169,7 +161,6 @@ export interface ValidateAccountSetupResponse {
   isValid: boolean;
   email?: string | null;
   fullName?: string | null;
-  tenantSlug?: string | null;
   errorMessage?: string | null;
   hasAddress: boolean;
 }
@@ -177,7 +168,6 @@ export interface ValidateAccountSetupResponse {
 export interface SetPasswordResponse {
   userId: UUID;
   email: string;
-  tenantSlug?: string | null;
   isActive: boolean;
 }
 
@@ -204,7 +194,6 @@ export interface AcceptTenantCreationInvitationRequest {
   password: string;
   confirmPassword: string;
   tenantName: string;
-  tenantSlug: string;
   tenantAddress?: AddressRequest;
   userAddress?: AddressRequest;
 }
@@ -249,6 +238,10 @@ export interface DashboardStatsDto {
   totalTenantAdmins: number | null;
   /** Platform-wide for SystemAdmin; own tenant only for TenantAdmin. */
   totalTenantUsers: number;
+  /** TenantAdmin only — null for other callers. */
+  totalRoles: number | null;
+  /** TenantAdmin only — null for other callers. */
+  totalPendingInvitations: number | null;
 }
 
 // ---------- Permissions ----------
@@ -275,13 +268,13 @@ export interface PermissionCatalogResponse {
 
 export interface TenantDto {
   id: UUID;
-  slug: string;
   name: string;
   isActive: boolean;
   createdVia: UserCreatedVia;
   profileFileId?: UUID | null;
   profileUrl?: string | null;
   address?: AddressDto | null;
+  adminEmail?: string | null;
 }
 
 export interface CreatedRoleSummary {
@@ -292,7 +285,6 @@ export interface CreatedRoleSummary {
 export interface OnboardTenantResponse {
   tenantId: UUID;
   name: string;
-  slug: string;
   adminUserId: UUID;
   adminEmail: string;
   roles: CreatedRoleSummary[];
@@ -306,7 +298,6 @@ export interface OnboardUserDetails {
 
 export interface OnboardTenantDetails {
   name: string;
-  slug: string;
   address?: AddressRequest;
 }
 
@@ -323,9 +314,8 @@ export interface OnboardTenantRequest {
 }
 
 export interface UpdateTenantRequest {
-  slug: string;
+  id: UUID;
   name?: string;
-  newSlug?: string;
   isActive?: boolean;
   profileFileId?: UUID | null;
   clearProfileImage?: boolean;
@@ -339,7 +329,7 @@ export interface UpdateCurrentTenantAddressRequest {
 }
 
 export interface DeleteTenantRequest {
-  slug: string;
+  id: UUID;
 }
 
 export interface InviteResponse {
@@ -370,7 +360,6 @@ export interface TenantCreationInvitationDto {
 export interface TenantAdminTenantDetails {
   id: UUID;
   name: string;
-  slug: string;
   isActive: boolean;
 }
 
@@ -391,7 +380,7 @@ export interface TenantAdminDto {
 }
 
 export interface CreateTenantAdminRequest {
-  tenantSlug: string;
+  tenantId: UUID;
   fullName: string;
   email: string;
   address?: AddressRequest;
@@ -402,7 +391,6 @@ export interface CreateTenantAdminResponse {
   fullName: string;
   email: string;
   tenantId: UUID;
-  tenantSlug: string;
   roles: string[];
   isActive: boolean;
 }
@@ -418,14 +406,13 @@ export interface UpdateTenantAdminRequest {
 }
 
 export interface InviteTenantAdminRequest {
-  tenantSlug: string;
+  tenantId: UUID;
   email: string;
 }
 
 export interface InviteTenantAdminResponse {
   id: UUID;
   email: string;
-  tenantSlug: string;
 }
 
 export interface TenantAdminInvitationDto {
@@ -448,7 +435,6 @@ export interface TenantAdminInvitationDto {
 export interface UserTenantDetails {
   id: UUID;
   name: string;
-  slug: string;
   isActive: boolean;
   profileFileId?: UUID | null;
   profileUrl?: string | null;

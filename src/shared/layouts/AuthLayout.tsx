@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
+import { usePageTitle } from '@/shared/hooks';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -15,6 +16,8 @@ function PageLoader() {
 }
 
 export function AuthLayout() {
+  usePageTitle();
+
   return (
     <Box
       sx={{

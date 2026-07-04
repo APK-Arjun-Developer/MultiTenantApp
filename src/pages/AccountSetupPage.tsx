@@ -93,20 +93,11 @@ function SetupSuccess({ result }: { result: SetPasswordResponse }) {
         <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
           {result.email}
         </Box>
-        {result.tenantSlug && (
-          <>
-            {' '}
-            and tenant slug{' '}
-            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
-              {result.tenantSlug}
-            </Box>
-          </>
-        )}
         .
       </Typography>
       <Button
         component={Link}
-        to={result.tenantSlug ? `/login?slug=${result.tenantSlug}` : '/login'}
+        to="/login"
         variant="contained"
         fullWidth
         size="large"
@@ -128,7 +119,7 @@ export function AccountSetupPage() {
   const { data: validation, isLoading: isValidating } = useValidateAccountSetupQuery(token, {
     skip: !token,
   });
-  const [setPassword] = useSetPasswordMutation();
+  const [setPassword, { isLoading: isSubmitting }] = useSetPasswordMutation();
 
   const [result, setResult] = useState<SetPasswordResponse | null>(null);
 
@@ -235,7 +226,7 @@ export function AccountSetupPage() {
           schema={passwordOnlySchema}
           fields={accountFields}
           onSubmit={onSubmitPasswordOnly}
-          submitText="Activate account"
+          submitText={isSubmitting ? 'Activating…' : 'Activate account'}
           sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
         />
       </Box>
@@ -262,7 +253,7 @@ export function AccountSetupPage() {
           },
         ]}
         onSubmit={onSubmitFull}
-        submitText="Activate account"
+        submitText={isSubmitting ? 'Activating…' : 'Activate account'}
         sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
       />
     </Box>

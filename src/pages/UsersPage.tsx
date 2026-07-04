@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -28,11 +29,15 @@ import EmailIcon from '@mui/icons-material/Email';
 import PeopleIcon from '@mui/icons-material/People';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
+import { LabelValue } from '@/shared/components/LabelValue';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
+import { ViewDialog } from '@/shared/components/ViewDialog';
+import { formatAddress } from '@/shared/utils/format';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
@@ -126,7 +131,7 @@ interface CreateUserDialogProps {
 }
 
 function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps) {
-  const [createUser] = useCreateUserMutation();
+  const [createUser, { isLoading }] = useCreateUserMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -176,7 +181,7 @@ function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps)
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create User</DialogTitle>
       <DialogContent>
         <FormBuilder
@@ -203,7 +208,7 @@ interface InviteUserDialogProps {
 }
 
 function InviteUserDialog({ open, onClose, roleOptions }: InviteUserDialogProps) {
-  const [inviteUser] = useInviteUserMutation();
+  const [inviteUser, { isLoading }] = useInviteUserMutation();
   const snackbar = useSnackbar();
 
   const fields = useMemo<FieldConfig[]>(
@@ -244,7 +249,7 @@ function InviteUserDialog({ open, onClose, roleOptions }: InviteUserDialogProps)
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Invite User</DialogTitle>
       <DialogContent>
         <FormBuilder
@@ -272,7 +277,7 @@ interface EditUserDialogProps {
 }
 
 function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProps) {
-  const [updateUser] = useUpdateUserMutation();
+  const [updateUser, { isLoading }] = useUpdateUserMutation();
   const snackbar = useSnackbar();
   const { data: currentUser } = useGetCurrentUserQuery();
   const tenantAddress = currentUser?.tenant?.address ?? null;
@@ -330,9 +335,10 @@ function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProp
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit User</DialogTitle>
       <DialogContent dividers>
+        <LabelValue label="Email" value={user?.email} sx={{ mb: 2 }} />
         <FormBuilder
           key={user?.id}
           schema={editSchema}
@@ -357,11 +363,42 @@ interface PendingAction {
   user: UserDto;
 }
 
+// ─── View dialog ──────────────────────────────────────────────────────────────
+
+function ViewUserDialog({ user, onClose }: { user: UserDto | null; onClose: () => void }) {
+  return (
+    <ViewDialog open={!!user} title="User details" onClose={onClose}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <LabelValue label="Full name" value={user?.fullName} />
+        <LabelValue label="Email" value={user?.email} />
+        <LabelValue
+          label="Roles"
+          value={
+            user?.roles && user.roles.length > 0
+              ? user.roles.map((r) => (
+                  <Chip key={r} label={r} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+                ))
+              : undefined
+          }
+        />
+        <LabelValue label="Status" value={<UserStatusChip isActive={user?.isActive ?? false} />} />
+        <LabelValue
+          label="Created via"
+          value={<CreatedViaChip createdVia={user?.createdVia ?? 'Direct'} />}
+        />
+        <LabelValue label="Address" value={formatAddress(user?.address)} />
+      </Box>
+    </ViewDialog>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function UsersPage() {
   const snackbar = useSnackbar();
 
+  const canList = usePermission('Users.List');
+  const canView = usePermission('Users.View');
   const canCreate = usePermission('Onboarding.Create');
   const canInvite = usePermission('Onboarding.Invite');
   const canEdit = usePermission('Users.Edit');
@@ -383,6 +420,7 @@ export function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserDto | null>(null);
+  const [viewUser, setViewUser] = useState<UserDto | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const [statusFilter, setStatusFilter] = useState('');
@@ -410,12 +448,13 @@ export function UsersPage() {
 
   const { data: rolesData } = useGetRolesQuery();
 
-  const [resendSetup] = useResendUserSetupMutation();
-  const [activateUser] = useActivateUserMutation();
-  const [deactivateUser] = useDeactivateUserMutation();
-  const [deleteUser] = useDeleteUserMutation();
-  const [revokeInvitation] = useRevokeUserInvitationMutation();
-  const [resendInvitation] = useResendUserInvitationMutation();
+  const [resendSetup, { isLoading: isResendingSetup }] = useResendUserSetupMutation();
+  const [activateUser, { isLoading: isActivating }] = useActivateUserMutation();
+  const [deactivateUser, { isLoading: isDeactivating }] = useDeactivateUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [revokeInvitation, { isLoading: isRevoking }] = useRevokeUserInvitationMutation();
+  const [resendInvitation, { isLoading: isResendingInvitation }] =
+    useResendUserInvitationMutation();
 
   const roleOptions = useMemo(
     () => (rolesData?.items ?? []).map((r) => ({ value: r.id, label: r.name })),
@@ -525,6 +564,13 @@ export function UsersPage() {
           const user = row.original;
           return (
             <Box sx={{ display: 'flex', gap: 0.5 }}>
+              {canView && (
+                <Tooltip title="View">
+                  <IconButton size="small" onClick={() => setViewUser(user)}>
+                    <VisibilityIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
               {canEdit && (
                 <Tooltip title="Edit">
                   <IconButton size="small" onClick={() => setEditUser(user)}>
@@ -534,9 +580,19 @@ export function UsersPage() {
               )}
               {canResend && user.hasPendingSetup && (
                 <Tooltip title="Resend setup email">
-                  <IconButton size="small" onClick={() => handleResend(user)}>
-                    <SendIcon fontSize="small" />
-                  </IconButton>
+                  <span>
+                    <IconButton
+                      size="small"
+                      disabled={isResendingSetup}
+                      onClick={() => handleResend(user)}
+                    >
+                      {isResendingSetup ? (
+                        <CircularProgress size={14} />
+                      ) : (
+                        <SendIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </span>
                 </Tooltip>
               )}
               {(canActivate || canDeactivate) && (
@@ -544,7 +600,10 @@ export function UsersPage() {
                   <IconButton
                     size="small"
                     onClick={() =>
-                      setPendingAction({ type: user.isActive ? 'deactivate' : 'activate', user })
+                      setPendingAction({
+                        type: user.isActive ? 'deactivate' : 'activate',
+                        user,
+                      })
                     }
                   >
                     {user.isActive ? (
@@ -572,12 +631,15 @@ export function UsersPage() {
       },
     ],
     [
+      canView,
       canEdit,
       canResend,
       canActivate,
       canDeactivate,
       canDelete,
+      isResendingSetup,
       setEditUser,
+      setViewUser,
       setPendingAction,
       handleResend,
     ],
@@ -604,37 +666,52 @@ export function UsersPage() {
           </Typography>
         ),
       },
-      {
-        header: 'Actions',
-        id: 'actions',
-        cell: ({ row }) => {
-          const inv = row.original;
-          const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-          const canRevokeRow = canRevoke && isPending;
-          const canResendRow = canResend && isPending;
-          if (!canRevokeRow && !canResendRow) return null;
-          return (
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              {canResendRow && (
-                <Tooltip title="Resend invitation">
-                  <IconButton size="small" color="info" onClick={() => handleResendInvitation(inv)}>
-                    <EmailIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {canRevokeRow && (
-                <Tooltip title="Revoke invitation">
-                  <IconButton size="small" color="error" onClick={() => setRevokeTarget(inv)}>
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          );
-        },
-      },
+      ...(canRevoke || canResend
+        ? ([
+            {
+              header: 'Actions',
+              id: 'actions',
+              cell: ({ row }) => {
+                const inv = row.original;
+                const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+                const canRevokeRow = canRevoke && isPending;
+                const canResendRow = canResend && isPending;
+                if (!canRevokeRow && !canResendRow) return null;
+                return (
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    {canResendRow && (
+                      <Tooltip title="Resend invitation">
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="info"
+                            disabled={isResendingInvitation}
+                            onClick={() => handleResendInvitation(inv)}
+                          >
+                            {isResendingInvitation ? (
+                              <CircularProgress size={14} />
+                            ) : (
+                              <EmailIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
+                    {canRevokeRow && (
+                      <Tooltip title="Revoke invitation">
+                        <IconButton size="small" color="error" onClick={() => setRevokeTarget(inv)}>
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                );
+              },
+            },
+          ] as ColumnDef<UserInvitationDto>[])
+        : []),
     ],
-    [canRevoke, canResend, setRevokeTarget, handleResendInvitation],
+    [canRevoke, canResend, isResendingInvitation, setRevokeTarget, handleResendInvitation],
   );
 
   // ── Confirm dialog copy ───────────────────────────────────────────────────────
@@ -650,8 +727,8 @@ export function UsersPage() {
     pendingAction?.type === 'delete'
       ? 'This will permanently remove the user. This action cannot be undone.'
       : pendingAction?.type === 'activate'
-        ? 'The user will be able to log in again.'
-        : 'The user will be unable to log in until reactivated.';
+        ? 'The user will be able to sign in again.'
+        : 'The user will be unable to sign in until reactivated.';
 
   return (
     <TenantContextGuard>
@@ -693,7 +770,12 @@ export function UsersPage() {
         </Tabs>
 
         {/* ── Users tab ── */}
-        {tab === 0 && (
+        {tab === 0 && !canList && (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Typography color="text.secondary">You don't have permission to list users.</Typography>
+          </Box>
+        )}
+        {tab === 0 && canList && (
           <Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
               <TextField
@@ -766,7 +848,14 @@ export function UsersPage() {
         )}
 
         {/* ── Invitations tab ── */}
-        {tab === 1 && (
+        {tab === 1 && !canList && (
+          <Box sx={{ textAlign: 'center', py: 6 }}>
+            <Typography color="text.secondary">
+              You don't have permission to list invitations.
+            </Typography>
+          </Box>
+        )}
+        {tab === 1 && canList && (
           <Box>
             <Box sx={{ mb: 2 }}>
               <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -800,6 +889,7 @@ export function UsersPage() {
         )}
 
         {/* Dialogs */}
+        <ViewUserDialog user={viewUser} onClose={() => setViewUser(null)} />
         <CreateUserDialog
           open={createOpen}
           onClose={() => setCreateOpen(false)}
@@ -829,15 +919,18 @@ export function UsersPage() {
                 : 'Deactivate'
           }
           danger={pendingAction?.type === 'delete'}
+          loading={isActivating || isDeactivating || isDeleting}
           onConfirm={handleConfirmAction}
           onCancel={() => setPendingAction(null)}
         />
 
         <ConfirmDialog
           open={!!revokeTarget}
-          title={`Revoke invitation for ${revokeTarget?.email}?`}
-          description="The invitation link will no longer be valid."
+          title={`Revoke invitation for "${revokeTarget?.email}"?`}
+          description="The invitation link will be invalidated immediately."
           confirmLabel="Revoke"
+          danger
+          loading={isRevoking}
           onConfirm={handleRevokeConfirm}
           onCancel={() => setRevokeTarget(null)}
         />

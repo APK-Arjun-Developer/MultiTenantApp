@@ -93,7 +93,7 @@ export const tenantsApi = apiSlice.injectEndpoints({
         },
         skipTenantHeader: true,
       }),
-      providesTags: ['Tenant'],
+      providesTags: ['Invitation'],
     }),
 
     inviteTenant: builder.mutation<InviteResponse, InviteTenantRequest>({
@@ -103,7 +103,7 @@ export const tenantsApi = apiSlice.injectEndpoints({
         data: body,
         skipTenantHeader: true,
       }),
-      invalidatesTags: ['Tenant'],
+      invalidatesTags: ['Invitation'],
     }),
 
     revokeTenantInvitation: builder.mutation<void, string>({
@@ -112,7 +112,7 @@ export const tenantsApi = apiSlice.injectEndpoints({
         method: 'POST',
         skipTenantHeader: true,
       }),
-      invalidatesTags: ['Tenant'],
+      invalidatesTags: ['Invitation'],
     }),
 
     resendTenantInvitation: builder.mutation<void, string>({
