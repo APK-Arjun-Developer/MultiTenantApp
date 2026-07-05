@@ -29,6 +29,7 @@ import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
@@ -58,7 +59,11 @@ import {
   useRevokeTenantInvitationMutation,
   useResendTenantInvitationMutation,
 } from '@/features/tenants/api/tenantsApi';
-import type { TenantDto, TenantCreationInvitationDto, ApiError } from '@/types/api';
+import {
+  useGetSubscriptionPlansQuery,
+  useUpdateTenantPlanMutation,
+} from '@/features/subscriptions/api/subscriptionsApi';
+import type { TenantDto, TenantCreationInvitationDto, ApiError, PlanType } from '@/types/api';
 
 // ─── Onboard dialog ───────────────────────────────────────────────────────────
 
@@ -325,6 +330,80 @@ function ViewTenantDialog({ tenant, onClose }: ViewTenantDialogProps) {
   );
 }
 
+// ─── Plan badge ───────────────────────────────────────────────────────────────
+
+function PlanBadge({ plan }: { plan?: PlanType | string }) {
+  return (
+    <Chip
+      label={plan ?? 'Free'}
+      color={plan === 'Pro' ? 'primary' : 'default'}
+      size="small"
+      variant={plan === 'Pro' ? 'filled' : 'outlined'}
+    />
+  );
+}
+
+// ─── Change plan dialog ───────────────────────────────────────────────────────
+
+interface ChangePlanDialogProps {
+  tenant: TenantDto | null;
+  onClose: () => void;
+}
+
+function ChangePlanDialog({ tenant, onClose }: ChangePlanDialogProps) {
+  const snackbar = useSnackbar();
+  const { data: plans = [] } = useGetSubscriptionPlansQuery();
+  const [updatePlan, { isLoading }] = useUpdateTenantPlanMutation();
+
+  const planSchema = z.object({
+    planType: z.string().min(1, 'Plan is required'),
+  });
+  type PlanValues = z.infer<typeof planSchema>;
+
+  const planFields: FieldConfig[] = [
+    {
+      name: 'planType',
+      label: 'Subscription plan',
+      type: FIELD_TYPE.SELECT,
+      required: true,
+      defaultValue: tenant?.planType ?? 'Free',
+      options: plans.map((p) => ({
+        label: `${p.name} — Max users: ${p.features.maxUsers === -1 ? 'Unlimited' : p.features.maxUsers}`,
+        value: p.planType,
+      })),
+    },
+  ];
+
+  const onSubmit = async (values: PlanValues) => {
+    if (!tenant) return;
+    try {
+      await updatePlan({ tenantId: tenant.id, planType: values.planType as PlanType }).unwrap();
+      snackbar.success(`Plan updated to ${values.planType} for "${tenant.name}".`);
+      onClose();
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to update plan.');
+    }
+  };
+
+  return (
+    <Dialog open={!!tenant} onClose={isLoading ? undefined : onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Change Plan — {tenant?.name}</DialogTitle>
+      <DialogContent>
+        <FormBuilder
+          key={tenant?.id}
+          schema={planSchema}
+          fields={planFields}
+          onSubmit={onSubmit}
+          onCancel={onClose}
+          submitText="Update plan"
+          cancelText="Cancel"
+          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent', mt: 1 }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Invitation status chip ───────────────────────────────────────────────────
 
 function InvitationStatusChip({ status }: { status: string }) {
@@ -364,6 +443,9 @@ export function TenantsPage() {
   const [viewTenant, setViewTenant] = useState<TenantDto | null>(null);
   const [editTenant, setEditTenant] = useState<TenantDto | null>(null);
   const [deleteTenant, setDeleteTenant] = useState<TenantDto | null>(null);
+  const [changePlanTenant, setChangePlanTenant] = useState<TenantDto | null>(null);
+
+  const canEditSubscription = usePermission('Subscriptions.Edit');
 
   // Invitations tab
   const [invPage, setInvPage] = useState(0);
@@ -449,6 +531,11 @@ export function TenantsPage() {
       ),
     },
     {
+      accessorKey: 'planType',
+      header: 'Plan',
+      cell: ({ row }) => <PlanBadge plan={row.original.planType} />,
+    },
+    {
       accessorKey: 'createdVia',
       header: 'Created via',
       cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
@@ -481,6 +568,17 @@ export function TenantsPage() {
             <Tooltip title="Edit">
               <IconButton size="small" onClick={() => setEditTenant(row.original)}>
                 <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {canEditSubscription && (
+            <Tooltip title="Change plan">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => setChangePlanTenant(row.original)}
+              >
+                <WorkspacePremiumIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
@@ -726,6 +824,7 @@ export function TenantsPage() {
       <InviteTenantDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <ViewTenantDialog tenant={viewTenant} onClose={() => setViewTenant(null)} />
       <EditTenantDialog tenant={editTenant} onClose={() => setEditTenant(null)} />
+      <ChangePlanDialog tenant={changePlanTenant} onClose={() => setChangePlanTenant(null)} />
 
       <ConfirmDialog
         open={!!deleteTenant}

@@ -36,6 +36,9 @@ const TenantAdminsPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 );
+const AuditLogsPage = lazy(() =>
+  import('@/pages/AuditLogsPage').then((m) => ({ default: m.AuditLogsPage })),
+);
 
 export const router = createBrowserRouter([
   {
@@ -77,6 +80,7 @@ export const router = createBrowserRouter([
             children: [
               { path: '/users', handle: { title: 'Users' }, element: <UsersPage /> },
               { path: '/roles', handle: { title: 'Roles' }, element: <RolesPage /> },
+              { path: '/audit-logs', handle: { title: 'Audit Log' }, element: <AuditLogsPage /> },
             ],
           },
 

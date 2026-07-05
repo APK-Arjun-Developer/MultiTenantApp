@@ -242,6 +242,13 @@ export interface DashboardStatsDto {
   totalRoles: number | null;
   /** TenantAdmin only — null for other callers. */
   totalPendingInvitations: number | null;
+  // SystemAdmin chart data
+  freePlanTenants: number | null;
+  proPlanTenants: number | null;
+  // TenantAdmin chart data
+  acceptedInvitations: number | null;
+  expiredInvitations: number | null;
+  revokedInvitations: number | null;
 }
 
 // ---------- Permissions ----------
@@ -275,6 +282,9 @@ export interface TenantDto {
   profileUrl?: string | null;
   address?: AddressDto | null;
   adminEmail?: string | null;
+  planType?: PlanType;
+  planName?: string;
+  planFeatures?: PlanFeaturesDto;
 }
 
 export interface CreatedRoleSummary {
@@ -529,6 +539,70 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+// ---------- Subscriptions ----------
+
+export type PlanType = 'Free' | 'Pro';
+
+export interface PlanFeaturesDto {
+  maxUsers: number;
+  maxStorageMb: number;
+  canAccessReports: boolean;
+  canAccessAdvancedRoles: boolean;
+}
+
+export interface SubscriptionPlanDto {
+  planType: PlanType;
+  name: string;
+  features: PlanFeaturesDto;
+}
+
+export interface UpdateTenantPlanRequest {
+  tenantId: UUID;
+  planType: PlanType;
+}
+
+export interface TenantPlanResponse {
+  tenantId: UUID;
+  tenantName: string;
+  planType: PlanType;
+  planName: string;
+  features: PlanFeaturesDto;
+}
+
+// ---------- Activity Logs ----------
+
+export interface ActivityLogDto {
+  id: UUID;
+  tenantId: UUID;
+  tenantName?: string | null;
+  userId: UUID;
+  userDisplayName: string;
+  userEmail: string;
+  action: string;
+  module: string;
+  description: string;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export interface ActivityLogQueryParams extends PaginationParams {
+  userId?: UUID;
+  module?: string;
+  action?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// ---------- Tenant Settings ----------
+
+export interface UpdateTenantSettingsRequest {
+  name: string;
+  profileFileId?: UUID | null;
+  clearProfileImage?: boolean;
+  address?: AddressRequest;
+  clearAddress?: boolean;
 }
 
 // ---------- Roles ----------

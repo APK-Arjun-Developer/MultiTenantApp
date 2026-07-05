@@ -11,6 +11,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import BusinessIcon from '@mui/icons-material/Business';
 import LockIcon from '@mui/icons-material/Lock';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
@@ -35,7 +36,10 @@ import {
   useRemoveCurrentUserAvatarMutation,
   getUserAvatarUrl,
 } from '@/features/users/api/usersApi';
-import { useUpdateCurrentTenantAddressMutation } from '@/features/tenants/api/tenantsApi';
+import {
+  useGetTenantSettingsQuery,
+  useUpdateTenantSettingsMutation,
+} from '@/features/tenantSettings/api/tenantSettingsApi';
 import type { ApiError } from '@/types/api';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -48,8 +52,11 @@ type ProfileValues = z.infer<typeof profileSchema>;
 const addressSchema = z.object(addressZodShape);
 type AddressValues = z.infer<typeof addressSchema>;
 
-const tenantAddressSchema = z.object(tenantAddressZodShape);
-type TenantAddressValues = z.infer<typeof tenantAddressSchema>;
+const companySchema = z.object({
+  name: z.string().min(1, 'Company name is required').max(200),
+  ...tenantAddressZodShape,
+});
+type CompanyValues = z.infer<typeof companySchema>;
 
 const passwordRule = z
   .string()
@@ -81,12 +88,13 @@ export function ProfilePage() {
 
   const { data: profile, isLoading } = useGetCurrentUserQuery();
   const [updateCurrentUser] = useUpdateCurrentUserMutation();
-  const [updateCurrentTenantAddress] = useUpdateCurrentTenantAddressMutation();
   const [changePassword] = useChangePasswordMutation();
   const [uploadAvatar, { isLoading: avatarUploading }] = useUploadCurrentUserAvatarMutation();
   const [removeAvatar, { isLoading: avatarRemoving }] = useRemoveCurrentUserAvatarMutation();
 
   const isTenantAdmin = profile?.systemRole === 'TenantAdmin';
+  const { data: tenantSettings } = useGetTenantSettingsQuery(undefined, { skip: !isTenantAdmin });
+  const [updateTenantSettings] = useUpdateTenantSettingsMutation();
 
   const initials = profile?.fullName
     ? profile.fullName
@@ -136,9 +144,18 @@ export function ProfilePage() {
 
   const addressFields = useMemo<FieldConfig[]>(() => getAddressFields(profile?.address), [profile]);
 
-  const tenantAddressFields = useMemo<FieldConfig[]>(
-    () => getTenantAddressFields(profile?.tenant?.address),
-    [profile],
+  const companyFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'name',
+        label: 'Company name',
+        type: FIELD_TYPE.TEXT,
+        required: true,
+        defaultValue: tenantSettings?.name ?? '',
+      },
+      ...getTenantAddressFields(tenantSettings?.address),
+    ],
+    [tenantSettings],
   );
 
   const onProfileSubmit = async (values: ProfileValues) => {
@@ -162,12 +179,15 @@ export function ProfilePage() {
     }
   };
 
-  const onTenantAddressSubmit = async (values: TenantAddressValues) => {
+  const onCompanySubmit = async (values: CompanyValues) => {
     try {
-      await updateCurrentTenantAddress(buildTenantAddressPayload(values)).unwrap();
-      snackbar.success('Company address updated.');
+      await updateTenantSettings({
+        name: values.name,
+        ...buildTenantAddressPayload(values),
+      }).unwrap();
+      snackbar.success('Company settings updated.');
     } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to update company address.');
+      snackbar.error((err as ApiError).message || 'Failed to update company settings.');
     }
   };
 
@@ -262,6 +282,9 @@ export function ProfilePage() {
           <Tab label="Profile" icon={<AccountCircleIcon fontSize="small" />} iconPosition="start" />
           <Tab label="Address" icon={<LocationOnIcon fontSize="small" />} iconPosition="start" />
           <Tab label="Security" icon={<LockIcon fontSize="small" />} iconPosition="start" />
+          {isTenantAdmin && (
+            <Tab label="Company" icon={<BusinessIcon fontSize="small" />} iconPosition="start" />
+          )}
         </Tabs>
 
         <Box sx={{ p: 3 }}>
@@ -284,9 +307,6 @@ export function ProfilePage() {
           {/* ── Tab 1: Address ── */}
           {tab === 1 && (
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
-                {isTenantAdmin ? 'My address' : 'Address'}
-              </Typography>
               <FormBuilder
                 key={`address-${profile?.id}`}
                 schema={addressSchema}
@@ -295,28 +315,6 @@ export function ProfilePage() {
                 submitText="Save address"
                 sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
               />
-
-              {isTenantAdmin && profile?.tenant && (
-                <>
-                  <Divider sx={{ my: 3 }} />
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      Company address
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {profile.tenant.name}
-                    </Typography>
-                  </Box>
-                  <FormBuilder
-                    key={`tenant-address-${profile.id}`}
-                    schema={tenantAddressSchema}
-                    fields={tenantAddressFields}
-                    onSubmit={onTenantAddressSubmit}
-                    submitText="Save company address"
-                    sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
-                  />
-                </>
-              )}
             </Box>
           )}
 
@@ -328,6 +326,18 @@ export function ProfilePage() {
               fields={passwordFields}
               onSubmit={onPasswordSubmit}
               submitText="Change password"
+              sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+            />
+          )}
+
+          {/* ── Tab 3: Company (TenantAdmin only) ── */}
+          {tab === 3 && isTenantAdmin && (
+            <FormBuilder
+              key={`company-${tenantSettings?.id}`}
+              schema={companySchema}
+              fields={companyFields}
+              onSubmit={onCompanySubmit}
+              submitText="Save company settings"
               sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
             />
           )}

@@ -14,6 +14,9 @@ export const apiSlice = createApi({
     'Permission',
     'Invitation',
     'File',
+    'ActivityLog',
+    'Subscription',
+    'TenantSettings',
   ],
   endpoints: () => ({}),
 });

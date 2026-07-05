@@ -34,6 +34,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import HistoryIcon from '@mui/icons-material/History';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleIcon from '@mui/icons-material/People';
@@ -69,6 +70,14 @@ const NAV_ITEMS: NavItem[] = [
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
     permission: 'Roles.View',
   },
+  // Audit log (TenantAdmin + SystemAdmin with tenant picker)
+  {
+    text: 'Audit Log',
+    icon: <HistoryIcon />,
+    path: '/audit-logs',
+    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+    permission: 'AuditLogs.View',
+  },
   // Platform management (SystemAdmin only)
   {
     text: 'Tenants',
@@ -93,7 +102,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 // Pages where SystemAdmin needs the TenantPicker to select a tenant context
-const TENANT_CONTEXT_PATHS = ['/users', '/roles'];
+const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/audit-logs'];
 
 function PageLoader() {
   return (
