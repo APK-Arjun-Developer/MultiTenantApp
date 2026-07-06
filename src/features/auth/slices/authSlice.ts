@@ -1,13 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
-import type { AuthUser } from '@/types/api';
+import type { AuthUser, ImpersonatedByInfo } from '@/types/api';
 
 interface AuthState {
   user: AuthUser | null;
   permissions: string[];
   permissionsLoaded: boolean;
   isAuthenticated: boolean;
+  isImpersonating: boolean;
+  impersonatedBy: ImpersonatedByInfo | null;
 }
 
 const USER_KEY = 'auth.user';
@@ -28,6 +30,8 @@ const initialState: AuthState = {
   permissions: [],
   permissionsLoaded: false,
   isAuthenticated: Boolean(storedUser),
+  isImpersonating: false,
+  impersonatedBy: null,
 };
 
 const authSlice = createSlice({
@@ -37,6 +41,8 @@ const authSlice = createSlice({
     login: (state, action: PayloadAction<AuthUser>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
+      state.isImpersonating = false;
+      state.impersonatedBy = null;
       localStorage.setItem(USER_KEY, JSON.stringify(action.payload));
     },
     logout: (state) => {
@@ -44,19 +50,43 @@ const authSlice = createSlice({
       state.permissions = [];
       state.permissionsLoaded = false;
       state.isAuthenticated = false;
+      state.isImpersonating = false;
+      state.impersonatedBy = null;
       localStorage.removeItem(USER_KEY);
     },
     setPermissions: (state, action: PayloadAction<string[]>) => {
       state.permissions = action.payload;
       state.permissionsLoaded = true;
     },
+    setImpersonation: (
+      state,
+      action: PayloadAction<{ user: AuthUser; impersonatedBy: ImpersonatedByInfo }>,
+    ) => {
+      state.user = action.payload.user;
+      state.isImpersonating = true;
+      state.impersonatedBy = action.payload.impersonatedBy;
+      state.permissions = [];
+      state.permissionsLoaded = false;
+      localStorage.setItem(USER_KEY, JSON.stringify(action.payload.user));
+    },
+    clearImpersonation: (state, action: PayloadAction<AuthUser>) => {
+      state.user = action.payload;
+      state.isImpersonating = false;
+      state.impersonatedBy = null;
+      state.permissions = [];
+      state.permissionsLoaded = false;
+      localStorage.setItem(USER_KEY, JSON.stringify(action.payload));
+    },
   },
 });
 
-export const { login, logout, setPermissions } = authSlice.actions;
+export const { login, logout, setPermissions, setImpersonation, clearImpersonation } =
+  authSlice.actions;
 export default authSlice.reducer;
 
 export const selectCurrentUser = (state: RootState) => state.auth.user;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectPermissions = (state: RootState) => state.auth.permissions;
 export const selectPermissionsLoaded = (state: RootState) => state.auth.permissionsLoaded;
+export const selectIsImpersonating = (state: RootState) => state.auth.isImpersonating;
+export const selectImpersonatedBy = (state: RootState) => state.auth.impersonatedBy;

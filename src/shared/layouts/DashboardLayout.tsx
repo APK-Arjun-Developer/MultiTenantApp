@@ -9,13 +9,21 @@ import {
   selectCurrentUser,
   selectPermissions,
   selectPermissionsLoaded,
+  selectIsImpersonating,
+  selectImpersonatedBy,
 } from '@/features/auth/slices/authSlice';
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
 import { useGetCurrentUserQuery, getUserAvatarUrl } from '@/features/users/api/usersApi';
-import type { SystemRole } from '@/types/api';
+import { useStopImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
+import { authApi } from '@/features/auth/api/authApi';
+import { apiSlice } from '@/shared/api/apiSlice';
+import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import type { ApiError } from '@/types/api';
+import Alert from '@mui/material/Alert';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
@@ -121,6 +129,10 @@ export function DashboardLayout() {
   const permissions = useAppSelector(selectPermissions);
   const permissionsLoaded = useAppSelector(selectPermissionsLoaded);
   const isSystemAdmin = user?.systemRole === 'SystemAdmin';
+  const isImpersonating = useAppSelector(selectIsImpersonating);
+  const impersonatedBy = useAppSelector(selectImpersonatedBy);
+  const snackbar = useSnackbar();
+  const [stopImpersonation, { isLoading: isStopping }] = useStopImpersonationMutation();
 
   usePageTitle();
 
@@ -144,6 +156,17 @@ export function DashboardLayout() {
 
   const handleThemeToggle = () => dispatch(toggleTheme());
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
+
+  const handleStopImpersonation = async () => {
+    try {
+      await stopImpersonation().unwrap();
+      dispatch(apiSlice.util.resetApiState());
+      dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
+      snackbar.success('Impersonation ended. Back to admin session.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to stop impersonation.');
+    }
+  };
 
   const initials = user?.fullName
     ? user.fullName
@@ -281,6 +304,27 @@ export function DashboardLayout() {
           mt: '64px',
         }}
       >
+        {isImpersonating && impersonatedBy && (
+          <Alert
+            severity="warning"
+            sx={{ mb: 2, borderRadius: 2 }}
+            action={
+              <Button
+                color="warning"
+                size="small"
+                variant="outlined"
+                disabled={isStopping}
+                onClick={handleStopImpersonation}
+              >
+                {isStopping ? <CircularProgress size={14} sx={{ mr: 0.5 }} /> : null}
+                Stop Impersonation
+              </Button>
+            }
+          >
+            Impersonating <strong>{user?.fullName}</strong> ({user?.email}) — admin:{' '}
+            <strong>{impersonatedBy.fullName}</strong>
+          </Alert>
+        )}
         <Suspense fallback={<PageLoader />}>
           <AnimatePresence mode="wait" initial={false}>
             <PageTransition motionKey={location.pathname}>

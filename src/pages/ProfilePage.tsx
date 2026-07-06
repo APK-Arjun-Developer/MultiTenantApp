@@ -39,6 +39,9 @@ import {
 import {
   useGetTenantSettingsQuery,
   useUpdateTenantSettingsMutation,
+  useUploadTenantLogoMutation,
+  useRemoveTenantLogoMutation,
+  getTenantLogoUrl,
 } from '@/features/tenantSettings/api/tenantSettingsApi';
 import type { ApiError } from '@/types/api';
 
@@ -95,6 +98,8 @@ export function ProfilePage() {
   const isTenantAdmin = profile?.systemRole === 'TenantAdmin';
   const { data: tenantSettings } = useGetTenantSettingsQuery(undefined, { skip: !isTenantAdmin });
   const [updateTenantSettings] = useUpdateTenantSettingsMutation();
+  const [uploadTenantLogo, { isLoading: logoUploading }] = useUploadTenantLogoMutation();
+  const [removeTenantLogo, { isLoading: logoRemoving }] = useRemoveTenantLogoMutation();
 
   const initials = profile?.fullName
     ? profile.fullName
@@ -176,6 +181,28 @@ export function ProfilePage() {
       snackbar.success('Address updated.');
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to update address.');
+    }
+  };
+
+  const tenantLogoSrc = tenantSettings?.profileFileId
+    ? getTenantLogoUrl(tenantSettings.profileFileId)
+    : null;
+
+  const onTenantLogoUpload = async (file: File) => {
+    try {
+      await uploadTenantLogo(file).unwrap();
+      snackbar.success('Company logo updated.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to upload company logo.');
+    }
+  };
+
+  const onTenantLogoRemove = async () => {
+    try {
+      await removeTenantLogo().unwrap();
+      snackbar.success('Company logo removed.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to remove company logo.');
     }
   };
 
@@ -332,14 +359,35 @@ export function ProfilePage() {
 
           {/* ── Tab 3: Company (TenantAdmin only) ── */}
           {tab === 3 && isTenantAdmin && (
-            <FormBuilder
-              key={`company-${tenantSettings?.id}`}
-              schema={companySchema}
-              fields={companyFields}
-              onSubmit={onCompanySubmit}
-              submitText="Save company settings"
-              sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
-            />
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                <AvatarUpload
+                  src={tenantLogoSrc}
+                  initials={tenantSettings?.name?.[0]?.toUpperCase() ?? '?'}
+                  size={64}
+                  uploading={logoUploading || logoRemoving}
+                  onFileSelect={onTenantLogoUpload}
+                  onRemove={tenantLogoSrc ? onTenantLogoRemove : undefined}
+                />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Company logo
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Square image recommended
+                  </Typography>
+                </Box>
+              </Box>
+              <Divider sx={{ mb: 3 }} />
+              <FormBuilder
+                key={`company-${tenantSettings?.id}`}
+                schema={companySchema}
+                fields={companyFields}
+                onSubmit={onCompanySubmit}
+                submitText="Save company settings"
+                sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+              />
+            </Box>
           )}
         </Box>
       </Paper>

@@ -1,12 +1,14 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type { TenantDto, UpdateTenantSettingsRequest } from '@/types/api';
 
+export function getTenantLogoUrl(tenantId: string): string {
+  return `/api/v1/files/${tenantId}/download`;
+}
+
 export const tenantSettingsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTenantSettings: builder.query<TenantDto, void>({
-      query: () => ({
-        url: '/api/v1/tenant-settings',
-      }),
+      query: () => ({ url: '/api/v1/tenant-settings' }),
       providesTags: ['TenantSettings'],
     }),
 
@@ -18,7 +20,26 @@ export const tenantSettingsApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['TenantSettings', 'Tenant'],
     }),
+
+    uploadTenantLogo: builder.mutation<TenantDto, File>({
+      query: (file) => {
+        const form = new FormData();
+        form.append('file', file);
+        return { url: '/api/v1/tenant-settings/logo', method: 'POST', data: form };
+      },
+      invalidatesTags: ['TenantSettings', 'Tenant'],
+    }),
+
+    removeTenantLogo: builder.mutation<TenantDto, void>({
+      query: () => ({ url: '/api/v1/tenant-settings/logo', method: 'DELETE' }),
+      invalidatesTags: ['TenantSettings', 'Tenant'],
+    }),
   }),
 });
 
-export const { useGetTenantSettingsQuery, useUpdateTenantSettingsMutation } = tenantSettingsApi;
+export const {
+  useGetTenantSettingsQuery,
+  useUpdateTenantSettingsMutation,
+  useUploadTenantLogoMutation,
+  useRemoveTenantLogoMutation,
+} = tenantSettingsApi;

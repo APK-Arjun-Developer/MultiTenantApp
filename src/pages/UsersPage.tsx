@@ -1,6 +1,7 @@
 ﻿import { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -19,6 +20,7 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import DownloadIcon from '@mui/icons-material/Download';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -29,6 +31,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import PeopleIcon from '@mui/icons-material/People';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
@@ -38,6 +41,7 @@ import { LabelValue } from '@/shared/components/LabelValue';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { ViewDialog } from '@/shared/components/ViewDialog';
 import { formatAddress } from '@/shared/utils/format';
+import { exportToCsv } from '@/shared/utils/exportCsv';
 import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
@@ -48,6 +52,12 @@ import {
   getSameAsCompanyField,
   buildAddressPayload,
 } from '@/shared/forms/addressFields';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { selectCurrentUser } from '@/features/auth/slices/authSlice';
+import { useGetTenantSettingsQuery } from '@/features/tenantSettings/api/tenantSettingsApi';
+import { useStartImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
+import { authApi } from '@/features/auth/api/authApi';
+import { apiSlice } from '@/shared/api/apiSlice';
 import { useGetCurrentUserQuery } from '@/features/users/api/usersApi';
 import { useGetRolesQuery } from '@/features/roles/api/rolesApi';
 import {
@@ -397,6 +407,11 @@ function ViewUserDialog({ user, onClose }: { user: UserDto | null; onClose: () =
 export function UsersPage() {
   const snackbar = useSnackbar();
 
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const isTenantAdmin = currentUser?.systemRole === 'TenantAdmin';
+  const { data: tenantSettings } = useGetTenantSettingsQuery(undefined, { skip: !isTenantAdmin });
+
   const canList = usePermission('Users.List');
   const canView = usePermission('Users.View');
   const canCreate = usePermission('Onboarding.Create');
@@ -448,6 +463,8 @@ export function UsersPage() {
 
   const { data: rolesData } = useGetRolesQuery();
 
+  const [startImpersonation, { isLoading: isImpersonating }] = useStartImpersonationMutation();
+
   const [resendSetup, { isLoading: isResendingSetup }] = useResendUserSetupMutation();
   const [activateUser, { isLoading: isActivating }] = useActivateUserMutation();
   const [deactivateUser, { isLoading: isDeactivating }] = useDeactivateUserMutation();
@@ -461,6 +478,12 @@ export function UsersPage() {
     [rolesData],
   );
 
+  const [exportLoading, setExportLoading] = useState(false);
+
+  const maxUsers = tenantSettings?.planFeatures?.maxUsers ?? -1;
+  const totalUsers = usersData?.totalCount ?? 0;
+  const atUserLimit = maxUsers !== -1 && totalUsers >= maxUsers;
+
   // ── Handlers ────────────────────────────────────────────────────────────────
 
   const handleResend = useCallback(
@@ -473,6 +496,22 @@ export function UsersPage() {
       }
     },
     [resendSetup, snackbar],
+  );
+
+  const handleImpersonate = useCallback(
+    async (user: UserDto) => {
+      try {
+        await startImpersonation({ targetUserId: user.id }).unwrap();
+        // Reset cached data (admin's data shouldn't show for impersonated user)
+        dispatch(apiSlice.util.resetApiState());
+        // getMe refetch picks up the new cookie and sets impersonation state + permissions
+        dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
+        snackbar.success(`Now impersonating ${user.fullName}.`);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to start impersonation.');
+      }
+    },
+    [startImpersonation, dispatch, snackbar],
   );
 
   const handleConfirmAction = async () => {
@@ -553,6 +592,15 @@ export function UsersPage() {
         cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
       },
       {
+        header: 'Last login',
+        accessorKey: 'lastLoginAt',
+        cell: ({ row }) => (
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            {row.original.lastLoginAt ? new Date(row.original.lastLoginAt).toLocaleString() : '—'}
+          </Typography>
+        ),
+      },
+      {
         header: 'Status',
         accessorKey: 'isActive',
         cell: ({ row }) => <UserStatusChip isActive={row.original.isActive} />,
@@ -614,6 +662,20 @@ export function UsersPage() {
                   </IconButton>
                 </Tooltip>
               )}
+              {currentUser?.systemRole === 'SystemAdmin' && user.isActive && (
+                <Tooltip title="Impersonate user">
+                  <span>
+                    <IconButton
+                      size="small"
+                      color="secondary"
+                      disabled={isImpersonating}
+                      onClick={() => handleImpersonate(user)}
+                    >
+                      <SupervisorAccountIcon fontSize="small" />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              )}
               {canDelete && (
                 <Tooltip title="Delete">
                   <IconButton
@@ -638,10 +700,10 @@ export function UsersPage() {
       canDeactivate,
       canDelete,
       isResendingSetup,
-      setEditUser,
-      setViewUser,
-      setPendingAction,
+      isImpersonating,
+      currentUser,
       handleResend,
+      handleImpersonate,
     ],
   );
 
@@ -730,6 +792,30 @@ export function UsersPage() {
         ? 'The user will be able to sign in again.'
         : 'The user will be unable to sign in until reactivated.';
 
+  const handleExportUsers = async () => {
+    setExportLoading(true);
+    try {
+      const { usersApi } = await import('@/features/users/api/usersApi');
+      const result = await dispatch(
+        usersApi.endpoints.getUsers.initiate({ page: 1, pageSize: 5000 }),
+      );
+      const items = ('data' in result ? result.data?.items : null) ?? usersData?.items ?? [];
+      exportToCsv(
+        'users',
+        items.map((u) => ({
+          Name: u.fullName,
+          Email: u.email,
+          Roles: u.roles.join('; '),
+          Status: u.isActive ? 'Active' : 'Inactive',
+          'Last Login': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '',
+          'Created Via': u.createdVia,
+        })),
+      );
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <TenantContextGuard>
       <Box>
@@ -743,25 +829,55 @@ export function UsersPage() {
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {canInvite && (
-              <Button
-                variant="outlined"
-                startIcon={<SendIcon />}
-                onClick={() => setInviteOpen(true)}
+              <Tooltip
+                title={
+                  atUserLimit
+                    ? `User limit reached (${maxUsers} on ${tenantSettings?.planName} plan)`
+                    : ''
+                }
               >
-                Invite
-              </Button>
+                <span>
+                  <Button
+                    variant="outlined"
+                    startIcon={<SendIcon />}
+                    disabled={atUserLimit}
+                    onClick={() => setInviteOpen(true)}
+                  >
+                    Invite
+                  </Button>
+                </span>
+              </Tooltip>
             )}
             {canCreate && (
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setCreateOpen(true)}
+              <Tooltip
+                title={
+                  atUserLimit
+                    ? `User limit reached (${maxUsers} on ${tenantSettings?.planName} plan)`
+                    : ''
+                }
               >
-                Create user
-              </Button>
+                <span>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    disabled={atUserLimit}
+                    onClick={() => setCreateOpen(true)}
+                  >
+                    Create user
+                  </Button>
+                </span>
+              </Tooltip>
             )}
           </Box>
         </Box>
+
+        {/* Plan limit banner */}
+        {atUserLimit && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            You've reached the <strong>{maxUsers}-user limit</strong> on the{' '}
+            <strong>{tenantSettings?.planName}</strong> plan. Upgrade to Pro to add more users.
+          </Alert>
+        )}
 
         {/* Tabs */}
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
@@ -777,7 +893,7 @@ export function UsersPage() {
         )}
         {tab === 0 && canList && (
           <Box>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'center' }}>
               <TextField
                 size="small"
                 placeholder="Search users"
@@ -834,6 +950,21 @@ export function UsersPage() {
                   <MenuItem value="Invitation">Invitation</MenuItem>
                 </Select>
               </FormControl>
+              <Box sx={{ ml: 'auto' }}>
+                <Tooltip title="Export to CSV">
+                  <span>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={exportLoading ? <CircularProgress size={14} /> : <DownloadIcon />}
+                      disabled={exportLoading || !usersData?.items?.length}
+                      onClick={handleExportUsers}
+                    >
+                      Export CSV
+                    </Button>
+                  </span>
+                </Tooltip>
+              </Box>
             </Box>
             <DataTable
               columns={userColumns}

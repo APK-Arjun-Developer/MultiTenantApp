@@ -107,6 +107,7 @@ export interface AuthUser {
   roles: string[];
   systemRole?: SystemRole | null;
   permissions?: string[];
+  impersonatedBy?: ImpersonatedByInfo | null;
 }
 
 export interface LoginResponse {
@@ -464,6 +465,7 @@ export interface UserDto {
   address?: AddressDto | null;
   tenant?: UserTenantDetails | null;
   createdVia: UserCreatedVia;
+  lastLoginAt?: string | null;
   hasPendingSetup: boolean;
 }
 
@@ -603,6 +605,35 @@ export interface UpdateTenantSettingsRequest {
   clearProfileImage?: boolean;
   address?: AddressRequest;
   clearAddress?: boolean;
+}
+
+// ---------- Impersonation ----------
+
+export interface StartImpersonationRequest {
+  targetUserId: UUID;
+}
+
+export interface StartImpersonationResponse {
+  userId: UUID;
+  email: string;
+  fullName: string;
+  systemRole: SystemRole;
+  roles: string[];
+  expiresAt: string;
+}
+
+export interface StopImpersonationResponse {
+  userId: UUID;
+  email: string;
+  fullName: string;
+  systemRole: SystemRole;
+  expiresAt: string;
+}
+
+export interface ImpersonatedByInfo {
+  id: UUID;
+  email: string;
+  fullName: string;
 }
 
 // ---------- Roles ----------
