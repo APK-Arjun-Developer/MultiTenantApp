@@ -70,13 +70,12 @@ const NAV_ITEMS: NavItem[] = [
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
     permission: 'Roles.View',
   },
-  // Audit log (TenantAdmin + SystemAdmin with tenant picker)
+  // Audit log (SystemAdmin only)
   {
     text: 'Audit Log',
     icon: <HistoryIcon />,
     path: '/audit-logs',
-    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
-    permission: 'AuditLogs.View',
+    allowedRoles: ['SystemAdmin'],
   },
   // Platform management (SystemAdmin only)
   {

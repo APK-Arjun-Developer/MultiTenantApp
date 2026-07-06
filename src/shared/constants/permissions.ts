@@ -11,7 +11,6 @@ export const PERMISSIONS = {
   TENANTS_DELETE: 'Tenants.Delete',
   SUBSCRIPTIONS_VIEW: 'Subscriptions.View',
   SUBSCRIPTIONS_EDIT: 'Subscriptions.Edit',
-  AUDIT_LOGS_VIEW: 'AuditLogs.View',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

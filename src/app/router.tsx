@@ -80,7 +80,6 @@ export const router = createBrowserRouter([
             children: [
               { path: '/users', handle: { title: 'Users' }, element: <UsersPage /> },
               { path: '/roles', handle: { title: 'Roles' }, element: <RolesPage /> },
-              { path: '/audit-logs', handle: { title: 'Audit Log' }, element: <AuditLogsPage /> },
             ],
           },
 
@@ -94,6 +93,7 @@ export const router = createBrowserRouter([
                 handle: { title: 'Tenant Admins' },
                 element: <TenantAdminsPage />,
               },
+              { path: '/audit-logs', handle: { title: 'Audit Log' }, element: <AuditLogsPage /> },
             ],
           },
         ],
