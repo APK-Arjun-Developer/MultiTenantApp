@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -16,8 +15,10 @@ import {
   type FormBuilderHandle,
 } from 'mui-schema-form-builder';
 import { useValidateResetTokenQuery, useResetPasswordMutation } from '@/features/auth/api/authApi';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -177,7 +178,18 @@ export function ResetPasswordPage() {
         schema={schema}
         fields={resetFields}
         onSubmit={onSubmit}
-        submitText={isResetting ? 'Resetting…' : 'Reset password'}
+        renderActions={({ isSubmitting }) => (
+          <LoadingButton
+            type="submit"
+            loading={isSubmitting || isResetting}
+            variant="contained"
+            fullWidth
+            size="large"
+            sx={{ mt: 1 }}
+          >
+            Reset password
+          </LoadingButton>
+        )}
         sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
       />
 

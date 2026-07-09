@@ -30,10 +30,13 @@ import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import Avatar from '@mui/material/Avatar';
 import { DataTable } from '@/shared/components/DataTable';
-import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
+import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { LabelValue } from '@/shared/components/LabelValue';
 import { ViewDialog } from '@/shared/components/ViewDialog';
 import { formatAddress } from '@/shared/utils/format';
@@ -58,11 +61,14 @@ import {
   useInviteTenantMutation,
   useRevokeTenantInvitationMutation,
   useResendTenantInvitationMutation,
+  useUploadTenantLogoByAdminMutation,
+  useRemoveTenantLogoByAdminMutation,
 } from '@/features/tenants/api/tenantsApi';
 import {
   useGetSubscriptionPlansQuery,
   useUpdateTenantPlanMutation,
 } from '@/features/subscriptions/api/subscriptionsApi';
+import { getTenantLogoUrl } from '@/features/tenantSettings/api/tenantSettingsApi';
 import type { TenantDto, TenantCreationInvitationDto, ApiError, PlanType } from '@/types/api';
 
 // ─── Onboard dialog ───────────────────────────────────────────────────────────
@@ -85,32 +91,35 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
   const [onboardTenant, { isLoading }] = useOnboardTenantMutation();
   const snackbar = useSnackbar();
 
-  const fields = useMemo<FieldConfig[]>(
+  const adminFields = useMemo<FieldConfig[]>(
     () => [
-      {
-        name: 'tenantName',
-        label: 'Tenant name',
-        type: FIELD_TYPE.TEXT,
-        section: 'Tenant details',
-        required: true,
-      },
-      ...getTenantAddressFields(undefined, 'Company Address', true),
       {
         name: 'adminFullName',
         label: 'Full name',
         type: FIELD_TYPE.TEXT,
-        section: 'Admin Details',
         required: true,
       },
       {
         name: 'adminEmail',
         label: 'Email address',
         type: FIELD_TYPE.TEXT,
-        section: 'Admin Details',
         required: true,
         muiProps: { type: 'email', helperText: 'Account setup email will be sent here' },
       },
       ...getAddressFields(undefined, 'Admin Address', true),
+    ],
+    [],
+  );
+
+  const tenantFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'tenantName',
+        label: 'Tenant name',
+        type: FIELD_TYPE.TEXT,
+        required: true,
+      },
+      ...getTenantAddressFields(undefined, 'Company Address', true),
     ],
     [],
   );
@@ -145,14 +154,43 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>New Tenant</DialogTitle>
       <DialogContent dividers>
-        <FormBuilder
+        <FormWizard
           key={open ? 'open' : 'closed'}
           schema={onboardSchema}
-          fields={fields}
+          steps={[
+            {
+              label: 'Admin details',
+              description: 'Admin name, email, and address',
+              fields: adminFields,
+            },
+            {
+              label: 'Tenant details',
+              description: 'Company name and address',
+              fields: tenantFields,
+            },
+          ]}
           onSubmit={onSubmit}
-          onCancel={onClose}
-          submitText="Create tenant"
-          cancelText="Cancel"
+          renderActions={({ isSubmitting, isLastStep, isFirstStep, next, back }) => (
+            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+              <Button
+                type="button"
+                onClick={isFirstStep ? onClose : back}
+                variant="outlined"
+                sx={{ flex: 1 }}
+              >
+                {isFirstStep ? 'Cancel' : 'Back'}
+              </Button>
+              <LoadingButton
+                type={isLastStep ? 'submit' : 'button'}
+                loading={isSubmitting || (isLastStep && isLoading)}
+                onClick={isLastStep ? undefined : next}
+                variant="contained"
+                sx={{ flex: 1 }}
+              >
+                {isLastStep ? 'Create tenant' : 'Next'}
+              </LoadingButton>
+            </Box>
+          )}
           sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
         />
       </DialogContent>
@@ -444,6 +482,7 @@ export function TenantsPage() {
   const [editTenant, setEditTenant] = useState<TenantDto | null>(null);
   const [deleteTenant, setDeleteTenant] = useState<TenantDto | null>(null);
   const [changePlanTenant, setChangePlanTenant] = useState<TenantDto | null>(null);
+  const [logoTenant, setLogoTenant] = useState<TenantDto | null>(null);
 
   const canEditSubscription = usePermission('Subscriptions.Edit');
 
@@ -477,6 +516,8 @@ export function TenantsPage() {
   const [revokeTenantInvitation, { isLoading: isRevoking }] = useRevokeTenantInvitationMutation();
   const [resendTenantInvitation, { isLoading: isResendingInvitation }] =
     useResendTenantInvitationMutation();
+  const [uploadTenantLogo, { isLoading: isUploadingLogo }] = useUploadTenantLogoByAdminMutation();
+  const [removeTenantLogo, { isLoading: isRemovingLogo }] = useRemoveTenantLogoByAdminMutation();
 
   const tenants = data?.items ?? [];
   const totalCount = data?.totalCount ?? 0;
@@ -513,7 +554,48 @@ export function TenantsPage() {
     }
   };
 
+  const handleUploadLogo = async (file: File) => {
+    if (!logoTenant) return;
+    try {
+      const updated = await uploadTenantLogo({ tenantId: logoTenant.id, file }).unwrap();
+      setLogoTenant(updated);
+      snackbar.success('Company logo updated.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to upload logo.');
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!logoTenant) return;
+    try {
+      const updated = await removeTenantLogo(logoTenant.id).unwrap();
+      setLogoTenant(updated);
+      snackbar.success('Company logo removed.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to remove logo.');
+    }
+  };
+
   const tenantColumns: ColumnDef<TenantDto>[] = [
+    {
+      id: 'logo',
+      header: '',
+      size: 48,
+      cell: ({ row }) => {
+        const logoSrc = row.original.profileFileId
+          ? getTenantLogoUrl(row.original.profileFileId)
+          : undefined;
+        return (
+          <Avatar
+            src={logoSrc}
+            sx={{ width: 36, height: 36, cursor: 'pointer', fontSize: 14 }}
+            onClick={() => setLogoTenant(row.original)}
+          >
+            {row.original.name.charAt(0).toUpperCase()}
+          </Avatar>
+        );
+      },
+    },
     {
       accessorKey: 'name',
       header: 'Name',
@@ -825,6 +907,17 @@ export function TenantsPage() {
       <ViewTenantDialog tenant={viewTenant} onClose={() => setViewTenant(null)} />
       <EditTenantDialog tenant={editTenant} onClose={() => setEditTenant(null)} />
       <ChangePlanDialog tenant={changePlanTenant} onClose={() => setChangePlanTenant(null)} />
+
+      <AvatarManageModal
+        open={!!logoTenant}
+        onClose={() => setLogoTenant(null)}
+        src={logoTenant?.profileFileId ? getTenantLogoUrl(logoTenant.profileFileId) : null}
+        initials={logoTenant?.name?.charAt(0)?.toUpperCase() ?? '?'}
+        title="Company logo"
+        uploading={isUploadingLogo || isRemovingLogo}
+        onUpload={handleUploadLogo}
+        onRemove={logoTenant?.profileFileId ? handleRemoveLogo : undefined}
+      />
 
       <ConfirmDialog
         open={!!deleteTenant}

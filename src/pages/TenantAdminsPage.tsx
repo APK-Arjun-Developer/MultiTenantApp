@@ -30,9 +30,12 @@ import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import Avatar from '@mui/material/Avatar';
 import { DataTable } from '@/shared/components/DataTable';
+import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
 import { LabelValue } from '@/shared/components/LabelValue';
@@ -64,6 +67,16 @@ import {
   useRevokeInvitationMutation,
   useResendInvitationMutation,
 } from '@/features/tenantAdmins/api/tenantAdminsApi';
+import { useStartImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
+import {
+  useUploadUserAvatarByAdminMutation,
+  useRemoveUserAvatarByAdminMutation,
+  getUserAvatarUrl,
+} from '@/features/users/api/usersApi';
+import { selectCurrentUser } from '@/features/auth/slices/authSlice';
+import { apiSlice } from '@/shared/api/apiSlice';
+import { authApi } from '@/features/auth/api/authApi';
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import type { TenantAdminDto, TenantAdminInvitationDto, AddressDto, ApiError } from '@/types/api';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -348,6 +361,8 @@ type ActionType = 'delete' | 'activate' | 'deactivate';
 
 export function TenantAdminsPage() {
   const snackbar = useSnackbar();
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectCurrentUser);
 
   const canList = usePermission('Tenants.List');
   const canView = usePermission('Tenants.View');
@@ -375,6 +390,7 @@ export function TenantAdminsPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [viewAdmin, setViewAdmin] = useState<TenantAdminDto | null>(null);
   const [editAdmin, setEditAdmin] = useState<TenantAdminDto | null>(null);
+  const [avatarAdmin, setAvatarAdmin] = useState<TenantAdminDto | null>(null);
   const [pendingAction, setPendingAction] = useState<{
     type: ActionType;
     admin: TenantAdminDto;
@@ -416,8 +432,52 @@ export function TenantAdminsPage() {
   const [revokeInvitation, { isLoading: isRevoking }] = useRevokeInvitationMutation();
   const [resendInvitationMutation, { isLoading: isResendingInvitation }] =
     useResendInvitationMutation();
+  const [startImpersonation, { isLoading: isImpersonating }] = useStartImpersonationMutation();
+  const [uploadUserAvatar, { isLoading: isUploadingAvatar }] = useUploadUserAvatarByAdminMutation();
+  const [removeUserAvatar, { isLoading: isRemovingAvatar }] = useRemoveUserAvatarByAdminMutation();
 
   const isActioning = isDeleting || isActivating || isDeactivating;
+
+  const handleUploadAvatar = async (file: File) => {
+    if (!avatarAdmin) return;
+    try {
+      const updated = await uploadUserAvatar({ userId: avatarAdmin.id, file }).unwrap();
+      setAvatarAdmin({
+        ...avatarAdmin,
+        profileFileId: updated.profileFileId,
+        profileUrl: updated.profileUrl,
+      });
+      snackbar.success('Profile picture updated.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!avatarAdmin) return;
+    try {
+      const updated = await removeUserAvatar(avatarAdmin.id).unwrap();
+      setAvatarAdmin({
+        ...avatarAdmin,
+        profileFileId: updated.profileFileId,
+        profileUrl: updated.profileUrl,
+      });
+      snackbar.success('Profile picture removed.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
+    }
+  };
+
+  const handleImpersonate = async (admin: TenantAdminDto) => {
+    try {
+      await startImpersonation({ targetUserId: admin.id, tenantId: admin.tenantId }).unwrap();
+      dispatch(apiSlice.util.resetApiState());
+      dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
+      snackbar.success(`Now impersonating ${admin.fullName}.`);
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to start impersonation.');
+    }
+  };
 
   const tenantIdOptions = useMemo(
     () => tenantsData?.items.map((t) => ({ value: t.id, label: t.name })) ?? [],
@@ -480,6 +540,30 @@ export function TenantAdminsPage() {
 
   const adminColumns: ColumnDef<TenantAdminDto>[] = [
     {
+      id: 'avatar',
+      header: '',
+      cell: ({ row }) => {
+        const admin = row.original;
+        const initials = admin.fullName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase();
+        return (
+          <Tooltip title="Manage profile photo">
+            <Avatar
+              src={admin.profileFileId ? getUserAvatarUrl(admin.id) : undefined}
+              sx={{ width: 36, height: 36, cursor: 'pointer', fontSize: '0.875rem' }}
+              onClick={() => setAvatarAdmin(admin)}
+            >
+              {initials}
+            </Avatar>
+          </Tooltip>
+        );
+      },
+    },
+    {
       accessorKey: 'fullName',
       header: 'Admin',
       cell: ({ row }) => (
@@ -529,6 +613,20 @@ export function TenantAdminsPage() {
       header: '',
       cell: ({ row }) => (
         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+          {currentUser?.systemRole === 'SystemAdmin' && row.original.isActive && (
+            <Tooltip title="Impersonate admin">
+              <span>
+                <IconButton
+                  size="small"
+                  color="secondary"
+                  disabled={isImpersonating}
+                  onClick={() => handleImpersonate(row.original)}
+                >
+                  <SupervisorAccountIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          )}
           {canView && (
             <Tooltip title="View">
               <IconButton size="small" onClick={() => setViewAdmin(row.original)}>
@@ -881,6 +979,26 @@ export function TenantAdminsPage() {
         admin={editAdmin}
         tenantAddress={editTenantAddress}
         onClose={() => setEditAdmin(null)}
+      />
+
+      <AvatarManageModal
+        open={!!avatarAdmin}
+        onClose={() => setAvatarAdmin(null)}
+        src={avatarAdmin?.profileFileId ? getUserAvatarUrl(avatarAdmin.id) : null}
+        initials={
+          avatarAdmin
+            ? avatarAdmin.fullName
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()
+            : ''
+        }
+        title={`Profile photo — ${avatarAdmin?.fullName ?? ''}`}
+        uploading={isUploadingAvatar || isRemovingAvatar}
+        onUpload={handleUploadAvatar}
+        onRemove={avatarAdmin?.profileFileId ? handleRemoveAvatar : undefined}
       />
 
       <ConfirmDialog

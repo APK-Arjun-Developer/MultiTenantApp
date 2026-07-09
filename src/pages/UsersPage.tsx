@@ -20,7 +20,6 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import DownloadIcon from '@mui/icons-material/Download';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -36,6 +35,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
 import { LabelValue } from '@/shared/components/LabelValue';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
@@ -953,15 +953,15 @@ export function UsersPage() {
               <Box sx={{ ml: 'auto' }}>
                 <Tooltip title="Export to CSV">
                   <span>
-                    <Button
+                    <LoadingButton
                       variant="outlined"
                       size="small"
-                      startIcon={exportLoading ? <CircularProgress size={14} /> : <DownloadIcon />}
-                      disabled={exportLoading || !usersData?.items?.length}
+                      loading={exportLoading}
+                      disabled={!usersData?.items?.length}
                       onClick={handleExportUsers}
                     >
                       Export CSV
-                    </Button>
+                    </LoadingButton>
                   </span>
                 </Tooltip>
               </Box>

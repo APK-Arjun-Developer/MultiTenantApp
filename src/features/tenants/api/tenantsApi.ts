@@ -122,6 +122,29 @@ export const tenantsApi = apiSlice.injectEndpoints({
         skipTenantHeader: true,
       }),
     }),
+
+    uploadTenantLogoByAdmin: builder.mutation<TenantDto, { tenantId: string; file: File }>({
+      query: ({ tenantId, file }) => {
+        const form = new FormData();
+        form.append('file', file);
+        return {
+          url: `/api/v1/tenants/${tenantId}/logo`,
+          method: 'POST',
+          data: form,
+          skipTenantHeader: true,
+        };
+      },
+      invalidatesTags: ['Tenant'],
+    }),
+
+    removeTenantLogoByAdmin: builder.mutation<TenantDto, string>({
+      query: (tenantId) => ({
+        url: `/api/v1/tenants/${tenantId}/logo`,
+        method: 'DELETE',
+        skipTenantHeader: true,
+      }),
+      invalidatesTags: ['Tenant'],
+    }),
   }),
 });
 
@@ -135,4 +158,6 @@ export const {
   useInviteTenantMutation,
   useRevokeTenantInvitationMutation,
   useResendTenantInvitationMutation,
+  useUploadTenantLogoByAdminMutation,
+  useRemoveTenantLogoByAdminMutation,
 } = tenantsApi;

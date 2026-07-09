@@ -183,6 +183,28 @@ export const usersApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
+
+    uploadUserAvatarByAdmin: builder.mutation<UserDto, { userId: string; file: File }>({
+      query: ({ userId, file }) => {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        return {
+          url: `/api/v1/users/${userId}/avatar`,
+          method: 'POST',
+          data: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        };
+      },
+      invalidatesTags: ['User'],
+    }),
+
+    removeUserAvatarByAdmin: builder.mutation<UserDto, string>({
+      query: (userId) => ({
+        url: `/api/v1/users/${userId}/avatar`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -203,6 +225,8 @@ export const {
   useChangePasswordMutation,
   useUploadCurrentUserAvatarMutation,
   useRemoveCurrentUserAvatarMutation,
+  useUploadUserAvatarByAdminMutation,
+  useRemoveUserAvatarByAdminMutation,
 } = usersApi;
 
 export function getUserAvatarUrl(userId: string): string {

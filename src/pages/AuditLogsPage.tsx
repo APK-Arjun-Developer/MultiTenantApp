@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -11,14 +9,17 @@ import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import DownloadIcon from '@mui/icons-material/Download';
 import HistoryIcon from '@mui/icons-material/History';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { DataTable } from '@/shared/components/DataTable';
 import { exportToCsv } from '@/shared/utils/exportCsv';
 import { useDebounce } from '@/shared/hooks';
 import { useAppDispatch } from '@/app/hooks';
-import { useGetActivityLogsQuery } from '@/features/activityLogs/api/activityLogsApi';
+import {
+  activityLogsApi,
+  useGetActivityLogsQuery,
+} from '@/features/activityLogs/api/activityLogsApi';
 import type { ActivityLogDto } from '@/types/api';
 
 const MODULE_OPTIONS = [
@@ -140,7 +141,6 @@ export function AuditLogsPage() {
   const handleExport = async () => {
     setExportLoading(true);
     try {
-      const { activityLogsApi } = await import('@/features/activityLogs/api/activityLogsApi');
       const result = await dispatch(
         activityLogsApi.endpoints.getActivityLogs.initiate({
           page: 1,
@@ -180,15 +180,15 @@ export function AuditLogsPage() {
           </Box>
           <Tooltip title="Export to CSV">
             <span>
-              <Button
+              <LoadingButton
                 variant="outlined"
                 size="small"
-                startIcon={exportLoading ? <CircularProgress size={14} /> : <DownloadIcon />}
-                disabled={exportLoading || !data?.items?.length}
+                loading={exportLoading}
+                disabled={!data?.items?.length}
                 onClick={handleExport}
               >
                 Export CSV
-              </Button>
+              </LoadingButton>
             </span>
           </Tooltip>
         </Box>

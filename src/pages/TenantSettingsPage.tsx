@@ -10,6 +10,7 @@ import {
   getAddressFields,
   buildAddressPayload,
 } from '@/shared/forms/addressFields';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
   useGetTenantSettingsQuery,
@@ -79,7 +80,16 @@ export function TenantSettingsPage() {
         schema={settingsSchema}
         fields={fields}
         onSubmit={onSubmit}
-        submitText={isSaving ? 'Saving…' : 'Save changes'}
+        renderActions={({ isSubmitting }) => (
+          <LoadingButton
+            type="submit"
+            loading={isSubmitting || isSaving}
+            variant="contained"
+            sx={{ mt: 1 }}
+          >
+            Save changes
+          </LoadingButton>
+        )}
         sx={{ boxShadow: 1 }}
       />
     </Box>

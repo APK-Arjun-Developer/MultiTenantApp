@@ -3,8 +3,6 @@ import { Link, Navigate } from 'react-router-dom';
 import { z } from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import InputBase from '@mui/material/InputBase';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -24,6 +22,7 @@ import {
   useVerifyEmailMutation,
   useResendVerificationMutation,
 } from '@/features/auth/api/authApi';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
@@ -247,7 +246,18 @@ export function LoginPage() {
               schema={loginSchema}
               fields={loginFields}
               onSubmit={onLoginSubmit}
-              submitText={isLoggingIn ? 'Signing in…' : 'Sign in'}
+              renderActions={({ isSubmitting }) => (
+                <LoadingButton
+                  type="submit"
+                  loading={isSubmitting || isLoggingIn}
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  sx={{ mt: 1 }}
+                >
+                  Sign in
+                </LoadingButton>
+              )}
               sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
             />
 
@@ -295,21 +305,26 @@ export function LoginPage() {
                 . Enter it below to confirm your address.
               </Typography>
 
-              <Stack spacing={3}>
+              <Stack
+                component="form"
+                spacing={3}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onVerifySubmit();
+                }}
+              >
                 <OtpInput value={otp} onChange={setOtp} disabled={isVerifying} />
 
-                <Button
+                <LoadingButton
+                  type="submit"
                   variant="contained"
                   fullWidth
                   size="large"
-                  disabled={otp.length !== OTP_LENGTH || isVerifying}
-                  onClick={onVerifySubmit}
-                  startIcon={
-                    isVerifying ? <CircularProgress size={16} color="inherit" /> : undefined
-                  }
+                  disabled={otp.length !== OTP_LENGTH}
+                  loading={isVerifying}
                 >
-                  {isVerifying ? 'Verifying…' : 'Verify email'}
-                </Button>
+                  Verify email
+                </LoadingButton>
 
                 <Box sx={{ textAlign: 'center' }}>
                   {cooldown > 0 ? (
@@ -320,17 +335,15 @@ export function LoginPage() {
                       </Box>
                     </Typography>
                   ) : (
-                    <Button
+                    <LoadingButton
+                      type="button"
                       variant="text"
                       size="small"
-                      disabled={isResending}
+                      loading={isResending}
                       onClick={() => sendOtp(pendingEmail)}
-                      startIcon={
-                        isResending ? <CircularProgress size={14} color="inherit" /> : undefined
-                      }
                     >
-                      {isResending ? 'Sending…' : 'Resend code'}
-                    </Button>
+                      Resend code
+                    </LoadingButton>
                   )}
                 </Box>
               </Stack>

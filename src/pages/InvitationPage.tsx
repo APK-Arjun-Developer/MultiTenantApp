@@ -4,7 +4,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -18,6 +17,7 @@ import {
   useAcceptTenantUserInvitationMutation,
   useAcceptTenantCreationInvitationMutation,
 } from '@/features/auth/api/authApi';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
   requiredAddressZodShape,
@@ -28,6 +28,7 @@ import {
   buildTenantAddressPayload,
 } from '@/shared/forms/addressFields';
 import type { AcceptInvitationResponse, ApiError } from '@/types/api';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -351,7 +352,30 @@ export function InvitationPage() {
             },
           ]}
           onSubmit={onSubmitNewTenant}
-          submitText={isSubmitting ? 'Creating account…' : 'Create tenant & account'}
+          renderActions={({
+            isSubmitting: formSubmitting,
+            isLastStep,
+            isFirstStep,
+            next,
+            back,
+          }) => (
+            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+              {!isFirstStep && (
+                <Button type="button" onClick={back} variant="outlined" sx={{ flex: 1 }}>
+                  Back
+                </Button>
+              )}
+              <LoadingButton
+                type={isLastStep ? 'submit' : 'button'}
+                loading={formSubmitting || (isLastStep && isSubmitting)}
+                onClick={isLastStep ? undefined : next}
+                variant="contained"
+                sx={{ flex: 1 }}
+              >
+                {isLastStep ? 'Create tenant & account' : 'Next'}
+              </LoadingButton>
+            </Box>
+          )}
           sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
         />
       </Box>
@@ -408,7 +432,24 @@ export function InvitationPage() {
           },
         ]}
         onSubmit={onSubmit}
-        submitText={isSubmitting ? 'Creating account…' : 'Create account'}
+        renderActions={({ isSubmitting: formSubmitting, isLastStep, isFirstStep, next, back }) => (
+          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+            {!isFirstStep && (
+              <Button type="button" onClick={back} variant="outlined" sx={{ flex: 1 }}>
+                Back
+              </Button>
+            )}
+            <LoadingButton
+              type={isLastStep ? 'submit' : 'button'}
+              loading={formSubmitting || (isLastStep && isSubmitting)}
+              onClick={isLastStep ? undefined : next}
+              variant="contained"
+              sx={{ flex: 1 }}
+            >
+              {isLastStep ? 'Create account' : 'Next'}
+            </LoadingButton>
+          </Box>
+        )}
         sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
       />
     </Box>

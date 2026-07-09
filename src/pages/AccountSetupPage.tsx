@@ -11,6 +11,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
   requiredAddressZodShape,
@@ -28,9 +29,9 @@ const passwordRule = z
   .regex(/[0-9]/, 'Must include a number')
   .regex(/[^A-Za-z0-9]/, 'Must include a special character');
 
-const passwordOnlySchema = z
+// Direct creation: admin already set the name — only need passwords.
+const directPasswordSchema = z
   .object({
-    fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
@@ -39,6 +40,7 @@ const passwordOnlySchema = z
     path: ['confirmPassword'],
   });
 
+// Invitation flow: user sets their own name + address.
 const fullSetupSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
@@ -51,7 +53,7 @@ const fullSetupSchema = z
     path: ['confirmPassword'],
   });
 
-type PasswordOnlyValues = z.infer<typeof passwordOnlySchema>;
+type DirectPasswordValues = z.infer<typeof directPasswordSchema>;
 type FullSetupValues = z.infer<typeof fullSetupSchema>;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -123,6 +125,25 @@ export function AccountSetupPage() {
 
   const [result, setResult] = useState<SetPasswordResponse | null>(null);
 
+  // Password-only fields (direct creation — admin already set full name)
+  const passwordFields: FieldConfig[] = [
+    {
+      name: 'password',
+      label: 'New password',
+      type: FIELD_TYPE.PASSWORD,
+      required: true,
+      muiProps: { autoComplete: 'new-password', autoFocus: true },
+    },
+    {
+      name: 'confirmPassword',
+      label: 'Confirm password',
+      type: FIELD_TYPE.PASSWORD,
+      required: true,
+      muiProps: { autoComplete: 'new-password' },
+    },
+  ];
+
+  // Full account fields (invitation flow — user must set their own name)
   const accountFields: FieldConfig[] = [
     {
       name: 'fullName',
@@ -150,13 +171,12 @@ export function AccountSetupPage() {
 
   const addressFields: FieldConfig[] = getAddressFields(undefined, undefined, true);
 
-  const onSubmitPasswordOnly = async (values: PasswordOnlyValues) => {
+  const onSubmitDirect = async (values: DirectPasswordValues) => {
     try {
       const response = await setPassword({
         token,
         password: values.password,
         confirmPassword: values.confirmPassword,
-        fullName: values.fullName,
       }).unwrap();
       setResult(response);
     } catch (err) {
@@ -216,24 +236,35 @@ export function AccountSetupPage() {
     </Box>
   );
 
-  // Direct-creation flow: address was already provided by the admin.
+  // Direct-creation flow: address and name were already provided by the admin.
   if (validation.hasAddress) {
     return (
       <Box>
         {header}
         <FormBuilder
           key={token}
-          schema={passwordOnlySchema}
-          fields={accountFields}
-          onSubmit={onSubmitPasswordOnly}
-          submitText={isSubmitting ? 'Activating…' : 'Activate account'}
+          schema={directPasswordSchema}
+          fields={passwordFields}
+          onSubmit={onSubmitDirect}
+          renderActions={({ isSubmitting: formSubmitting }) => (
+            <LoadingButton
+              type="submit"
+              loading={formSubmitting || isSubmitting}
+              variant="contained"
+              fullWidth
+              size="large"
+              sx={{ mt: 1 }}
+            >
+              Activate account
+            </LoadingButton>
+          )}
           sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
         />
       </Box>
     );
   }
 
-  // Invitation flow: user needs to provide address too.
+  // Invitation flow: user needs to provide name and address too.
   return (
     <Box>
       {header}
@@ -253,7 +284,24 @@ export function AccountSetupPage() {
           },
         ]}
         onSubmit={onSubmitFull}
-        submitText={isSubmitting ? 'Activating…' : 'Activate account'}
+        renderActions={({ isSubmitting: formSubmitting, isLastStep, next, back, isFirstStep }) => (
+          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+            {!isFirstStep && (
+              <Button type="button" onClick={back} variant="outlined" sx={{ flex: 1 }}>
+                Back
+              </Button>
+            )}
+            <LoadingButton
+              type={isLastStep ? 'submit' : 'button'}
+              loading={formSubmitting || (isLastStep && isSubmitting)}
+              onClick={isLastStep ? undefined : next}
+              variant="contained"
+              sx={{ flex: 1 }}
+            >
+              {isLastStep ? 'Activate account' : 'Next'}
+            </LoadingButton>
+          </Box>
+        )}
         sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
       />
     </Box>

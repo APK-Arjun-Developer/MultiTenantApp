@@ -18,7 +18,7 @@ import { useStopImpersonationMutation } from '@/features/impersonation/api/imper
 import { authApi } from '@/features/auth/api/authApi';
 import { apiSlice } from '@/shared/api/apiSlice';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import type { ApiError } from '@/types/api';
+import type { ApiError, SystemRole } from '@/types/api';
 import Alert from '@mui/material/Alert';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';

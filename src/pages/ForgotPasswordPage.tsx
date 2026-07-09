@@ -11,6 +11,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EmailIcon from '@mui/icons-material/Email';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
+import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
@@ -78,7 +79,18 @@ export function ForgotPasswordPage() {
               schema={schema}
               fields={fields}
               onSubmit={onSubmit}
-              submitText={isLoading ? 'Sending…' : 'Send reset link'}
+              renderActions={({ isSubmitting }) => (
+                <LoadingButton
+                  type="submit"
+                  loading={isSubmitting || isLoading}
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  sx={{ mt: 1 }}
+                >
+                  Send reset link
+                </LoadingButton>
+              )}
               sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
             />
 

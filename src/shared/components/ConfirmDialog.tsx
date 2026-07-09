@@ -1,10 +1,10 @@
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
+import { LoadingButton } from './LoadingButton';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -41,15 +41,14 @@ export function ConfirmDialog({
         <Button onClick={onCancel} disabled={loading}>
           Cancel
         </Button>
-        <Button
+        <LoadingButton
           onClick={onConfirm}
           variant="contained"
           color={danger ? 'error' : 'primary'}
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={14} color="inherit" /> : undefined}
+          loading={loading}
         >
           {confirmLabel}
-        </Button>
+        </LoadingButton>
       </DialogActions>
     </Dialog>
   );
