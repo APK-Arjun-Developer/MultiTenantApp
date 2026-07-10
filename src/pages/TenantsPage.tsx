@@ -187,7 +187,7 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
                 variant="contained"
                 sx={{ flex: 1 }}
               >
-                {isLastStep ? 'Create tenant' : 'Next'}
+                {isLastStep ? 'Create' : 'Next'}
               </LoadingButton>
             </Box>
           )}

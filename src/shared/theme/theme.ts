@@ -29,6 +29,28 @@ export function buildTheme(mode: 'light' | 'dark') {
       borderRadius: 8,
     },
     components: {
+      MuiCssBaseline: {
+        styleOverrides: (theme) => ({
+          '*': {
+            scrollbarWidth: 'thin',
+            scrollbarColor: `${theme.palette.action.disabled} transparent`,
+          },
+          '*::-webkit-scrollbar': {
+            width: 2,
+            height: 2,
+          },
+          '*::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: theme.palette.action.disabled,
+            borderRadius: 3,
+          },
+          '*::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: theme.palette.action.active,
+          },
+        }),
+      },
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {

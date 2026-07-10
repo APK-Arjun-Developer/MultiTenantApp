@@ -446,7 +446,7 @@ export function InvitationPage() {
               variant="contained"
               sx={{ flex: 1 }}
             >
-              {isLastStep ? 'Create account' : 'Next'}
+              {isLastStep ? 'Create' : 'Next'}
             </LoadingButton>
           </Box>
         )}

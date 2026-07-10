@@ -280,7 +280,6 @@ export interface TenantDto {
   isActive: boolean;
   createdVia: UserCreatedVia;
   profileFileId?: UUID | null;
-  profileUrl?: string | null;
   address?: AddressDto | null;
   adminEmail?: string | null;
   planType?: PlanType;
@@ -383,7 +382,6 @@ export interface TenantAdminDto {
   isActive: boolean;
   roles: string[];
   profileFileId?: UUID | null;
-  profileUrl?: string | null;
   address?: AddressDto | null;
   tenant?: TenantAdminTenantDetails | null;
   createdVia: UserCreatedVia;
@@ -448,7 +446,6 @@ export interface UserTenantDetails {
   name: string;
   isActive: boolean;
   profileFileId?: UUID | null;
-  profileUrl?: string | null;
   address?: AddressDto | null;
 }
 
@@ -461,7 +458,6 @@ export interface UserDto {
   isActive: boolean;
   roles: string[];
   profileFileId?: UUID | null;
-  profileUrl?: string | null;
   address?: AddressDto | null;
   tenant?: UserTenantDetails | null;
   createdVia: UserCreatedVia;

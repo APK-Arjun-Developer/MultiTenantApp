@@ -445,7 +445,6 @@ export function TenantAdminsPage() {
       setAvatarAdmin({
         ...avatarAdmin,
         profileFileId: updated.profileFileId,
-        profileUrl: updated.profileUrl,
       });
       snackbar.success('Profile picture updated.');
     } catch (err) {
@@ -460,7 +459,6 @@ export function TenantAdminsPage() {
       setAvatarAdmin({
         ...avatarAdmin,
         profileFileId: updated.profileFileId,
-        profileUrl: updated.profileUrl,
       });
       snackbar.success('Profile picture removed.');
     } catch (err) {

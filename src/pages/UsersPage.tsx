@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Alert from '@mui/material/Alert';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -34,6 +35,7 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
+import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
@@ -72,6 +74,9 @@ import {
   useGetUserInvitationsQuery,
   useRevokeUserInvitationMutation,
   useResendUserInvitationMutation,
+  useUploadUserAvatarByAdminMutation,
+  useRemoveUserAvatarByAdminMutation,
+  getUserAvatarUrl,
 } from '@/features/users/api/usersApi';
 import type { UserDto, UserInvitationDto, ApiError } from '@/types/api';
 
@@ -436,6 +441,7 @@ export function UsersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserDto | null>(null);
   const [viewUser, setViewUser] = useState<UserDto | null>(null);
+  const [avatarUser, setAvatarUser] = useState<UserDto | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const [statusFilter, setStatusFilter] = useState('');
@@ -472,6 +478,8 @@ export function UsersPage() {
   const [revokeInvitation, { isLoading: isRevoking }] = useRevokeUserInvitationMutation();
   const [resendInvitation, { isLoading: isResendingInvitation }] =
     useResendUserInvitationMutation();
+  const [uploadUserAvatar, { isLoading: isUploadingAvatar }] = useUploadUserAvatarByAdminMutation();
+  const [removeUserAvatar, { isLoading: isRemovingAvatar }] = useRemoveUserAvatarByAdminMutation();
 
   const roleOptions = useMemo(
     () => (rolesData?.items ?? []).map((r) => ({ value: r.id, label: r.name })),
@@ -559,10 +567,63 @@ export function UsersPage() {
     [resendInvitation, snackbar],
   );
 
+  const handleUploadAvatar = async (file: File) => {
+    if (!avatarUser) return;
+    try {
+      const updated = await uploadUserAvatar({ userId: avatarUser.id, file }).unwrap();
+      setAvatarUser({ ...avatarUser, profileFileId: updated.profileFileId });
+      snackbar.success('Profile picture updated.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!avatarUser) return;
+    try {
+      const updated = await removeUserAvatar(avatarUser.id).unwrap();
+      setAvatarUser({ ...avatarUser, profileFileId: updated.profileFileId });
+      snackbar.success('Profile picture removed.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
+    }
+  };
+
   // ── Table columns ────────────────────────────────────────────────────────────
 
   const userColumns = useMemo<ColumnDef<UserDto>[]>(
     () => [
+      {
+        id: 'avatar',
+        header: '',
+        cell: ({ row }) => {
+          const user = row.original;
+          const initials = user.fullName
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase();
+          return canEdit ? (
+            <Tooltip title="Manage profile photo">
+              <Avatar
+                src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
+                sx={{ width: 36, height: 36, cursor: 'pointer', fontSize: '0.875rem' }}
+                onClick={() => setAvatarUser(user)}
+              >
+                {initials}
+              </Avatar>
+            </Tooltip>
+          ) : (
+            <Avatar
+              src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
+              sx={{ width: 36, height: 36, fontSize: '0.875rem' }}
+            >
+              {initials}
+            </Avatar>
+          );
+        },
+      },
       {
         header: 'User',
         accessorKey: 'fullName',
@@ -704,6 +765,7 @@ export function UsersPage() {
       currentUser,
       handleResend,
       handleImpersonate,
+      setAvatarUser,
     ],
   );
 
@@ -1020,6 +1082,25 @@ export function UsersPage() {
         )}
 
         {/* Dialogs */}
+        <AvatarManageModal
+          open={!!avatarUser}
+          onClose={() => setAvatarUser(null)}
+          src={avatarUser?.profileFileId ? getUserAvatarUrl(avatarUser.id) : null}
+          initials={
+            avatarUser
+              ? avatarUser.fullName
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .slice(0, 2)
+                  .toUpperCase()
+              : ''
+          }
+          title={`Profile photo — ${avatarUser?.fullName ?? ''}`}
+          uploading={isUploadingAvatar || isRemovingAvatar}
+          onUpload={handleUploadAvatar}
+          onRemove={avatarUser?.profileFileId ? handleRemoveAvatar : undefined}
+        />
         <ViewUserDialog user={viewUser} onClose={() => setViewUser(null)} />
         <CreateUserDialog
           open={createOpen}
