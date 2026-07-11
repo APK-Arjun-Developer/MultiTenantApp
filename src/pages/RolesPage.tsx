@@ -3,27 +3,19 @@ import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { LabelValue } from '@/shared/components/LabelValue';
@@ -257,9 +249,11 @@ export function RolesPage() {
   const canEdit = usePermission('Roles.Edit');
   const canDelete = usePermission('Roles.Delete');
 
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
-  const [permissionFilter, setPermissionFilter] = useState<string[]>([]);
+  const [rolesFilter, setRolesFilter] = useState<{ search: string; permissions: string[] }>({
+    search: '',
+    permissions: [],
+  });
+  const debouncedSearch = useDebounce(rolesFilter.search, 400);
   const [page, setPage] = useState(0);
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -267,21 +261,42 @@ export function RolesPage() {
   const [viewRole, setViewRole] = useState<RoleDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RoleDto | null>(null);
 
-  const { data: rolesData, isLoading } = useGetRolesQuery({
-    page: page + 1,
-    pageSize: 20,
-    search: debouncedSearch || undefined,
-    permissionIds: permissionFilter.length > 0 ? permissionFilter : undefined,
-  });
-
   const { data: permissionsData } = useGetPermissionsQuery();
-
-  const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
   const permissionOptions = useMemo(
     () => (permissionsData?.items ?? []).map((p) => ({ value: p.id, label: p.name })),
     [permissionsData],
   );
+
+  const rolesFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'search',
+        label: 'Search',
+        type: FIELD_TYPE.SEARCH,
+        placeholder: 'Search roles…',
+        grid: { xs: 12, sm: 6 },
+      },
+      {
+        name: 'permissions',
+        label: 'Filter by permission',
+        type: FIELD_TYPE.SELECT,
+        multiple: true,
+        options: permissionOptions,
+        grid: { xs: 12, sm: 6 },
+      },
+    ],
+    [permissionOptions],
+  );
+
+  const { data: rolesData, isLoading } = useGetRolesQuery({
+    page: page + 1,
+    pageSize: 20,
+    search: debouncedSearch || undefined,
+    permissionIds: rolesFilter.permissions.length > 0 ? rolesFilter.permissions : undefined,
+  });
+
+  const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -391,65 +406,17 @@ export function RolesPage() {
         </Box>
 
         {/* Search + Permission filter */}
-        <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
-          <TextField
-            size="small"
-            placeholder="Search roles"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+        <Box sx={{ mb: 2 }}>
+          <FilterForm
+            fields={rolesFilterFields}
+            defaultValues={{ search: '', permissions: [] }}
+            onChange={(values) => {
+              setRolesFilter(values as typeof rolesFilter);
               setPage(0);
             }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-                endAdornment: search ? (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setSearch('')}>
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ) : null,
-              },
-            }}
-            sx={{ width: 260 }}
+            showReset
+            spacing={2}
           />
-          <Select
-            multiple
-            size="small"
-            displayEmpty
-            value={permissionFilter}
-            onChange={(e) => {
-              setPermissionFilter(e.target.value as string[]);
-              setPage(0);
-            }}
-            renderValue={(selected) => {
-              if (selected.length === 0) {
-                return (
-                  <Typography variant="body2" color="text.disabled">
-                    Filter by permission
-                  </Typography>
-                );
-              }
-              return <Chip label={`${selected.length} selected`} size="small" />;
-            }}
-            sx={{ width: 320 }}
-          >
-            {permissionOptions.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value} dense>
-                <Checkbox
-                  checked={permissionFilter.includes(opt.value)}
-                  size="small"
-                  sx={{ p: 0, mr: 1 }}
-                />
-                <ListItemText primary={opt.label} />
-              </MenuItem>
-            ))}
-          </Select>
         </Box>
 
         {!canList ? (

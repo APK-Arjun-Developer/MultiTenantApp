@@ -10,15 +10,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
@@ -29,11 +23,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
 import PeopleIcon from '@mui/icons-material/People';
-import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
@@ -432,8 +425,8 @@ export function UsersPage() {
   const [tab, setTab] = useState(0);
 
   // Users tab state
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
+  const [userFilter, setUserFilter] = useState({ search: '', status: '', createdVia: '' });
+  const debouncedSearch = useDebounce(userFilter.search, 400);
   const [usersPage, setUsersPage] = useState(0);
 
   // Dialogs
@@ -444,21 +437,73 @@ export function UsersPage() {
   const [avatarUser, setAvatarUser] = useState<UserDto | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
-  const [statusFilter, setStatusFilter] = useState('');
-  const [createdViaFilter, setCreatedViaFilter] = useState('');
-
   // Invitations tab state
   const [invStatusFilter, setInvStatusFilter] = useState('');
   const [invitationsPage, setInvitationsPage] = useState(0);
   const [revokeTarget, setRevokeTarget] = useState<UserInvitationDto | null>(null);
 
   // API
+  const userFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'search',
+        label: 'Search',
+        type: FIELD_TYPE.SEARCH,
+        placeholder: 'Search users…',
+        grid: { xs: 12, sm: 5 },
+      },
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Active', value: 'active' },
+          { label: 'Inactive', value: 'inactive' },
+        ],
+        grid: { xs: 6, sm: 3 },
+      },
+      {
+        name: 'createdVia',
+        label: 'Created via',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Direct', value: 'Direct' },
+          { label: 'Invitation', value: 'Invitation' },
+        ],
+        grid: { xs: 6, sm: 4 },
+      },
+    ],
+    [],
+  );
+
+  const invFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Pending', value: 'pending' },
+          { label: 'Accepted', value: 'accepted' },
+          { label: 'Expired', value: 'expired' },
+          { label: 'Revoked', value: 'revoked' },
+        ],
+        grid: { xs: 12, sm: 4 },
+      },
+    ],
+    [],
+  );
+
   const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
     page: usersPage + 1,
     pageSize: 20,
     search: debouncedSearch || undefined,
-    isActive: statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined,
-    createdVia: (createdViaFilter as 'Direct' | 'Invitation') || undefined,
+    isActive:
+      userFilter.status === 'active' ? true : userFilter.status === 'inactive' ? false : undefined,
+    createdVia: (userFilter.createdVia as 'Direct' | 'Invitation') || undefined,
   });
 
   const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
@@ -955,64 +1000,18 @@ export function UsersPage() {
         )}
         {tab === 0 && canList && (
           <Box>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'center' }}>
-              <TextField
-                size="small"
-                placeholder="Search users"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
+            <Box sx={{ mb: 2 }}>
+              <FilterForm
+                fields={userFilterFields}
+                defaultValues={{ search: '', status: '', createdVia: '' }}
+                onChange={(values) => {
+                  setUserFilter(values as typeof userFilter);
                   setUsersPage(0);
                 }}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: search ? (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setSearch('')}>
-                          <ClearIcon fontSize="small" />
-                        </IconButton>
-                      </InputAdornment>
-                    ) : null,
-                  },
-                }}
-                sx={{ width: 240 }}
+                showReset
+                spacing={2}
               />
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status"
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setUsersPage(0);
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl size="small" sx={{ minWidth: 150 }}>
-                <InputLabel>Created via</InputLabel>
-                <Select
-                  value={createdViaFilter}
-                  label="Created via"
-                  onChange={(e) => {
-                    setCreatedViaFilter(e.target.value);
-                    setUsersPage(0);
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="Direct">Direct</MenuItem>
-                  <MenuItem value="Invitation">Invitation</MenuItem>
-                </Select>
-              </FormControl>
-              <Box sx={{ ml: 'auto' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                 <Tooltip title="Export to CSV">
                   <span>
                     <LoadingButton
@@ -1051,23 +1050,16 @@ export function UsersPage() {
         {tab === 1 && canList && (
           <Box>
             <Box sx={{ mb: 2 }}>
-              <FormControl size="small" sx={{ minWidth: 160 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={invStatusFilter}
-                  label="Status"
-                  onChange={(e) => {
-                    setInvStatusFilter(e.target.value);
-                    setInvitationsPage(0);
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="accepted">Accepted</MenuItem>
-                  <MenuItem value="expired">Expired</MenuItem>
-                  <MenuItem value="revoked">Revoked</MenuItem>
-                </Select>
-              </FormControl>
+              <FilterForm
+                fields={invFilterFields}
+                defaultValues={{ status: '' }}
+                onChange={(values) => {
+                  setInvStatusFilter((values.status as string) ?? '');
+                  setInvitationsPage(0);
+                }}
+                showReset
+                spacing={2}
+              />
             </Box>
             <DataTable
               columns={invitationColumns}

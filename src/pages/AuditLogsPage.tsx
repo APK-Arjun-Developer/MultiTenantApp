@@ -1,15 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import HistoryIcon from '@mui/icons-material/History';
+import { FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { DataTable } from '@/shared/components/DataTable';
@@ -123,17 +119,43 @@ export function AuditLogsPage() {
   const dispatch = useAppDispatch();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [moduleFilter, setModuleFilter] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [auditFilter, setAuditFilter] = useState({ module: '', dateFrom: '', dateTo: '' });
   const [exportLoading, setExportLoading] = useState(false);
-  const debouncedDateFrom = useDebounce(dateFrom, 500);
-  const debouncedDateTo = useDebounce(dateTo, 500);
+  const debouncedDateFrom = useDebounce(auditFilter.dateFrom, 500);
+  const debouncedDateTo = useDebounce(auditFilter.dateTo, 500);
+
+  const auditFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'module',
+        label: 'Module',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All modules', value: '' },
+          ...MODULE_OPTIONS.map((m) => ({ label: m, value: m })),
+        ],
+        grid: { xs: 12, sm: 4 },
+      },
+      {
+        name: 'dateFrom',
+        label: 'From date',
+        type: FIELD_TYPE.DATE,
+        grid: { xs: 6, sm: 4 },
+      },
+      {
+        name: 'dateTo',
+        label: 'To date',
+        type: FIELD_TYPE.DATE,
+        grid: { xs: 6, sm: 4 },
+      },
+    ],
+    [],
+  );
 
   const { data, isLoading } = useGetActivityLogsQuery({
     page: page + 1,
     pageSize,
-    module: moduleFilter || undefined,
+    module: auditFilter.module || undefined,
     dateFrom: debouncedDateFrom || undefined,
     dateTo: debouncedDateTo ? `${debouncedDateTo}T23:59:59Z` : undefined,
   });
@@ -145,7 +167,7 @@ export function AuditLogsPage() {
         activityLogsApi.endpoints.getActivityLogs.initiate({
           page: 1,
           pageSize: 5000,
-          module: moduleFilter || undefined,
+          module: auditFilter.module || undefined,
           dateFrom: debouncedDateFrom || undefined,
           dateTo: debouncedDateTo ? `${debouncedDateTo}T23:59:59Z` : undefined,
         }),
@@ -193,50 +215,16 @@ export function AuditLogsPage() {
           </Tooltip>
         </Box>
 
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>Module</InputLabel>
-            <Select
-              value={moduleFilter}
-              label="Module"
-              onChange={(e) => {
-                setModuleFilter(e.target.value);
-                setPage(0);
-              }}
-            >
-              <MenuItem value="">All modules</MenuItem>
-              {MODULE_OPTIONS.map((m) => (
-                <MenuItem key={m} value={m}>
-                  {m}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <TextField
-            size="small"
-            label="From date"
-            type="date"
-            value={dateFrom}
-            onChange={(e) => {
-              setDateFrom(e.target.value);
+        <Box sx={{ mb: 2 }}>
+          <FilterForm
+            fields={auditFilterFields}
+            defaultValues={{ module: '', dateFrom: '', dateTo: '' }}
+            onChange={(values) => {
+              setAuditFilter(values as typeof auditFilter);
               setPage(0);
             }}
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ width: 160 }}
-          />
-
-          <TextField
-            size="small"
-            label="To date"
-            type="date"
-            value={dateTo}
-            onChange={(e) => {
-              setDateTo(e.target.value);
-              setPage(0);
-            }}
-            slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ width: 160 }}
+            showReset
+            spacing={2}
           />
         </Box>
 

@@ -39,10 +39,12 @@ const passwordRule = z
   .regex(/[0-9]/, 'Must include a number')
   .regex(/[^A-Za-z0-9]/, 'Must include a special character');
 
+const phoneZodShape = z.object({ select: z.string(), input: z.string() }).optional();
+
 const inviteSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-    phone: z.string().optional(),
+    phone: phoneZodShape,
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     ...requiredAddressZodShape,
@@ -57,7 +59,7 @@ type FormValues = z.infer<typeof inviteSchema>;
 const tenantCreationSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-    phone: z.string().optional(),
+    phone: phoneZodShape,
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     tenantName: z.string().min(1, 'Tenant name is required').max(200),
@@ -172,8 +174,22 @@ export function InvitationPage() {
     {
       name: 'phone',
       label: 'Phone',
-      type: FIELD_TYPE.TEXT,
-      muiProps: { autoComplete: 'tel' },
+      type: FIELD_TYPE.COMBO_INPUT,
+      placeholder: 'Phone number',
+      selectOptions: [
+        { label: '+1', value: '+1' },
+        { label: '+44', value: '+44' },
+        { label: '+91', value: '+91' },
+        { label: '+61', value: '+61' },
+        { label: '+49', value: '+49' },
+        { label: '+33', value: '+33' },
+        { label: '+86', value: '+86' },
+        { label: '+81', value: '+81' },
+        { label: '+55', value: '+55' },
+        { label: '+52', value: '+52' },
+      ],
+      selectPlaceholder: 'Code',
+      selectWidth: 88,
     },
     {
       name: 'password',
@@ -206,8 +222,22 @@ export function InvitationPage() {
     {
       name: 'phone',
       label: 'Phone',
-      type: FIELD_TYPE.TEXT,
-      muiProps: { autoComplete: 'tel' },
+      type: FIELD_TYPE.COMBO_INPUT,
+      placeholder: 'Phone number',
+      selectOptions: [
+        { label: '+1', value: '+1' },
+        { label: '+44', value: '+44' },
+        { label: '+91', value: '+91' },
+        { label: '+61', value: '+61' },
+        { label: '+49', value: '+49' },
+        { label: '+33', value: '+33' },
+        { label: '+86', value: '+86' },
+        { label: '+81', value: '+81' },
+        { label: '+55', value: '+55' },
+        { label: '+52', value: '+52' },
+      ],
+      selectPlaceholder: 'Code',
+      selectWidth: 88,
     },
     {
       name: 'password',
@@ -248,7 +278,7 @@ export function InvitationPage() {
       const payload = {
         token,
         fullName: values.fullName,
-        phone: values.phone || undefined,
+        phone: values.phone?.input ? `${values.phone.select}${values.phone.input}` : undefined,
         password: values.password,
         confirmPassword: values.confirmPassword,
         ...addressPayload,
@@ -277,7 +307,7 @@ export function InvitationPage() {
       const response = await acceptNewTenant({
         token,
         fullName: values.fullName,
-        phone: values.phone || undefined,
+        phone: values.phone?.input ? `${values.phone.select}${values.phone.input}` : undefined,
         password: values.password,
         confirmPassword: values.confirmPassword,
         tenantName: values.tenantName,

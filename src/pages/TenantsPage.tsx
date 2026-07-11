@@ -8,29 +8,27 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import BusinessIcon from '@mui/icons-material/Business';
-import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
-import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import {
+  FormBuilder,
+  FormWizard,
+  FilterForm,
+  FIELD_TYPE,
+  type FieldConfig,
+} from 'mui-schema-form-builder';
 import Avatar from '@mui/material/Avatar';
 import { DataTable } from '@/shared/components/DataTable';
 import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
@@ -471,10 +469,10 @@ export function TenantsPage() {
   const [tab, setTab] = useState(0);
 
   // Tenants tab
-  const [search, setSearch] = useState('');
+  const [tenantFilter, setTenantFilter] = useState({ search: '', status: '', createdVia: '' });
+  const debouncedSearch = useDebounce(tenantFilter.search, 300);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const debouncedSearch = useDebounce(search, 300);
 
   const [onboardOpen, setOnboardOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -492,8 +490,59 @@ export function TenantsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [pendingRevoke, setPendingRevoke] = useState<TenantCreationInvitationDto | null>(null);
 
-  const [isActiveFilter, setIsActiveFilter] = useState('');
-  const [createdViaFilter, setCreatedViaFilter] = useState('');
+  const tenantFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'search',
+        label: 'Search',
+        type: FIELD_TYPE.SEARCH,
+        placeholder: 'Search tenants…',
+        grid: { xs: 12, sm: 5 },
+      },
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Active', value: 'active' },
+          { label: 'Inactive', value: 'inactive' },
+        ],
+        grid: { xs: 6, sm: 3 },
+      },
+      {
+        name: 'createdVia',
+        label: 'Created via',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Direct', value: 'Direct' },
+          { label: 'Invitation', value: 'Invitation' },
+        ],
+        grid: { xs: 6, sm: 4 },
+      },
+    ],
+    [],
+  );
+
+  const invFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All statuses', value: '' },
+          { label: 'Pending', value: 'Pending' },
+          { label: 'Accepted', value: 'Accepted' },
+          { label: 'Expired', value: 'Expired' },
+          { label: 'Revoked', value: 'Revoked' },
+        ],
+        grid: { xs: 12, sm: 4 },
+      },
+    ],
+    [],
+  );
 
   // Data
   const { data, isLoading } = useGetTenantsQuery({
@@ -501,8 +550,12 @@ export function TenantsPage() {
     pageSize,
     search: debouncedSearch || undefined,
     isActive:
-      isActiveFilter === 'active' ? true : isActiveFilter === 'inactive' ? false : undefined,
-    createdVia: (createdViaFilter as 'Direct' | 'Invitation') || undefined,
+      tenantFilter.status === 'active'
+        ? true
+        : tenantFilter.status === 'inactive'
+          ? false
+          : undefined,
+    createdVia: (tenantFilter.createdVia as 'Direct' | 'Invitation') || undefined,
   });
 
   const { data: invitationsData, isLoading: isLoadingInvitations } =
@@ -780,63 +833,17 @@ export function TenantsPage() {
       )}
       {tab === 0 && canList && (
         <Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-            <TextField
-              size="small"
-              placeholder="Search tenants…"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
+          <Box sx={{ mb: 2 }}>
+            <FilterForm
+              fields={tenantFilterFields}
+              defaultValues={{ search: '', status: '', createdVia: '' }}
+              onChange={(values) => {
+                setTenantFilter(values as typeof tenantFilter);
                 setPage(0);
               }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: search ? (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setSearch('')}>
-                        <ClearIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : null,
-                },
-              }}
-              sx={{ width: 240 }}
+              showReset
+              spacing={2}
             />
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={isActiveFilter}
-                label="Status"
-                onChange={(e) => {
-                  setIsActiveFilter(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Created via</InputLabel>
-              <Select
-                value={createdViaFilter}
-                label="Created via"
-                onChange={(e) => {
-                  setCreatedViaFilter(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="Direct">Direct</MenuItem>
-                <MenuItem value="Invitation">Invitation</MenuItem>
-              </Select>
-            </FormControl>
           </Box>
 
           <DataTable
@@ -866,23 +873,16 @@ export function TenantsPage() {
       {tab === 1 && canList && (
         <Box>
           <Box sx={{ mb: 2 }}>
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Filter by status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Filter by status"
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setInvPage(0);
-                }}
-              >
-                <MenuItem value="">All statuses</MenuItem>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="Accepted">Accepted</MenuItem>
-                <MenuItem value="Expired">Expired</MenuItem>
-                <MenuItem value="Revoked">Revoked</MenuItem>
-              </Select>
-            </FormControl>
+            <FilterForm
+              fields={invFilterFields}
+              defaultValues={{ status: '' }}
+              onChange={(values) => {
+                setStatusFilter((values.status as string) ?? '');
+                setInvPage(0);
+              }}
+              showReset
+              spacing={2}
+            />
           </Box>
 
           <DataTable

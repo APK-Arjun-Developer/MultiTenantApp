@@ -8,31 +8,23 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ClearIcon from '@mui/icons-material/Clear';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
 import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import SearchIcon from '@mui/icons-material/Search';
 import SendIcon from '@mui/icons-material/Send';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import Avatar from '@mui/material/Avatar';
 import { DataTable } from '@/shared/components/DataTable';
 import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
@@ -378,13 +370,15 @@ export function TenantAdminsPage() {
   const [tab, setTab] = useState(0);
 
   // Admins tab
-  const [search, setSearch] = useState('');
+  const [adminsFilter, setAdminsFilter] = useState({
+    search: '',
+    tenant: '',
+    status: '',
+    createdVia: '',
+  });
+  const debouncedSearch = useDebounce(adminsFilter.search, 300);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [tenantIdFilter, setTenantIdFilter] = useState('');
-  const [adminsStatusFilter, setAdminsStatusFilter] = useState('');
-  const [adminsCreatedViaFilter, setAdminsCreatedViaFilter] = useState('');
-  const debouncedSearch = useDebounce(search, 300);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -404,19 +398,84 @@ export function TenantAdminsPage() {
 
   // Data
   const { data: tenantsData } = useGetTenantsQuery();
+
+  const adminsFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'search',
+        label: 'Search',
+        type: FIELD_TYPE.SEARCH,
+        placeholder: 'Search admins…',
+        grid: { xs: 12, sm: 4 },
+      },
+      {
+        name: 'tenant',
+        label: 'Tenant',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All tenants', value: '' },
+          ...(tenantsData?.items.map((t) => ({ label: t.name, value: t.id })) ?? []),
+        ],
+        grid: { xs: 12, sm: 4 },
+      },
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Active', value: 'active' },
+          { label: 'Inactive', value: 'inactive' },
+        ],
+        grid: { xs: 6, sm: 2 },
+      },
+      {
+        name: 'createdVia',
+        label: 'Created via',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Direct', value: 'Direct' },
+          { label: 'Invitation', value: 'Invitation' },
+        ],
+        grid: { xs: 6, sm: 2 },
+      },
+    ],
+    [tenantsData?.items],
+  );
+
   const { data: adminsData, isLoading: isLoadingAdmins } = useGetTenantAdminsQuery({
     page: page + 1,
     pageSize,
     search: debouncedSearch || undefined,
-    tenantId: tenantIdFilter || undefined,
+    tenantId: adminsFilter.tenant || undefined,
     isActive:
-      adminsStatusFilter === 'active'
+      adminsFilter.status === 'active'
         ? true
-        : adminsStatusFilter === 'inactive'
+        : adminsFilter.status === 'inactive'
           ? false
           : undefined,
-    createdVia: (adminsCreatedViaFilter as 'Direct' | 'Invitation') || undefined,
+    createdVia: (adminsFilter.createdVia as 'Direct' | 'Invitation') || undefined,
   });
+  const adminsInvFilterFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All statuses', value: '' },
+          { label: 'Pending', value: 'Pending' },
+          { label: 'Accepted', value: 'Accepted' },
+          { label: 'Expired', value: 'Expired' },
+          { label: 'Revoked', value: 'Revoked' },
+        ],
+        grid: { xs: 12, sm: 4 },
+      },
+    ],
+    [],
+  );
+
   const { data: invitationsData, isLoading: isLoadingInvitations } =
     useGetTenantAdminInvitationsQuery({
       page: invPage + 1,
@@ -822,81 +881,17 @@ export function TenantAdminsPage() {
       )}
       {tab === 0 && canList && (
         <Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-            <TextField
-              size="small"
-              placeholder="Search admins…"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
+          <Box sx={{ mb: 2 }}>
+            <FilterForm
+              fields={adminsFilterFields}
+              defaultValues={{ search: '', tenant: '', status: '', createdVia: '' }}
+              onChange={(values) => {
+                setAdminsFilter(values as typeof adminsFilter);
                 setPage(0);
               }}
-              sx={{ minWidth: 260 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: search ? (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setSearch('')}>
-                        <ClearIcon fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : null,
-                },
-              }}
+              showReset
+              spacing={2}
             />
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Filter by tenant</InputLabel>
-              <Select
-                value={tenantIdFilter}
-                label="Filter by tenant"
-                onChange={(e) => {
-                  setTenantIdFilter(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <MenuItem value="">All tenants</MenuItem>
-                {tenantsData?.items.map((t) => (
-                  <MenuItem key={t.id} value={t.id}>
-                    {t.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={adminsStatusFilter}
-                label="Status"
-                onChange={(e) => {
-                  setAdminsStatusFilter(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Created via</InputLabel>
-              <Select
-                value={adminsCreatedViaFilter}
-                label="Created via"
-                onChange={(e) => {
-                  setAdminsCreatedViaFilter(e.target.value);
-                  setPage(0);
-                }}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="Direct">Direct</MenuItem>
-                <MenuItem value="Invitation">Invitation</MenuItem>
-              </Select>
-            </FormControl>
           </Box>
 
           <DataTable
@@ -926,23 +921,16 @@ export function TenantAdminsPage() {
       {tab === 1 && canList && (
         <Box>
           <Box sx={{ mb: 2 }}>
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Filter by status</InputLabel>
-              <Select
-                value={statusFilter}
-                label="Filter by status"
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setInvPage(0);
-                }}
-              >
-                <MenuItem value="">All statuses</MenuItem>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="Accepted">Accepted</MenuItem>
-                <MenuItem value="Expired">Expired</MenuItem>
-                <MenuItem value="Revoked">Revoked</MenuItem>
-              </Select>
-            </FormControl>
+            <FilterForm
+              fields={adminsInvFilterFields}
+              defaultValues={{ status: '' }}
+              onChange={(values) => {
+                setStatusFilter((values.status as string) ?? '');
+                setInvPage(0);
+              }}
+              showReset
+              spacing={2}
+            />
           </Box>
 
           <DataTable
