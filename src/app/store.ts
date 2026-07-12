@@ -1,7 +1,7 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import type { UnknownAction } from '@reduxjs/toolkit';
 import authReducer, { logout } from '@/features/auth/slices/authSlice';
-import uiReducer from '@/features/ui/uiSlice';
+import uiReducer, { SELECTED_TENANT_STORAGE_KEY, THEME_STORAGE_KEY } from '@/features/ui/uiSlice';
 import { apiSlice } from '@/shared/api/apiSlice';
 
 const combinedReducer = combineReducers({
@@ -23,6 +23,30 @@ function rootReducer(state: AppState | undefined, action: UnknownAction): AppSta
 export const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware),
+});
+
+// Persist ui preferences to localStorage so they survive page reloads.
+let prevTenantId: string | null = store.getState().ui.selectedTenantId;
+let prevThemeMode: string = store.getState().ui.themeMode;
+store.subscribe(() => {
+  const { selectedTenantId, selectedTenantName, themeMode } = store.getState().ui;
+
+  if (selectedTenantId !== prevTenantId) {
+    prevTenantId = selectedTenantId;
+    if (selectedTenantId) {
+      localStorage.setItem(
+        SELECTED_TENANT_STORAGE_KEY,
+        JSON.stringify({ id: selectedTenantId, name: selectedTenantName }),
+      );
+    } else {
+      localStorage.removeItem(SELECTED_TENANT_STORAGE_KEY);
+    }
+  }
+
+  if (themeMode !== prevThemeMode) {
+    prevThemeMode = themeMode;
+    localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  }
 });
 
 export type RootState = ReturnType<typeof store.getState>;

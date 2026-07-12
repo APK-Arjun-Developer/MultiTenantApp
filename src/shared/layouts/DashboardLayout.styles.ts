@@ -10,39 +10,47 @@ export const styles = {
     minHeight: '100vh',
   } as Sx,
 
+  // ── AppBar ──────────────────────────────────────────────────────────────────
+  // Background / border handled by MuiAppBar theme override.
   appBar: {
     width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
     ml: { md: `${DRAWER_WIDTH}px` },
-    borderBottom: 1,
-    borderColor: 'divider',
-    bgcolor: 'background.paper',
-    color: 'text.primary',
   } as Sx,
 
   appBarToolbar: {
-    gap: 1,
+    gap: 0.5,
   } as Sx,
 
   menuButton: {
-    mr: 1,
+    mr: 0.5,
     display: { md: 'none' },
   } as Sx,
 
-  toolbarSpacer: {
-    flex: 1,
+  toolbarSpacer: { flex: 1 } as Sx,
+
+  themeToggle: {
+    color: 'text.secondary',
+    '&:hover': { color: 'text.primary' },
   } as Sx,
 
+  // ── User avatar in AppBar ───────────────────────────────────────────────────
   userAvatar: {
-    width: 32,
-    height: 32,
-    bgcolor: 'primary.main',
+    width: 34,
+    height: 34,
+    bgcolor: 'primary.dark',
     fontSize: 13,
+    fontWeight: 700,
+    border: '2px solid',
+    borderColor: 'primary.light',
+    boxSizing: 'border-box',
   } as Sx,
 
   profileButton: {
-    ml: 0.5,
+    ml: 0.25,
+    p: 0.5,
   } as Sx,
 
+  // ── Drawer / sidebar ────────────────────────────────────────────────────────
   nav: {
     width: { md: DRAWER_WIDTH },
     flexShrink: { md: 0 },
@@ -58,8 +66,6 @@ export const styles = {
     '& .MuiDrawer-paper': {
       width: DRAWER_WIDTH,
       boxSizing: 'border-box',
-      borderRight: 1,
-      borderColor: 'divider',
     },
   } as Sx,
 
@@ -69,31 +75,66 @@ export const styles = {
     flexDirection: 'column',
   } as Sx,
 
-  drawerTitle: {
-    fontWeight: 700,
-    color: 'primary.main',
+  // ── Brand ───────────────────────────────────────────────────────────────────
+  brandContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1.25,
+    py: 0.25,
   } as Sx,
 
+  brandMark: {
+    width: 28,
+    height: 28,
+    borderRadius: 1.5,
+    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    fontWeight: 800,
+    fontSize: '0.8125rem',
+    letterSpacing: '-0.02em',
+    flexShrink: 0,
+    boxShadow: '0 0 12px rgba(124,58,237,0.45)',
+  } as Sx,
+
+  drawerTitle: {
+    fontWeight: 700,
+    fontSize: '0.9375rem',
+    letterSpacing: '-0.01em',
+    color: 'text.primary',
+  } as Sx,
+
+  // ── Nav lists ────────────────────────────────────────────────────────────────
   navList: {
     flex: 1,
     pt: 1,
+    px: 0,
   } as Sx,
 
+  navBottomList: {
+    pb: 1.5,
+    px: 0,
+  } as Sx,
+
+  // Non-selected items are dimmed for visual hierarchy.
+  // Selected state is handled by MuiListItemButton theme override.
   navItem: {
     mx: 1,
     borderRadius: 2,
-    '&.Mui-selected': {
-      bgcolor: 'primary.main',
-      color: 'primary.contrastText',
-      '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
-      '&:hover': { bgcolor: 'primary.dark' },
+    color: 'text.secondary',
+    '& .MuiListItemIcon-root': {
+      color: 'text.secondary',
     },
   } as Sx,
 
   navItemIcon: {
-    minWidth: 40,
+    minWidth: 38,
+    '& svg': { fontSize: '1.125rem' },
   } as Sx,
 
+  // ── Main content area ────────────────────────────────────────────────────────
   mainContent: {
     flex: 1,
     display: 'flex',
@@ -103,20 +144,22 @@ export const styles = {
     mt: '64px',
   } as Sx,
 
+  // ── Impersonation alert ──────────────────────────────────────────────────────
   impersonationAlert: {
     mb: 2,
     borderRadius: 2,
   } as Sx,
 
+  stopImpersonationSpinner: {
+    mr: 0.5,
+  } as Sx,
+
+  // ── Page loader ──────────────────────────────────────────────────────────────
   pageLoader: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     flex: 1,
     py: 8,
-  } as Sx,
-
-  stopImpersonationSpinner: {
-    mr: 0.5,
   } as Sx,
 } as const;

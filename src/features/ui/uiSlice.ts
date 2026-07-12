@@ -2,6 +2,9 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
 
+export const SELECTED_TENANT_STORAGE_KEY = 'selectedTenant';
+export const THEME_STORAGE_KEY = 'themeMode';
+
 interface UiState {
   themeMode: 'light' | 'dark';
   sidebarOpen: boolean;
@@ -9,11 +12,37 @@ interface UiState {
   selectedTenantName: string | null;
 }
 
+function loadThemeFromStorage(): 'light' | 'dark' {
+  try {
+    const raw = localStorage.getItem(THEME_STORAGE_KEY);
+    if (raw === 'light' || raw === 'dark') return raw;
+  } catch {
+    // corrupted storage — ignore
+  }
+  return 'dark';
+}
+
+function loadTenantFromStorage(): Pick<UiState, 'selectedTenantId' | 'selectedTenantName'> {
+  try {
+    const raw = localStorage.getItem(SELECTED_TENANT_STORAGE_KEY);
+    if (!raw) return { selectedTenantId: null, selectedTenantName: null };
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && 'id' in parsed && 'name' in parsed) {
+      return {
+        selectedTenantId: typeof parsed.id === 'string' ? parsed.id : null,
+        selectedTenantName: typeof parsed.name === 'string' ? parsed.name : null,
+      };
+    }
+  } catch {
+    // corrupted storage — ignore
+  }
+  return { selectedTenantId: null, selectedTenantName: null };
+}
+
 const initialState: UiState = {
-  themeMode: 'light',
+  themeMode: loadThemeFromStorage(),
   sidebarOpen: true,
-  selectedTenantId: null,
-  selectedTenantName: null,
+  ...loadTenantFromStorage(),
 };
 
 const uiSlice = createSlice({

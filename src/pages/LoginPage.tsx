@@ -304,7 +304,9 @@ export const LoginPage = memo(function LoginPage() {
               </IconButton>
 
               <Box sx={styles.verifyTitleRow}>
-                <MarkEmailReadIcon color="primary" />
+                <Box sx={styles.titleIconBox}>
+                  <MarkEmailReadIcon sx={{ fontSize: '0.875rem' }} />
+                </Box>
                 <Typography variant="h6" sx={styles.verifyTitleText}>
                   Verify your email
                 </Typography>

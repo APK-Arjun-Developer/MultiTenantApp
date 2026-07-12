@@ -120,7 +120,9 @@ const TenantsPageHeader = memo(function TenantsPageHeader({
   return (
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
-        <BusinessIcon color="primary" />
+        <Box sx={styles.pageIconBox}>
+          <BusinessIcon sx={{ fontSize: '1.125rem' }} />
+        </Box>
         <Typography variant="h5" sx={styles.headerTitleText}>
           Tenants
         </Typography>
@@ -519,12 +521,14 @@ const ViewTenantDialog = memo(function ViewTenantDialog({
 // ─── Plan badge ───────────────────────────────────────────────────────────────
 
 const PlanBadge = memo(function PlanBadge({ plan }: { plan?: PlanType | string }) {
+  const isPro = plan === 'Pro';
   return (
     <Chip
       label={plan ?? 'Free'}
-      color={plan === 'Pro' ? 'primary' : 'default'}
+      color={isPro ? 'primary' : 'default'}
       size="small"
-      variant={plan === 'Pro' ? 'filled' : 'outlined'}
+      variant={isPro ? 'filled' : 'outlined'}
+      sx={isPro ? undefined : { color: 'text.disabled', borderColor: 'divider' }}
     />
   );
 });
@@ -601,7 +605,7 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
         : lower === 'expired'
           ? 'warning'
           : 'error';
-  return <Chip label={status} color={color} size="small" variant="outlined" />;
+  return <Chip label={status} color={color} size="small" variant="filled" />;
 });
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -822,7 +826,7 @@ export const TenantsPage = memo(function TenantsPage() {
             label={row.original.isActive ? 'Active' : 'Inactive'}
             color={row.original.isActive ? 'success' : 'default'}
             size="small"
-            variant="outlined"
+            variant={row.original.isActive ? 'filled' : 'outlined'}
           />
         ),
       },

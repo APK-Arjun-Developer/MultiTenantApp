@@ -88,7 +88,9 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
             transition={{ duration: 0.2 }}
           >
             <Box sx={styles.titleRow}>
-              <EmailIcon color="primary" />
+              <Box sx={styles.titleIconBox}>
+                <EmailIcon sx={{ fontSize: '0.875rem' }} />
+              </Box>
               <Typography variant="h6" sx={styles.titleText}>
                 Reset your password
               </Typography>
@@ -127,7 +129,9 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
             transition={{ duration: 0.2 }}
           >
             <Stack spacing={2} sx={styles.sentStack}>
-              <CheckCircleIcon sx={styles.sentIcon} />
+              <Box sx={styles.sentIconBox}>
+                <CheckCircleIcon sx={styles.sentIcon} />
+              </Box>
               <Typography variant="h6" sx={styles.sentTitle}>
                 Check your inbox
               </Typography>

@@ -5,7 +5,7 @@ import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha, type Theme } from '@mui/material/styles';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -31,22 +31,51 @@ import { useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useGetDashboardStatsQuery } from '@/features/dashboard/api/dashboardApi';
 import { styles } from './DashboardPage.styles';
-import type { StatCardProps } from './DashboardPage.types';
+import type { StatCardProps, StatCardColor } from './DashboardPage.types';
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
+
+function resolveHex(theme: Theme, color: StatCardColor): string {
+  const map: Record<StatCardColor, string> = {
+    primary: theme.palette.primary.main,
+    secondary: theme.palette.secondary.main,
+    warning: theme.palette.warning.main,
+    error: theme.palette.error.main,
+    success: theme.palette.success.main,
+    info: theme.palette.info.main,
+  };
+  return map[color];
+}
 
 const StatCard = memo(function StatCard({
   label,
   value,
   icon,
-  color = 'primary.main',
+  color = 'primary',
   isLoading,
 }: StatCardProps) {
+  const theme = useTheme();
+  const hex = resolveHex(theme, color);
+
   return (
     <Paper variant="outlined" sx={styles.statCardPaper}>
-      <Box sx={[styles.statCardIconBox, { bgcolor: color }] as never}>{icon}</Box>
+      <Box
+        sx={
+          [
+            styles.statCardIconBox,
+            {
+              background: `linear-gradient(135deg, ${alpha(hex, 0.15)} 0%, ${alpha(hex, 0.28)} 100%)`,
+              boxShadow: `0 0 14px ${alpha(hex, 0.18)}`,
+              color: hex,
+              border: `1px solid ${alpha(hex, 0.2)}`,
+            },
+          ] as never
+        }
+      >
+        {icon}
+      </Box>
       <Box>
-        <Typography variant="h5" sx={styles.statCardValue}>
+        <Typography variant="h4" sx={styles.statCardValue}>
           {isLoading ? <Skeleton width={48} /> : (value ?? 0)}
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -107,6 +136,17 @@ const SystemAdminDashboard = memo(function SystemAdminDashboard() {
     [theme.palette.text.disabled, theme.palette.primary.main],
   );
 
+  const tooltipStyle = useMemo(
+    () => ({
+      backgroundColor: theme.palette.background.paper,
+      border: `1px solid ${theme.palette.divider}`,
+      borderRadius: 8,
+      fontSize: 12,
+      color: theme.palette.text.primary,
+    }),
+    [theme.palette.background.paper, theme.palette.divider, theme.palette.text.primary],
+  );
+
   return (
     <Box>
       <SystemAdminStatsGrid stats={stats} isLoading={isLoading} />
@@ -124,14 +164,14 @@ const SystemAdminDashboard = memo(function SystemAdminDashboard() {
               sx={styles.planChartSkeletonCircle}
             />
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
                   data={planData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={80}
+                  innerRadius={58}
+                  outerRadius={84}
                   paddingAngle={3}
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}
@@ -141,8 +181,8 @@ const SystemAdminDashboard = memo(function SystemAdminDashboard() {
                     <Cell key={index} fill={planColors[index]} />
                   ))}
                 </Pie>
-                <RechartsTooltip />
-                <Legend />
+                <RechartsTooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: 12, color: theme.palette.text.secondary }} />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -173,14 +213,14 @@ const TenantAdminStatsGrid = memo(function TenantAdminStatsGrid({
         label="Roles"
         value={stats?.totalRoles}
         icon={<SecurityIcon />}
-        color="secondary.main"
+        color="secondary"
         isLoading={isLoading}
       />
       <StatCard
         label="Pending Invitations"
         value={stats?.totalPendingInvitations}
         icon={<HourglassEmptyIcon />}
-        color="warning.main"
+        color="warning"
         isLoading={isLoading}
       />
     </Box>
@@ -226,6 +266,17 @@ const TenantAdminDashboard = memo(function TenantAdminDashboard() {
     ],
   );
 
+  const tooltipStyle = useMemo(
+    () => ({
+      backgroundColor: theme.palette.background.paper,
+      border: `1px solid ${theme.palette.divider}`,
+      borderRadius: 8,
+      fontSize: 12,
+      color: theme.palette.text.primary,
+    }),
+    [theme.palette.background.paper, theme.palette.divider, theme.palette.text.primary],
+  );
+
   return (
     <Box>
       <TenantAdminStatsGrid stats={stats} isLoading={isLoading} />
@@ -236,14 +287,31 @@ const TenantAdminDashboard = memo(function TenantAdminDashboard() {
             Invitation Overview
           </Typography>
           {isLoading ? (
-            <Skeleton variant="rectangular" height={200} />
+            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={invitationData} barSize={36}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <RechartsTooltip />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke={theme.palette.divider}
+                />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                  axisLine={{ stroke: theme.palette.divider }}
+                  tickLine={false}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <RechartsTooltip
+                  contentStyle={tooltipStyle}
+                  cursor={{ fill: alpha(theme.palette.primary.main, 0.06) }}
+                />
                 <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]}>
                   {invitationData.map((entry, index) => (
                     <Cell key={index} fill={entry.color} />
@@ -314,12 +382,14 @@ const WelcomeHeader = memo(function WelcomeHeader({ fullName }: { fullName?: str
   return (
     <>
       <Box sx={styles.welcomeHeader}>
-        <DashboardIcon color="primary" />
+        <Box sx={styles.welcomeIconBox}>
+          <DashboardIcon fontSize="small" />
+        </Box>
         <Typography variant="h5" sx={styles.welcomeTitle}>
           Dashboard
         </Typography>
       </Box>
-      <Typography variant="body1" color="text.secondary">
+      <Typography variant="body2" color="text.secondary" sx={styles.welcomeSubtitle}>
         Welcome back{fullName ? `, ${fullName}` : ''}.
       </Typography>
     </>

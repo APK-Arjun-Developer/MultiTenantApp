@@ -47,6 +47,7 @@ export const TenantPicker = React.memo(function TenantPicker() {
   const renderValue = useCallback(
     (value: string) => (
       <Box sx={styles.renderValueBox}>
+        <Box sx={styles.renderValueDot} />
         <Typography variant="body2" sx={styles.renderValueText}>
           {value === PLATFORM_VALUE ? 'Platform view' : (selectedTenantName ?? value)}
         </Typography>

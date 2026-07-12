@@ -46,7 +46,9 @@ const resetFields: FieldConfig[] = [
 const TokenInvalid = memo(function TokenInvalid({ message }: TokenInvalidProps) {
   return (
     <Stack spacing={2} sx={styles.invalidStack}>
-      <ErrorIcon sx={styles.invalidIcon} />
+      <Box sx={styles.invalidIconBox}>
+        <ErrorIcon sx={styles.invalidIcon} />
+      </Box>
       <Typography variant="h6" sx={styles.invalidTitle}>
         Link expired or invalid
       </Typography>
@@ -73,7 +75,9 @@ const TokenInvalid = memo(function TokenInvalid({ message }: TokenInvalidProps) 
 const ResetSuccess = memo(function ResetSuccess() {
   return (
     <Stack spacing={2} sx={styles.successStack}>
-      <CheckCircleIcon sx={styles.successIcon} />
+      <Box sx={styles.successIconBox}>
+        <CheckCircleIcon sx={styles.successIcon} />
+      </Box>
       <Typography variant="h6" sx={styles.successTitle}>
         Password updated
       </Typography>
@@ -174,7 +178,9 @@ export const ResetPasswordPage = memo(function ResetPasswordPage() {
   return (
     <Box>
       <Box sx={styles.titleRow}>
-        <LockResetIcon color="primary" />
+        <Box sx={styles.titleIconBox}>
+          <LockResetIcon sx={{ fontSize: '0.875rem' }} />
+        </Box>
         <Typography variant="h6" sx={styles.titleText}>
           Set new password
         </Typography>

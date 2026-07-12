@@ -120,7 +120,12 @@ const DashboardNavItem = memo(function DashboardNavItem({ item, onClose }: Dashb
         {({ isActive }) => (
           <ListItemButton selected={isActive} onClick={onClose} sx={styles.navItem}>
             <ListItemIcon sx={styles.navItemIcon}>{icon}</ListItemIcon>
-            <ListItemText primary={text} />
+            <ListItemText
+              primary={text}
+              slotProps={{
+                primary: { style: { fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500 } },
+              }}
+            />
           </ListItemButton>
         )}
       </NavLink>
@@ -137,19 +142,35 @@ const DashboardSidebar = memo(function DashboardSidebar({
   visibleNavItems,
   onClose,
 }: DashboardSidebarProps) {
+  const mainItems = visibleNavItems.filter((item) => item.path !== '/profile');
+  const accountItems = visibleNavItems.filter((item) => item.path === '/profile');
+
   return (
     <Box sx={styles.drawer}>
       <Toolbar>
-        <Typography variant="h6" sx={styles.drawerTitle} noWrap>
-          MultiTenant
-        </Typography>
+        <Box sx={styles.brandContainer}>
+          <Box sx={styles.brandMark}>M</Box>
+          <Typography variant="h6" sx={styles.drawerTitle} noWrap>
+            MultiTenant
+          </Typography>
+        </Box>
       </Toolbar>
       <Divider />
       <List sx={styles.navList}>
-        {visibleNavItems.map((item) => (
+        {mainItems.map((item) => (
           <DashboardNavItem key={item.path} item={item} onClose={onClose} />
         ))}
       </List>
+      {accountItems.length > 0 && (
+        <>
+          <Divider />
+          <List sx={styles.navBottomList}>
+            {accountItems.map((item) => (
+              <DashboardNavItem key={item.path} item={item} onClose={onClose} />
+            ))}
+          </List>
+        </>
+      )}
     </Box>
   );
 });
@@ -184,8 +205,12 @@ const DashboardAppBar = memo(function DashboardAppBar({
         <Box sx={styles.toolbarSpacer} />
 
         <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
-          <IconButton onClick={onThemeToggle}>
-            {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          <IconButton onClick={onThemeToggle} sx={styles.themeToggle}>
+            {themeMode === 'dark' ? (
+              <Brightness7Icon fontSize="small" />
+            ) : (
+              <Brightness4Icon fontSize="small" />
+            )}
           </IconButton>
         </Tooltip>
 

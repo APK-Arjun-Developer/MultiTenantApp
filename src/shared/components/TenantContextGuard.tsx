@@ -17,7 +17,9 @@ export const TenantContextGuard = React.memo(function TenantContextGuard({
   if (user?.systemRole === 'SystemAdmin' && !selectedTenantId) {
     return (
       <Box sx={styles.emptyState}>
-        <BusinessIcon sx={styles.icon} />
+        <Box sx={styles.iconBox}>
+          <BusinessIcon sx={styles.icon} />
+        </Box>
         <Typography variant="h6" sx={styles.heading}>
           No tenant selected
         </Typography>

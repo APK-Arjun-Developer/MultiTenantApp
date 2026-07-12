@@ -11,6 +11,7 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import InboxIcon from '@mui/icons-material/Inbox';
 import type { DataTableProps } from './DataTable.types';
 import { styles } from './DataTable.styles';
 
@@ -52,7 +53,7 @@ export const DataTable = React.memo(function DataTable<TData>({
   );
 
   return (
-    <Paper>
+    <Paper variant="outlined" sx={styles.paper}>
       <TableContainer>
         <Table size="small">
           <TableHead>
@@ -72,15 +73,18 @@ export const DataTable = React.memo(function DataTable<TData>({
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={columns.length} sx={styles.centeredCell}>
-                  <CircularProgress size={28} />
+                  <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} sx={styles.centeredCell}>
-                  <Typography variant="body2" color="text.secondary">
-                    No records found
-                  </Typography>
+                  <Box sx={styles.emptyState}>
+                    <InboxIcon sx={styles.emptyIcon} />
+                    <Typography variant="body2" color="text.disabled">
+                      No records found
+                    </Typography>
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : (

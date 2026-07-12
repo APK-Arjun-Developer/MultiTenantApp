@@ -28,7 +28,9 @@ import type {
 const SetupInvalid = memo(function SetupInvalid({ message }: SetupInvalidProps) {
   return (
     <Stack spacing={2} sx={styles.invalidIconRoot}>
-      <ErrorIcon sx={styles.invalidIcon} />
+      <Box sx={styles.invalidIconBox}>
+        <ErrorIcon sx={styles.invalidIcon} />
+      </Box>
       <Typography variant="h6" sx={styles.invalidTitle}>
         Setup link expired or invalid
       </Typography>
@@ -53,7 +55,9 @@ const SetupInvalid = memo(function SetupInvalid({ message }: SetupInvalidProps) 
 const SetupSuccess = memo(function SetupSuccess({ result }: SetupSuccessProps) {
   return (
     <Stack spacing={2} sx={styles.successIconRoot}>
-      <CheckCircleIcon sx={styles.successIcon} />
+      <Box sx={styles.successIconBox}>
+        <CheckCircleIcon sx={styles.successIcon} />
+      </Box>
       <Typography variant="h6" sx={styles.successTitle}>
         Account is ready!
       </Typography>
@@ -252,7 +256,9 @@ export const AccountSetupPage = memo(function AccountSetupPage() {
   const header = (
     <Box>
       <Box sx={styles.headerTitleRow}>
-        <AccountCircleIcon color="primary" />
+        <Box sx={styles.headerIconBox}>
+          <AccountCircleIcon sx={{ fontSize: '0.875rem' }} />
+        </Box>
         <Typography variant="h6" sx={styles.headerTitle}>
           Set up your account
         </Typography>

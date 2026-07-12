@@ -23,9 +23,12 @@ export const AuthLayout = memo(function AuthLayout() {
   return (
     <Box sx={styles.root}>
       <Box sx={styles.logoContainer}>
-        <Typography variant="h5" sx={styles.title}>
-          MultiTenant
-        </Typography>
+        <Box sx={styles.brandRow}>
+          <Box sx={styles.brandMark}>M</Box>
+          <Typography variant="h5" sx={styles.title}>
+            MultiTenant
+          </Typography>
+        </Box>
         <Typography variant="body2" color="text.secondary" sx={styles.subtitle}>
           Admin Portal
         </Typography>

@@ -11,7 +11,7 @@ export const NotFoundPage = React.memo(function NotFoundPage() {
       <Typography variant="h1" sx={styles.heading}>
         404
       </Typography>
-      <Typography variant="h5" color="text.secondary">
+      <Typography variant="h6" color="text.secondary" sx={styles.subtitle}>
         Page not found
       </Typography>
       <Button component={Link} to="/dashboard" variant="contained" sx={styles.goButton}>

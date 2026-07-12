@@ -7,13 +7,24 @@ export const styles = {
     textAlign: 'center',
   } as Sx,
 
+  invalidIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 3,
+    background: 'linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(239,68,68,0.06) 100%)',
+    border: '1px solid rgba(239,68,68,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  } as Sx,
+
   invalidIcon: {
-    fontSize: 48,
+    fontSize: '2rem',
     color: 'error.main',
   } as Sx,
 
   invalidTitle: {
-    fontWeight: 600,
+    fontWeight: 700,
   } as Sx,
 
   invalidRequestButton: {
@@ -25,13 +36,24 @@ export const styles = {
     textAlign: 'center',
   } as Sx,
 
+  successIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 3,
+    background: 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.06) 100%)',
+    border: '1px solid rgba(34,197,94,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  } as Sx,
+
   successIcon: {
-    fontSize: 48,
+    fontSize: '2rem',
     color: 'success.main',
   } as Sx,
 
   successTitle: {
-    fontWeight: 600,
+    fontWeight: 700,
   } as Sx,
 
   successButton: {
@@ -51,8 +73,21 @@ export const styles = {
     mb: 0.5,
   } as Sx,
 
+  titleIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 1.25,
+    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    flexShrink: 0,
+    boxShadow: '0 0 10px rgba(124,58,237,0.28)',
+  } as Sx,
+
   titleText: {
-    fontWeight: 600,
+    fontWeight: 700,
   } as Sx,
 
   emailSubtitle: {

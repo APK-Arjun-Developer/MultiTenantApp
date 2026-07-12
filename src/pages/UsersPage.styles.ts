@@ -21,6 +21,20 @@ export const styles = {
     gap: 1.5,
   } as Sx,
 
+  /** Gradient icon box for page header (matches dashboard brandMark style) */
+  pageIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 1.5,
+    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    flexShrink: 0,
+    boxShadow: '0 0 12px rgba(124,58,237,0.3)',
+  } as Sx,
+
   /** Right side of header: Create / Invite buttons */
   headerActions: {
     display: 'flex',
@@ -29,7 +43,8 @@ export const styles = {
 
   /** Page title text */
   titleText: {
-    fontWeight: 600,
+    fontWeight: 700,
+    letterSpacing: '-0.01em',
   } as Sx,
 
   /** Plan-limit warning alert */
@@ -44,8 +59,13 @@ export const styles = {
 
   /** "No permission" empty-state box */
   noPermission: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 1,
+    py: 10,
     textAlign: 'center',
-    py: 6,
+    color: 'text.disabled',
   } as Sx,
 
   /** Wrapper around the filter bar + export row for the Users tab */
@@ -103,19 +123,28 @@ export const styles = {
     gap: 2,
   } as Sx,
 
-  /** Avatar (clickable) in the users table */
+  /** Avatar (clickable) in the users table — violet border signals interactivity */
   avatarClickable: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     cursor: 'pointer',
-    fontSize: '0.875rem',
+    fontSize: '0.8125rem',
+    bgcolor: 'primary.dark',
+    border: '1.5px solid',
+    borderColor: 'primary.light',
+    boxSizing: 'border-box',
+    transition: 'box-shadow 0.15s ease',
+    '&:hover': {
+      boxShadow: '0 0 0 2px rgba(124,58,237,0.35)',
+    },
   } as Sx,
 
   /** Avatar (read-only) in the users table */
   avatarReadOnly: {
-    width: 36,
-    height: 36,
-    fontSize: '0.875rem',
+    width: 34,
+    height: 34,
+    fontSize: '0.8125rem',
+    bgcolor: 'action.selected',
   } as Sx,
 
   /** FormBuilder inside dialogs — removes card chrome */

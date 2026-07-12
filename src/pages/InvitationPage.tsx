@@ -40,7 +40,9 @@ import type {
 const InvitationInvalid = memo(function InvitationInvalid({ message }: InvitationInvalidProps) {
   return (
     <Stack spacing={2} sx={styles.invalidStack}>
-      <ErrorIcon sx={styles.invalidIcon} />
+      <Box sx={styles.invalidIconBox}>
+        <ErrorIcon sx={styles.invalidIcon} />
+      </Box>
       <Typography variant="h6" sx={styles.invalidTitle}>
         Invitation expired or invalid
       </Typography>
@@ -66,7 +68,9 @@ const InvitationInvalid = memo(function InvitationInvalid({ message }: Invitatio
 const InvitationSuccess = memo(function InvitationSuccess({ result }: InvitationSuccessProps) {
   return (
     <Stack spacing={2} sx={styles.successStack}>
-      <CheckCircleIcon sx={styles.successIcon} />
+      <Box sx={styles.successIconBox}>
+        <CheckCircleIcon sx={styles.successIcon} />
+      </Box>
       <Typography variant="h6" sx={styles.successTitle}>
         Account created!
       </Typography>
@@ -433,7 +437,9 @@ export const InvitationPage = memo(function InvitationPage() {
     return (
       <Box sx={styles.newTenantRoot}>
         <Box sx={styles.newTenantHeader}>
-          <PersonAddIcon color="primary" />
+          <Box sx={styles.headerIconBox}>
+            <PersonAddIcon sx={{ fontSize: '0.875rem' }} />
+          </Box>
           <Typography variant="h6" sx={styles.newTenantTitle}>
             Create your tenant account
           </Typography>
@@ -468,7 +474,9 @@ export const InvitationPage = memo(function InvitationPage() {
   return (
     <Box sx={styles.adminUserRoot}>
       <Box sx={styles.adminUserHeader}>
-        <PersonAddIcon color="primary" />
+        <Box sx={styles.headerIconBox}>
+          <PersonAddIcon sx={{ fontSize: '0.875rem' }} />
+        </Box>
         <Typography variant="h6" sx={styles.adminUserTitle}>
           Accept invitation
         </Typography>

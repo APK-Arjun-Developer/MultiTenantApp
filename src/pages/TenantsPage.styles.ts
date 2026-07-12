@@ -18,8 +18,22 @@ export const styles = {
     gap: 1.5,
   } as Sx,
 
+  pageIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 1.5,
+    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    flexShrink: 0,
+    boxShadow: '0 0 12px rgba(124,58,237,0.3)',
+  } as Sx,
+
   headerTitleText: {
-    fontWeight: 600,
+    fontWeight: 700,
+    letterSpacing: '-0.01em',
   } as Sx,
 
   headerActions: {
@@ -34,8 +48,13 @@ export const styles = {
   } as Sx,
 
   emptyPermission: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 1,
+    py: 10,
     textAlign: 'center',
-    py: 6,
+    color: 'text.disabled',
   } as Sx,
 
   filterBar: {
@@ -49,10 +68,19 @@ export const styles = {
   } as Sx,
 
   avatarLogo: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     cursor: 'pointer',
-    fontSize: 14,
+    fontSize: '0.8125rem',
+    borderRadius: 1.5,
+    bgcolor: 'action.selected',
+    border: '1.5px solid',
+    borderColor: 'divider',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.15s ease',
+    '&:hover': {
+      borderColor: 'primary.light',
+    },
   } as Sx,
 
   viewDialogContent: {

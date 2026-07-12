@@ -57,7 +57,9 @@ const AuditLogsPageHeader = memo(function AuditLogsPageHeader({
   return (
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
-        <HistoryIcon color="primary" />
+        <Box sx={styles.pageIconBox}>
+          <HistoryIcon sx={{ fontSize: '1.125rem' }} />
+        </Box>
         <Typography variant="h5" sx={styles.titleText}>
           Audit Log
         </Typography>

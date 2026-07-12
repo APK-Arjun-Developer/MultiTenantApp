@@ -60,7 +60,9 @@ const RolesPageHeader = memo(function RolesPageHeader({
   return (
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
-        <AdminPanelSettingsIcon color="primary" />
+        <Box sx={styles.pageIconBox}>
+          <AdminPanelSettingsIcon sx={{ fontSize: '1.125rem' }} />
+        </Box>
         <Typography variant="h5" sx={styles.titleText}>
           Roles
         </Typography>

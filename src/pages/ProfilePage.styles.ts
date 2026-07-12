@@ -16,9 +16,23 @@ export const styles = {
     mb: 3,
   } as Sx,
 
+  pageIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 1.5,
+    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    flexShrink: 0,
+    boxShadow: '0 0 12px rgba(124,58,237,0.3)',
+  } as Sx,
+
   // Page title text
   pageTitle: {
-    fontWeight: 600,
+    fontWeight: 700,
+    letterSpacing: '-0.01em',
   } as Sx,
 
   // Avatar + identity summary row

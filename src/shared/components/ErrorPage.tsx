@@ -3,6 +3,7 @@ import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-d
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { styles } from './ErrorPage.styles';
 
 export const ErrorPage = React.memo(function ErrorPage() {
@@ -25,13 +26,16 @@ export const ErrorPage = React.memo(function ErrorPage() {
 
   return (
     <Box sx={styles.container}>
-      <Typography variant="h4" sx={styles.title}>
+      <Box sx={styles.iconBox}>
+        <ErrorOutlineIcon sx={styles.icon} />
+      </Box>
+      <Typography variant="h5" sx={styles.title}>
         Something went wrong
       </Typography>
-      <Typography color="text.secondary" sx={styles.message}>
+      <Typography variant="body2" sx={styles.message}>
         {message}
       </Typography>
-      <Button variant="contained" onClick={handleBack}>
+      <Button variant="contained" onClick={handleBack} sx={styles.button}>
         Back to Dashboard
       </Button>
     </Box>

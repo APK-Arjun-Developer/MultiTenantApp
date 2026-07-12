@@ -97,7 +97,7 @@ const UserStatusChip = memo(function UserStatusChip({ isActive }: { isActive: bo
       label={isActive ? 'Active' : 'Inactive'}
       size="small"
       color={isActive ? 'success' : 'default'}
-      variant="outlined"
+      variant={isActive ? 'filled' : 'outlined'}
     />
   );
 });
@@ -116,7 +116,7 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
       label={status.charAt(0).toUpperCase() + status.slice(1)}
       size="small"
       color={color}
-      variant="outlined"
+      variant="filled"
     />
   );
 });
@@ -397,7 +397,9 @@ const UsersPageHeader = memo(function UsersPageHeader({
   return (
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
-        <PeopleIcon color="primary" />
+        <Box sx={styles.pageIconBox}>
+          <PeopleIcon sx={{ fontSize: '1.125rem' }} />
+        </Box>
         <Typography variant="h5" sx={styles.titleText}>
           Users
         </Typography>
