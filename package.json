@@ -10,7 +10,8 @@
     "format": "prettier --write .",
     "preview": "vite preview",
     "prepare": "husky",
-    "check": "bun run build && bun lint && bun format"
+    "typecheck": "tsc --noEmit",
+    "check": "bun run format && bun run lint && bun run typecheck && bun run build"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
