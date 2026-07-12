@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
@@ -29,45 +30,23 @@ import {
 import { useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useGetDashboardStatsQuery } from '@/features/dashboard/api/dashboardApi';
+import { styles } from './DashboardPage.styles';
+import type { StatCardProps } from './DashboardPage.types';
 
-interface StatCardProps {
-  label: string;
-  value: number | null | undefined;
-  icon: React.ReactNode;
-  color?: string;
-  isLoading: boolean;
-}
+// ─── StatCard ─────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, icon, color = 'primary.main', isLoading }: StatCardProps) {
+const StatCard = memo(function StatCard({
+  label,
+  value,
+  icon,
+  color = 'primary.main',
+  isLoading,
+}: StatCardProps) {
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2.5,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        flex: '1 1 200px',
-        maxWidth: 300,
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 48,
-          height: 48,
-          borderRadius: 2,
-          bgcolor: color,
-          color: 'primary.contrastText',
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </Box>
+    <Paper variant="outlined" sx={styles.statCardPaper}>
+      <Box sx={[styles.statCardIconBox, { bgcolor: color }] as never}>{icon}</Box>
       <Box>
-        <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+        <Typography variant="h5" sx={styles.statCardValue}>
           {isLoading ? <Skeleton width={48} /> : (value ?? 0)}
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -76,49 +55,74 @@ function StatCard({ label, value, icon, color = 'primary.main', isLoading }: Sta
       </Box>
     </Paper>
   );
-}
+});
 
-function SystemAdminDashboard() {
+// ─── SystemAdminDashboard ─────────────────────────────────────────────────────
+
+const SystemAdminStatsGrid = memo(function SystemAdminStatsGrid({
+  stats,
+  isLoading,
+}: {
+  stats: ReturnType<typeof useGetDashboardStatsQuery>['data'];
+  isLoading: boolean;
+}) {
+  return (
+    <Box sx={styles.systemAdminStatsGrid}>
+      <StatCard
+        label="Tenants"
+        value={stats?.totalTenants}
+        icon={<BusinessIcon />}
+        isLoading={isLoading}
+      />
+      <StatCard
+        label="Tenant Admins"
+        value={stats?.totalTenantAdmins}
+        icon={<ManageAccountsIcon />}
+        isLoading={isLoading}
+      />
+      <StatCard
+        label="Tenant Users"
+        value={stats?.totalTenantUsers}
+        icon={<PeopleIcon />}
+        isLoading={isLoading}
+      />
+    </Box>
+  );
+});
+
+const SystemAdminDashboard = memo(function SystemAdminDashboard() {
   const theme = useTheme();
   const { data: stats, isLoading } = useGetDashboardStatsQuery(undefined);
 
-  const planData = [
-    { name: 'Free', value: stats?.freePlanTenants ?? 0 },
-    { name: 'Pro', value: stats?.proPlanTenants ?? 0 },
-  ];
+  const planData = useMemo(
+    () => [
+      { name: 'Free', value: stats?.freePlanTenants ?? 0 },
+      { name: 'Pro', value: stats?.proPlanTenants ?? 0 },
+    ],
+    [stats?.freePlanTenants, stats?.proPlanTenants],
+  );
 
-  const PLAN_COLORS = [theme.palette.text.disabled, theme.palette.primary.main];
+  const planColors = useMemo(
+    () => [theme.palette.text.disabled, theme.palette.primary.main],
+    [theme.palette.text.disabled, theme.palette.primary.main],
+  );
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 3 }}>
-        <StatCard
-          label="Tenants"
-          value={stats?.totalTenants}
-          icon={<BusinessIcon />}
-          isLoading={isLoading}
-        />
-        <StatCard
-          label="Tenant Admins"
-          value={stats?.totalTenantAdmins}
-          icon={<ManageAccountsIcon />}
-          isLoading={isLoading}
-        />
-        <StatCard
-          label="Tenant Users"
-          value={stats?.totalTenantUsers}
-          icon={<PeopleIcon />}
-          isLoading={isLoading}
-        />
-      </Box>
+      <SystemAdminStatsGrid stats={stats} isLoading={isLoading} />
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mt: 4 }}>
-        <Paper variant="outlined" sx={{ p: 2.5, flex: '1 1 300px', maxWidth: 380 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+      <Box sx={styles.systemAdminChartsRow}>
+        <Paper variant="outlined" sx={styles.planChartPaper}>
+          <Typography variant="subtitle2" sx={styles.planChartTitle}>
             Plan Distribution
           </Typography>
           {isLoading ? (
-            <Skeleton variant="circular" width={180} height={180} sx={{ mx: 'auto' }} />
+            <Skeleton
+              variant="circular"
+              width={180}
+              height={180}
+              sx={styles.planChartSkeletonCircle}
+            />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -134,7 +138,7 @@ function SystemAdminDashboard() {
                   labelLine={false}
                 >
                   {planData.map((_, index) => (
-                    <Cell key={index} fill={PLAN_COLORS[index]} />
+                    <Cell key={index} fill={planColors[index]} />
                   ))}
                 </Pie>
                 <RechartsTooltip />
@@ -146,51 +150,89 @@ function SystemAdminDashboard() {
       </Box>
     </Box>
   );
-}
+});
 
-function TenantAdminDashboard() {
+// ─── TenantAdminDashboard ─────────────────────────────────────────────────────
+
+const TenantAdminStatsGrid = memo(function TenantAdminStatsGrid({
+  stats,
+  isLoading,
+}: {
+  stats: ReturnType<typeof useGetDashboardStatsQuery>['data'];
+  isLoading: boolean;
+}) {
+  return (
+    <Box sx={styles.tenantAdminStatsGrid}>
+      <StatCard
+        label="Users"
+        value={stats?.totalTenantUsers}
+        icon={<PeopleIcon />}
+        isLoading={isLoading}
+      />
+      <StatCard
+        label="Roles"
+        value={stats?.totalRoles}
+        icon={<SecurityIcon />}
+        color="secondary.main"
+        isLoading={isLoading}
+      />
+      <StatCard
+        label="Pending Invitations"
+        value={stats?.totalPendingInvitations}
+        icon={<HourglassEmptyIcon />}
+        color="warning.main"
+        isLoading={isLoading}
+      />
+    </Box>
+  );
+});
+
+const TenantAdminDashboard = memo(function TenantAdminDashboard() {
   const theme = useTheme();
   const { data: stats, isLoading } = useGetDashboardStatsQuery(undefined);
 
-  const invitationData = [
-    {
-      name: 'Pending',
-      value: stats?.totalPendingInvitations ?? 0,
-      color: theme.palette.warning.main,
-    },
-    { name: 'Accepted', value: stats?.acceptedInvitations ?? 0, color: theme.palette.success.main },
-    { name: 'Expired', value: stats?.expiredInvitations ?? 0, color: theme.palette.text.disabled },
-    { name: 'Revoked', value: stats?.revokedInvitations ?? 0, color: theme.palette.error.main },
-  ];
+  const invitationData = useMemo(
+    () => [
+      {
+        name: 'Pending',
+        value: stats?.totalPendingInvitations ?? 0,
+        color: theme.palette.warning.main,
+      },
+      {
+        name: 'Accepted',
+        value: stats?.acceptedInvitations ?? 0,
+        color: theme.palette.success.main,
+      },
+      {
+        name: 'Expired',
+        value: stats?.expiredInvitations ?? 0,
+        color: theme.palette.text.disabled,
+      },
+      {
+        name: 'Revoked',
+        value: stats?.revokedInvitations ?? 0,
+        color: theme.palette.error.main,
+      },
+    ],
+    [
+      stats?.totalPendingInvitations,
+      stats?.acceptedInvitations,
+      stats?.expiredInvitations,
+      stats?.revokedInvitations,
+      theme.palette.warning.main,
+      theme.palette.success.main,
+      theme.palette.text.disabled,
+      theme.palette.error.main,
+    ],
+  );
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 3 }}>
-        <StatCard
-          label="Users"
-          value={stats?.totalTenantUsers}
-          icon={<PeopleIcon />}
-          isLoading={isLoading}
-        />
-        <StatCard
-          label="Roles"
-          value={stats?.totalRoles}
-          icon={<SecurityIcon />}
-          color="secondary.main"
-          isLoading={isLoading}
-        />
-        <StatCard
-          label="Pending Invitations"
-          value={stats?.totalPendingInvitations}
-          icon={<HourglassEmptyIcon />}
-          color="warning.main"
-          isLoading={isLoading}
-        />
-      </Box>
+      <TenantAdminStatsGrid stats={stats} isLoading={isLoading} />
 
-      <Box sx={{ mt: 4 }}>
-        <Paper variant="outlined" sx={{ p: 2.5, maxWidth: 500 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+      <Box sx={styles.tenantAdminChartSection}>
+        <Paper variant="outlined" sx={styles.invitationChartPaper}>
+          <Typography variant="subtitle2" sx={styles.invitationChartTitle}>
             Invitation Overview
           </Typography>
           {isLoading ? (
@@ -214,19 +256,21 @@ function TenantAdminDashboard() {
       </Box>
     </Box>
   );
-}
+});
 
-function TenantUserDashboard() {
+// ─── TenantUserDashboard ──────────────────────────────────────────────────────
+
+const TenantUserDashboard = memo(function TenantUserDashboard() {
   const user = useAppSelector(selectCurrentUser);
 
   return (
-    <Paper variant="outlined" sx={{ mt: 3, p: 3, maxWidth: 480 }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+    <Paper variant="outlined" sx={styles.tenantUserProfilePaper}>
+      <Typography variant="subtitle1" sx={styles.tenantUserProfileTitle}>
         Your profile
       </Typography>
-      <Divider sx={{ mb: 2 }} />
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Divider sx={styles.tenantUserDivider} />
+      <Box sx={styles.tenantUserProfileFields}>
+        <Box sx={styles.tenantUserProfileRow}>
           <AssignmentIndIcon fontSize="small" color="action" />
           <Box>
             <Typography variant="caption" color="text.secondary">
@@ -235,7 +279,7 @@ function TenantUserDashboard() {
             <Typography variant="body2">{user?.fullName ?? '—'}</Typography>
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box sx={styles.tenantUserProfileRow}>
           <EmailIcon fontSize="small" color="action" />
           <Box>
             <Typography variant="caption" color="text.secondary">
@@ -245,13 +289,13 @@ function TenantUserDashboard() {
           </Box>
         </Box>
         {user?.roles && user.roles.length > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-            <SecurityIcon fontSize="small" color="action" sx={{ mt: 0.25 }} />
+          <Box sx={styles.tenantUserRolesRow}>
+            <SecurityIcon fontSize="small" color="action" sx={styles.tenantUserRoleIcon} />
             <Box>
               <Typography variant="caption" color="text.secondary">
                 Roles
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+              <Box sx={styles.tenantUserRolesChips}>
                 {user.roles.map((r) => (
                   <Chip key={r} label={r} size="small" variant="outlined" />
                 ))}
@@ -262,29 +306,42 @@ function TenantUserDashboard() {
       </Box>
     </Paper>
   );
-}
+});
 
-export function DashboardPage() {
-  const user = useAppSelector(selectCurrentUser);
+// ─── DashboardPage ────────────────────────────────────────────────────────────
 
-  const isSystemAdmin = user?.systemRole === 'SystemAdmin';
-  const isTenantAdmin = user?.systemRole === 'TenantAdmin';
-
+const WelcomeHeader = memo(function WelcomeHeader({ fullName }: { fullName?: string | null }) {
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+    <>
+      <Box sx={styles.welcomeHeader}>
         <DashboardIcon color="primary" />
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
+        <Typography variant="h5" sx={styles.welcomeTitle}>
           Dashboard
         </Typography>
       </Box>
       <Typography variant="body1" color="text.secondary">
-        Welcome back{user?.fullName ? `, ${user.fullName}` : ''}.
+        Welcome back{fullName ? `, ${fullName}` : ''}.
       </Typography>
+    </>
+  );
+});
 
-      {isSystemAdmin && <SystemAdminDashboard />}
-      {isTenantAdmin && <TenantAdminDashboard />}
-      {!isSystemAdmin && !isTenantAdmin && <TenantUserDashboard />}
+export const DashboardPage = memo(function DashboardPage() {
+  const user = useAppSelector(selectCurrentUser);
+
+  const isSystemAdmin = useMemo(() => user?.systemRole === 'SystemAdmin', [user?.systemRole]);
+  const isTenantAdmin = useMemo(() => user?.systemRole === 'TenantAdmin', [user?.systemRole]);
+
+  const renderDashboardSection = useCallback(() => {
+    if (isSystemAdmin) return <SystemAdminDashboard />;
+    if (isTenantAdmin) return <TenantAdminDashboard />;
+    return <TenantUserDashboard />;
+  }, [isSystemAdmin, isTenantAdmin]);
+
+  return (
+    <Box sx={styles.pageRoot}>
+      <WelcomeHeader fullName={user?.fullName} />
+      {renderDashboardSection()}
     </Box>
   );
-}
+});

@@ -1,12 +1,11 @@
+import React from 'react';
 import Box from '@mui/material/Box';
-import Button, { type ButtonProps } from '@mui/material/Button';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import type { LoadingButtonProps } from './LoadingButton.types';
+import { styles } from './LoadingButton.styles';
 
-interface LoadingButtonProps extends ButtonProps {
-  loading?: boolean;
-}
-
-export function LoadingButton({
+export const LoadingButton = React.memo(function LoadingButton({
   loading = false,
   children,
   disabled,
@@ -15,16 +14,10 @@ export function LoadingButton({
 }: LoadingButtonProps) {
   return (
     <Button disabled={loading || disabled} sx={{ position: 'relative', ...sx }} {...rest}>
-      <Box component="span" sx={{ visibility: loading ? 'hidden' : 'visible' }}>
+      <Box component="span" sx={loading ? styles.spinnerHidden : styles.spinnerVisible}>
         {children}
       </Box>
-      {loading && (
-        <CircularProgress
-          size={16}
-          color="inherit"
-          sx={{ position: 'absolute', left: '50%', top: '50%', mt: '-8px', ml: '-8px' }}
-        />
-      )}
+      {loading && <CircularProgress size={16} color="inherit" sx={styles.spinner} />}
     </Button>
   );
-}
+});

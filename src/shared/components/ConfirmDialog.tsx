@@ -1,3 +1,4 @@
+import React from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -5,19 +6,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import { LoadingButton } from './LoadingButton';
+import type { ConfirmDialogProps } from './ConfirmDialog.types';
+import { styles } from './ConfirmDialog.styles';
 
-interface ConfirmDialogProps {
-  open: boolean;
-  title: string;
-  description?: string;
-  confirmLabel?: string;
-  danger?: boolean;
-  loading?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
-export function ConfirmDialog({
+export const ConfirmDialog = React.memo(function ConfirmDialog({
   open,
   title,
   description,
@@ -37,7 +29,7 @@ export function ConfirmDialog({
           </Typography>
         </DialogContent>
       )}
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+      <DialogActions sx={styles.dialogActions}>
         <Button onClick={onCancel} disabled={loading}>
           Cancel
         </Button>
@@ -52,4 +44,4 @@ export function ConfirmDialog({
       </DialogActions>
     </Dialog>
   );
-}
+});

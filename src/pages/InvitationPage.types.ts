@@ -1,0 +1,59 @@
+import { z } from 'zod';
+import {
+  requiredAddressZodShape,
+  requiredTenantAddressZodShape,
+} from '@/shared/forms/addressFields';
+import type { AcceptInvitationResponse } from '@/types/api';
+
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+export const passwordRule = z
+  .string()
+  .min(8, 'At least 8 characters')
+  .regex(/[A-Z]/, 'Must include an uppercase letter')
+  .regex(/[0-9]/, 'Must include a number')
+  .regex(/[^A-Za-z0-9]/, 'Must include a special character');
+
+export const phoneZodShape = z.object({ select: z.string(), input: z.string() }).optional();
+
+export const inviteSchema = z
+  .object({
+    fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+    phone: phoneZodShape,
+    password: passwordRule,
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    ...requiredAddressZodShape,
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+export type FormValues = z.infer<typeof inviteSchema>;
+
+export const tenantCreationSchema = z
+  .object({
+    fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+    phone: phoneZodShape,
+    password: passwordRule,
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    tenantName: z.string().min(1, 'Tenant name is required').max(200),
+    ...requiredTenantAddressZodShape,
+    ...requiredAddressZodShape,
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+export type TenantCreationValues = z.infer<typeof tenantCreationSchema>;
+
+// ─── Component prop types ──────────────────────────────────────────────────────
+
+export interface InvitationInvalidProps {
+  message?: string | null;
+}
+
+export interface InvitationSuccessProps {
+  result: AcceptInvitationResponse;
+}

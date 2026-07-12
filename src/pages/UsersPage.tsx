@@ -1,5 +1,4 @@
-﻿import { useCallback, useMemo, useState } from 'react';
-import { z } from 'zod';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
@@ -41,8 +40,6 @@ import { useDebounce } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { usePermission } from '@/shared/hooks/usePermission';
 import {
-  addressZodShape,
-  requiredAddressZodShape,
   getAddressFields,
   getSameAsCompanyField,
   buildAddressPayload,
@@ -71,36 +68,30 @@ import {
   useRemoveUserAvatarByAdminMutation,
   getUserAvatarUrl,
 } from '@/features/users/api/usersApi';
-import type { UserDto, UserInvitationDto, ApiError } from '@/types/api';
-
-// ─── Schemas ──────────────────────────────────────────────────────────────────
-
-const createSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required').max(200),
-  email: z.string().email('Invalid email address'),
-  // AUTOCOMPLETE multiple returns option objects { value, label }, not plain strings
-  roleIds: z.array(z.any()).min(1, 'At least one role is required'),
-  ...requiredAddressZodShape,
-});
-type CreateValues = z.infer<typeof createSchema>;
-
-const inviteSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  roleIds: z.array(z.any()).min(1, 'At least one role is required'),
-});
-type InviteValues = z.infer<typeof inviteSchema>;
-
-const editSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required').max(200),
-  roleId: z.string().optional(),
-  sameAsCompany: z.boolean().default(false),
-  ...addressZodShape,
-});
-type EditValues = z.infer<typeof editSchema>;
+import type { ApiError } from '@/types/api';
+import { styles } from './UsersPage.styles';
+import { createSchema, inviteSchema, editSchema } from './UsersPage.types';
+import type {
+  CreateValues,
+  InviteValues,
+  EditValues,
+  PendingAction,
+  RoleOption,
+  CreateUserDialogProps,
+  InviteUserDialogProps,
+  EditUserDialogProps,
+  ViewUserDialogProps,
+  UsersPageHeaderProps,
+  UsersPageFilterBarProps,
+  UsersPageActionsProps,
+  UsersInvitationsFilterBarProps,
+  UserDto,
+  UserInvitationDto,
+} from './UsersPage.types';
 
 // ─── Status chip ──────────────────────────────────────────────────────────────
 
-function UserStatusChip({ isActive }: { isActive: boolean }) {
+const UserStatusChip = memo(function UserStatusChip({ isActive }: { isActive: boolean }) {
   return (
     <Chip
       label={isActive ? 'Active' : 'Inactive'}
@@ -109,9 +100,9 @@ function UserStatusChip({ isActive }: { isActive: boolean }) {
       variant="outlined"
     />
   );
-}
+});
 
-function InvitationStatusChip({ status }: { status: string }) {
+const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { status: string }) {
   const color =
     status === 'accepted'
       ? 'success'
@@ -128,17 +119,15 @@ function InvitationStatusChip({ status }: { status: string }) {
       variant="outlined"
     />
   );
-}
+});
 
 // ─── Create dialog ────────────────────────────────────────────────────────────
 
-interface CreateUserDialogProps {
-  open: boolean;
-  onClose: () => void;
-  roleOptions: { value: string; label: string }[];
-}
-
-function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps) {
+const CreateUserDialog = memo(function CreateUserDialog({
+  open,
+  onClose,
+  roleOptions,
+}: CreateUserDialogProps) {
   const [createUser, { isLoading }] = useCreateUserMutation();
   const snackbar = useSnackbar();
 
@@ -171,22 +160,25 @@ function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps)
     [roleOptions],
   );
 
-  const onSubmit = async (values: CreateValues) => {
-    try {
-      const result = await createUser({
-        fullName: values.fullName,
-        email: values.email,
-        roleIds: values.roleIds.map((r: unknown) =>
-          typeof r === 'string' ? r : (r as { value: string }).value,
-        ),
-        ...buildAddressPayload(values),
-      }).unwrap();
-      snackbar.success(`User "${result.fullName}" created. Setup email sent to ${result.email}.`);
-      onClose();
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to create user.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: CreateValues) => {
+      try {
+        const result = await createUser({
+          fullName: values.fullName,
+          email: values.email,
+          roleIds: values.roleIds.map((r: unknown) =>
+            typeof r === 'string' ? r : (r as { value: string }).value,
+          ),
+          ...buildAddressPayload(values),
+        }).unwrap();
+        snackbar.success(`User "${result.fullName}" created. Setup email sent to ${result.email}.`);
+        onClose();
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to create user.');
+      }
+    },
+    [createUser, snackbar, onClose],
+  );
 
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -200,22 +192,20 @@ function CreateUserDialog({ open, onClose, roleOptions }: CreateUserDialogProps)
           onCancel={onClose}
           submitText="Create user"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          sx={styles.dialogForm as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── Invite dialog ────────────────────────────────────────────────────────────
 
-interface InviteUserDialogProps {
-  open: boolean;
-  onClose: () => void;
-  roleOptions: { value: string; label: string }[];
-}
-
-function InviteUserDialog({ open, onClose, roleOptions }: InviteUserDialogProps) {
+const InviteUserDialog = memo(function InviteUserDialog({
+  open,
+  onClose,
+  roleOptions,
+}: InviteUserDialogProps) {
   const [inviteUser, { isLoading }] = useInviteUserMutation();
   const snackbar = useSnackbar();
 
@@ -241,20 +231,23 @@ function InviteUserDialog({ open, onClose, roleOptions }: InviteUserDialogProps)
     [roleOptions],
   );
 
-  const onSubmit = async (values: InviteValues) => {
-    try {
-      await inviteUser({
-        email: values.email,
-        roleIds: values.roleIds.map((r: unknown) =>
-          typeof r === 'string' ? r : (r as { value: string }).value,
-        ),
-      }).unwrap();
-      snackbar.success(`Invitation sent to ${values.email}.`);
-      onClose();
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to send invitation.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: InviteValues) => {
+      try {
+        await inviteUser({
+          email: values.email,
+          roleIds: values.roleIds.map((r: unknown) =>
+            typeof r === 'string' ? r : (r as { value: string }).value,
+          ),
+        }).unwrap();
+        snackbar.success(`Invitation sent to ${values.email}.`);
+        onClose();
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to send invitation.');
+      }
+    },
+    [inviteUser, snackbar, onClose],
+  );
 
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -268,23 +261,21 @@ function InviteUserDialog({ open, onClose, roleOptions }: InviteUserDialogProps)
           onCancel={onClose}
           submitText="Send invitation"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          sx={styles.dialogForm as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-interface EditUserDialogProps {
-  open: boolean;
-  onClose: () => void;
-  user: UserDto | null;
-  roleOptions: { value: string; label: string }[];
-}
-
-function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProps) {
+const EditUserDialog = memo(function EditUserDialog({
+  open,
+  onClose,
+  user,
+  roleOptions,
+}: EditUserDialogProps) {
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const snackbar = useSnackbar();
   const { data: currentUser } = useGetCurrentUserQuery();
@@ -321,32 +312,35 @@ function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProp
     [user, roleOptions, currentRoleId, tenantAddress],
   );
 
-  const onSubmit = async (values: EditValues) => {
-    if (!user) return;
-    try {
-      const addressPayload =
-        values.sameAsCompany && tenantAddress
-          ? { address: tenantAddress }
-          : buildAddressPayload(values);
+  const onSubmit = useCallback(
+    async (values: EditValues) => {
+      if (!user) return;
+      try {
+        const addressPayload =
+          values.sameAsCompany && tenantAddress
+            ? { address: tenantAddress }
+            : buildAddressPayload(values);
 
-      await updateUser({
-        email: user.email,
-        fullName: values.fullName,
-        roleId: values.roleId || null,
-        ...addressPayload,
-      }).unwrap();
-      snackbar.success('User updated.');
-      onClose();
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to update user.');
-    }
-  };
+        await updateUser({
+          email: user.email,
+          fullName: values.fullName,
+          roleId: values.roleId || null,
+          ...addressPayload,
+        }).unwrap();
+        snackbar.success('User updated.');
+        onClose();
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to update user.');
+      }
+    },
+    [updateUser, snackbar, onClose, user, tenantAddress],
+  );
 
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit User</DialogTitle>
       <DialogContent dividers>
-        <LabelValue label="Email" value={user?.email} sx={{ mb: 2 }} />
+        <LabelValue label="Email" value={user?.email} sx={styles.editDialogEmail} />
         <FormBuilder
           key={user?.id}
           schema={editSchema}
@@ -355,37 +349,26 @@ function EditUserDialog({ open, onClose, user, roleOptions }: EditUserDialogProp
           onCancel={onClose}
           submitText="Save changes"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          sx={styles.dialogForm as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
-
-// ─── Action types ─────────────────────────────────────────────────────────────
-
-type ActionType = 'delete' | 'activate' | 'deactivate';
-
-interface PendingAction {
-  type: ActionType;
-  user: UserDto;
-}
+});
 
 // ─── View dialog ──────────────────────────────────────────────────────────────
 
-function ViewUserDialog({ user, onClose }: { user: UserDto | null; onClose: () => void }) {
+const ViewUserDialog = memo(function ViewUserDialog({ user, onClose }: ViewUserDialogProps) {
   return (
     <ViewDialog open={!!user} title="User details" onClose={onClose}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={styles.viewDialogBody}>
         <LabelValue label="Full name" value={user?.fullName} />
         <LabelValue label="Email" value={user?.email} />
         <LabelValue
           label="Roles"
           value={
             user?.roles && user.roles.length > 0
-              ? user.roles.map((r) => (
-                  <Chip key={r} label={r} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
-                ))
+              ? user.roles.map((r) => <Chip key={r} label={r} size="small" sx={styles.roleChip} />)
               : undefined
           }
         />
@@ -398,11 +381,128 @@ function ViewUserDialog({ user, onClose }: { user: UserDto | null; onClose: () =
       </Box>
     </ViewDialog>
   );
-}
+});
+
+// ─── Section sub-components ───────────────────────────────────────────────────
+
+const UsersPageHeader = memo(function UsersPageHeader({
+  canCreate,
+  canInvite,
+  atUserLimit,
+  maxUsers,
+  planName,
+  onCreateOpen,
+  onInviteOpen,
+}: UsersPageHeaderProps) {
+  return (
+    <Box sx={styles.header}>
+      <Box sx={styles.headerTitle}>
+        <PeopleIcon color="primary" />
+        <Typography variant="h5" sx={styles.titleText}>
+          Users
+        </Typography>
+      </Box>
+      <Box sx={styles.headerActions}>
+        {canInvite && (
+          <Tooltip
+            title={atUserLimit ? `User limit reached (${maxUsers} on ${planName} plan)` : ''}
+          >
+            <span>
+              <Button
+                variant="outlined"
+                startIcon={<SendIcon />}
+                disabled={atUserLimit}
+                onClick={onInviteOpen}
+              >
+                Invite
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+        {canCreate && (
+          <Tooltip
+            title={atUserLimit ? `User limit reached (${maxUsers} on ${planName} plan)` : ''}
+          >
+            <span>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                disabled={atUserLimit}
+                onClick={onCreateOpen}
+              >
+                Create user
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+      </Box>
+    </Box>
+  );
+});
+
+const UsersPageFilterBar = memo(function UsersPageFilterBar({
+  userFilterFields,
+  defaultValues,
+  onChange,
+}: UsersPageFilterBarProps) {
+  return (
+    <Box sx={styles.filterBar}>
+      <FilterForm
+        fields={userFilterFields}
+        defaultValues={defaultValues}
+        onChange={onChange}
+        showReset
+        spacing={2}
+      />
+    </Box>
+  );
+});
+
+const UsersPageActions = memo(function UsersPageActions({
+  exportLoading,
+  hasItems,
+  onExport,
+}: UsersPageActionsProps) {
+  return (
+    <Box sx={styles.exportRow}>
+      <Tooltip title="Export to CSV">
+        <span>
+          <LoadingButton
+            variant="outlined"
+            size="small"
+            loading={exportLoading}
+            disabled={!hasItems}
+            onClick={onExport}
+          >
+            Export CSV
+          </LoadingButton>
+        </span>
+      </Tooltip>
+    </Box>
+  );
+});
+
+const UsersInvitationsFilterBar = memo(function UsersInvitationsFilterBar({
+  invFilterFields,
+  defaultValues,
+  onChange,
+}: UsersInvitationsFilterBarProps) {
+  return (
+    <Box sx={styles.invitationsFilterBar}>
+      <FilterForm
+        fields={invFilterFields}
+        defaultValues={defaultValues}
+        onChange={onChange}
+        showReset
+        spacing={2}
+      />
+    </Box>
+  );
+});
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function UsersPage() {
+export const UsersPage = memo(function UsersPage() {
   const snackbar = useSnackbar();
 
   const dispatch = useAppDispatch();
@@ -442,7 +542,7 @@ export function UsersPage() {
   const [invitationsPage, setInvitationsPage] = useState(0);
   const [revokeTarget, setRevokeTarget] = useState<UserInvitationDto | null>(null);
 
-  // API
+  // Field configs
   const userFilterFields = useMemo<FieldConfig[]>(
     () => [
       {
@@ -497,6 +597,12 @@ export function UsersPage() {
     [],
   );
 
+  // Default values (memoised objects — prevent referential churn on FilterForm)
+  const userFilterDefaults = useMemo(() => ({ search: '', status: '', createdVia: '' }), []);
+
+  const invFilterDefaults = useMemo(() => ({ status: '' }), []);
+
+  // API
   const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
     page: usersPage + 1,
     pageSize: 20,
@@ -526,7 +632,7 @@ export function UsersPage() {
   const [uploadUserAvatar, { isLoading: isUploadingAvatar }] = useUploadUserAvatarByAdminMutation();
   const [removeUserAvatar, { isLoading: isRemovingAvatar }] = useRemoveUserAvatarByAdminMutation();
 
-  const roleOptions = useMemo(
+  const roleOptions = useMemo<RoleOption[]>(
     () => (rolesData?.items ?? []).map((r) => ({ value: r.id, label: r.name })),
     [rolesData],
   );
@@ -535,9 +641,34 @@ export function UsersPage() {
 
   const maxUsers = tenantSettings?.planFeatures?.maxUsers ?? -1;
   const totalUsers = usersData?.totalCount ?? 0;
-  const atUserLimit = maxUsers !== -1 && totalUsers >= maxUsers;
+  const atUserLimit = useMemo(
+    () => maxUsers !== -1 && totalUsers >= maxUsers,
+    [maxUsers, totalUsers],
+  );
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+
+  const handleTabChange = useCallback((_: React.SyntheticEvent, v: number) => setTab(v), []);
+
+  const handleCreateOpen = useCallback(() => setCreateOpen(true), []);
+  const handleCreateClose = useCallback(() => setCreateOpen(false), []);
+  const handleInviteOpen = useCallback(() => setInviteOpen(true), []);
+  const handleInviteClose = useCallback(() => setInviteOpen(false), []);
+  const handleViewClose = useCallback(() => setViewUser(null), []);
+  const handleEditClose = useCallback(() => setEditUser(null), []);
+  const handleAvatarClose = useCallback(() => setAvatarUser(null), []);
+  const handlePendingCancel = useCallback(() => setPendingAction(null), []);
+  const handleRevokeCancel = useCallback(() => setRevokeTarget(null), []);
+
+  const handleUserFilterChange = useCallback((values: Record<string, unknown>) => {
+    setUserFilter(values as { search: string; status: string; createdVia: string });
+    setUsersPage(0);
+  }, []);
+
+  const handleInvFilterChange = useCallback((values: Record<string, unknown>) => {
+    setInvStatusFilter((values.status as string) ?? '');
+    setInvitationsPage(0);
+  }, []);
 
   const handleResend = useCallback(
     async (user: UserDto) => {
@@ -555,9 +686,7 @@ export function UsersPage() {
     async (user: UserDto) => {
       try {
         await startImpersonation({ targetUserId: user.id }).unwrap();
-        // Reset cached data (admin's data shouldn't show for impersonated user)
         dispatch(apiSlice.util.resetApiState());
-        // getMe refetch picks up the new cookie and sets impersonation state + permissions
         dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
         snackbar.success(`Now impersonating ${user.fullName}.`);
       } catch (err) {
@@ -567,7 +696,7 @@ export function UsersPage() {
     [startImpersonation, dispatch, snackbar],
   );
 
-  const handleConfirmAction = async () => {
+  const handleConfirmAction = useCallback(async () => {
     if (!pendingAction) return;
     const { type, user } = pendingAction;
     try {
@@ -586,9 +715,9 @@ export function UsersPage() {
     } finally {
       setPendingAction(null);
     }
-  };
+  }, [pendingAction, deleteUser, activateUser, deactivateUser, snackbar]);
 
-  const handleRevokeConfirm = async () => {
+  const handleRevokeConfirm = useCallback(async () => {
     if (!revokeTarget) return;
     try {
       await revokeInvitation(revokeTarget.id).unwrap();
@@ -598,7 +727,7 @@ export function UsersPage() {
     } finally {
       setRevokeTarget(null);
     }
-  };
+  }, [revokeTarget, revokeInvitation, snackbar]);
 
   const handleResendInvitation = useCallback(
     async (inv: UserInvitationDto) => {
@@ -612,18 +741,21 @@ export function UsersPage() {
     [resendInvitation, snackbar],
   );
 
-  const handleUploadAvatar = async (file: File) => {
-    if (!avatarUser) return;
-    try {
-      const updated = await uploadUserAvatar({ userId: avatarUser.id, file }).unwrap();
-      setAvatarUser({ ...avatarUser, profileFileId: updated.profileFileId });
-      snackbar.success('Profile picture updated.');
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
-    }
-  };
+  const handleUploadAvatar = useCallback(
+    async (file: File) => {
+      if (!avatarUser) return;
+      try {
+        const updated = await uploadUserAvatar({ userId: avatarUser.id, file }).unwrap();
+        setAvatarUser({ ...avatarUser, profileFileId: updated.profileFileId });
+        snackbar.success('Profile picture updated.');
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
+      }
+    },
+    [avatarUser, uploadUserAvatar, snackbar],
+  );
 
-  const handleRemoveAvatar = async () => {
+  const handleRemoveAvatar = useCallback(async () => {
     if (!avatarUser) return;
     try {
       const updated = await removeUserAvatar(avatarUser.id).unwrap();
@@ -632,9 +764,33 @@ export function UsersPage() {
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
     }
-  };
+  }, [avatarUser, removeUserAvatar, snackbar]);
 
-  // ── Table columns ────────────────────────────────────────────────────────────
+  const handleExportUsers = useCallback(async () => {
+    setExportLoading(true);
+    try {
+      const { usersApi } = await import('@/features/users/api/usersApi');
+      const result = await dispatch(
+        usersApi.endpoints.getUsers.initiate({ page: 1, pageSize: 5000 }),
+      );
+      const items = ('data' in result ? result.data?.items : null) ?? usersData?.items ?? [];
+      exportToCsv(
+        'users',
+        items.map((u) => ({
+          Name: u.fullName,
+          Email: u.email,
+          Roles: u.roles.join('; '),
+          Status: u.isActive ? 'Active' : 'Inactive',
+          'Last Login': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '',
+          'Created Via': u.createdVia,
+        })),
+      );
+    } finally {
+      setExportLoading(false);
+    }
+  }, [dispatch, usersData?.items]);
+
+  // ── Table columns ─────────────────────────────────────────────────────────────
 
   const userColumns = useMemo<ColumnDef<UserDto>[]>(
     () => [
@@ -653,7 +809,7 @@ export function UsersPage() {
             <Tooltip title="Manage profile photo">
               <Avatar
                 src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
-                sx={{ width: 36, height: 36, cursor: 'pointer', fontSize: '0.875rem' }}
+                sx={styles.avatarClickable}
                 onClick={() => setAvatarUser(user)}
               >
                 {initials}
@@ -662,7 +818,7 @@ export function UsersPage() {
           ) : (
             <Avatar
               src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
-              sx={{ width: 36, height: 36, fontSize: '0.875rem' }}
+              sx={styles.avatarReadOnly}
             >
               {initials}
             </Avatar>
@@ -673,8 +829,8 @@ export function UsersPage() {
         header: 'User',
         accessorKey: 'fullName',
         cell: ({ row }) => (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          <Box sx={styles.userCell}>
+            <Typography variant="body2" sx={styles.userCellName}>
               {row.original.fullName}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -701,7 +857,7 @@ export function UsersPage() {
         header: 'Last login',
         accessorKey: 'lastLoginAt',
         cell: ({ row }) => (
-          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+          <Typography variant="body2" color="text.secondary" sx={styles.lastLoginCell}>
             {row.original.lastLoginAt ? new Date(row.original.lastLoginAt).toLocaleString() : '—'}
           </Typography>
         ),
@@ -717,7 +873,7 @@ export function UsersPage() {
         cell: ({ row }) => {
           const user = row.original;
           return (
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Box sx={styles.actionsCell}>
               {canView && (
                 <Tooltip title="View">
                   <IconButton size="small" onClick={() => setViewUser(user)}>
@@ -810,7 +966,6 @@ export function UsersPage() {
       currentUser,
       handleResend,
       handleImpersonate,
-      setAvatarUser,
     ],
   );
 
@@ -847,7 +1002,7 @@ export function UsersPage() {
                 const canResendRow = canResend && isPending;
                 if (!canRevokeRow && !canResendRow) return null;
                 return (
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <Box sx={styles.invitationActionsCell}>
                     {canResendRow && (
                       <Tooltip title="Resend invitation">
                         <span>
@@ -880,153 +1035,97 @@ export function UsersPage() {
           ] as ColumnDef<UserInvitationDto>[])
         : []),
     ],
-    [canRevoke, canResend, isResendingInvitation, setRevokeTarget, handleResendInvitation],
+    [canRevoke, canResend, isResendingInvitation, handleResendInvitation],
   );
 
   // ── Confirm dialog copy ───────────────────────────────────────────────────────
 
-  const confirmTitle =
-    pendingAction?.type === 'delete'
-      ? `Delete "${pendingAction.user.fullName}"?`
-      : pendingAction?.type === 'activate'
-        ? `Activate "${pendingAction?.user.fullName}"?`
-        : `Deactivate "${pendingAction?.user.fullName}"?`;
+  const confirmTitle = useMemo(
+    () =>
+      pendingAction?.type === 'delete'
+        ? `Delete "${pendingAction.user.fullName}"?`
+        : pendingAction?.type === 'activate'
+          ? `Activate "${pendingAction?.user.fullName}"?`
+          : `Deactivate "${pendingAction?.user.fullName}"?`,
+    [pendingAction],
+  );
 
-  const confirmMessage =
-    pendingAction?.type === 'delete'
-      ? 'This will permanently remove the user. This action cannot be undone.'
-      : pendingAction?.type === 'activate'
-        ? 'The user will be able to sign in again.'
-        : 'The user will be unable to sign in until reactivated.';
+  const confirmMessage = useMemo(
+    () =>
+      pendingAction?.type === 'delete'
+        ? 'This will permanently remove the user. This action cannot be undone.'
+        : pendingAction?.type === 'activate'
+          ? 'The user will be able to sign in again.'
+          : 'The user will be unable to sign in until reactivated.',
+    [pendingAction],
+  );
 
-  const handleExportUsers = async () => {
-    setExportLoading(true);
-    try {
-      const { usersApi } = await import('@/features/users/api/usersApi');
-      const result = await dispatch(
-        usersApi.endpoints.getUsers.initiate({ page: 1, pageSize: 5000 }),
-      );
-      const items = ('data' in result ? result.data?.items : null) ?? usersData?.items ?? [];
-      exportToCsv(
-        'users',
-        items.map((u) => ({
-          Name: u.fullName,
-          Email: u.email,
-          Roles: u.roles.join('; '),
-          Status: u.isActive ? 'Active' : 'Inactive',
-          'Last Login': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '',
-          'Created Via': u.createdVia,
-        })),
-      );
-    } finally {
-      setExportLoading(false);
-    }
-  };
+  // ── Avatar modal helpers ──────────────────────────────────────────────────────
+
+  const avatarSrc = useMemo(
+    () => (avatarUser?.profileFileId ? getUserAvatarUrl(avatarUser.id) : null),
+    [avatarUser],
+  );
+
+  const avatarInitials = useMemo(
+    () =>
+      avatarUser
+        ? avatarUser.fullName
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase()
+        : '',
+    [avatarUser],
+  );
 
   return (
     <TenantContextGuard>
-      <Box>
+      <Box sx={styles.root}>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <PeopleIcon color="primary" />
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Users
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {canInvite && (
-              <Tooltip
-                title={
-                  atUserLimit
-                    ? `User limit reached (${maxUsers} on ${tenantSettings?.planName} plan)`
-                    : ''
-                }
-              >
-                <span>
-                  <Button
-                    variant="outlined"
-                    startIcon={<SendIcon />}
-                    disabled={atUserLimit}
-                    onClick={() => setInviteOpen(true)}
-                  >
-                    Invite
-                  </Button>
-                </span>
-              </Tooltip>
-            )}
-            {canCreate && (
-              <Tooltip
-                title={
-                  atUserLimit
-                    ? `User limit reached (${maxUsers} on ${tenantSettings?.planName} plan)`
-                    : ''
-                }
-              >
-                <span>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    disabled={atUserLimit}
-                    onClick={() => setCreateOpen(true)}
-                  >
-                    Create user
-                  </Button>
-                </span>
-              </Tooltip>
-            )}
-          </Box>
-        </Box>
+        <UsersPageHeader
+          canCreate={canCreate}
+          canInvite={canInvite}
+          atUserLimit={atUserLimit}
+          maxUsers={maxUsers}
+          planName={tenantSettings?.planName}
+          onCreateOpen={handleCreateOpen}
+          onInviteOpen={handleInviteOpen}
+        />
 
         {/* Plan limit banner */}
         {atUserLimit && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity="warning" sx={styles.limitAlert}>
             You've reached the <strong>{maxUsers}-user limit</strong> on the{' '}
             <strong>{tenantSettings?.planName}</strong> plan. Upgrade to Pro to add more users.
           </Alert>
         )}
 
         {/* Tabs */}
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+        <Tabs value={tab} onChange={handleTabChange} sx={styles.tabsRow}>
           <Tab label="Users" />
           <Tab label="Invitations" />
         </Tabs>
 
         {/* ── Users tab ── */}
         {tab === 0 && !canList && (
-          <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Box sx={styles.noPermission}>
             <Typography color="text.secondary">You don't have permission to list users.</Typography>
           </Box>
         )}
         {tab === 0 && canList && (
           <Box>
-            <Box sx={{ mb: 2 }}>
-              <FilterForm
-                fields={userFilterFields}
-                defaultValues={{ search: '', status: '', createdVia: '' }}
-                onChange={(values) => {
-                  setUserFilter(values as typeof userFilter);
-                  setUsersPage(0);
-                }}
-                showReset
-                spacing={2}
-              />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                <Tooltip title="Export to CSV">
-                  <span>
-                    <LoadingButton
-                      variant="outlined"
-                      size="small"
-                      loading={exportLoading}
-                      disabled={!usersData?.items?.length}
-                      onClick={handleExportUsers}
-                    >
-                      Export CSV
-                    </LoadingButton>
-                  </span>
-                </Tooltip>
-              </Box>
-            </Box>
+            <UsersPageFilterBar
+              userFilterFields={userFilterFields}
+              defaultValues={userFilterDefaults}
+              onChange={handleUserFilterChange}
+            />
+            <UsersPageActions
+              exportLoading={exportLoading}
+              hasItems={!!usersData?.items?.length}
+              onExport={handleExportUsers}
+            />
             <DataTable
               columns={userColumns}
               data={usersData?.items ?? []}
@@ -1041,7 +1140,7 @@ export function UsersPage() {
 
         {/* ── Invitations tab ── */}
         {tab === 1 && !canList && (
-          <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Box sx={styles.noPermission}>
             <Typography color="text.secondary">
               You don't have permission to list invitations.
             </Typography>
@@ -1049,18 +1148,11 @@ export function UsersPage() {
         )}
         {tab === 1 && canList && (
           <Box>
-            <Box sx={{ mb: 2 }}>
-              <FilterForm
-                fields={invFilterFields}
-                defaultValues={{ status: '' }}
-                onChange={(values) => {
-                  setInvStatusFilter((values.status as string) ?? '');
-                  setInvitationsPage(0);
-                }}
-                showReset
-                spacing={2}
-              />
-            </Box>
+            <UsersInvitationsFilterBar
+              invFilterFields={invFilterFields}
+              defaultValues={invFilterDefaults}
+              onChange={handleInvFilterChange}
+            />
             <DataTable
               columns={invitationColumns}
               data={invitationsData?.items ?? []}
@@ -1076,37 +1168,20 @@ export function UsersPage() {
         {/* Dialogs */}
         <AvatarManageModal
           open={!!avatarUser}
-          onClose={() => setAvatarUser(null)}
-          src={avatarUser?.profileFileId ? getUserAvatarUrl(avatarUser.id) : null}
-          initials={
-            avatarUser
-              ? avatarUser.fullName
-                  .split(' ')
-                  .map((n) => n[0])
-                  .join('')
-                  .slice(0, 2)
-                  .toUpperCase()
-              : ''
-          }
+          onClose={handleAvatarClose}
+          src={avatarSrc}
+          initials={avatarInitials}
           title={`Profile photo — ${avatarUser?.fullName ?? ''}`}
           uploading={isUploadingAvatar || isRemovingAvatar}
           onUpload={handleUploadAvatar}
           onRemove={avatarUser?.profileFileId ? handleRemoveAvatar : undefined}
         />
-        <ViewUserDialog user={viewUser} onClose={() => setViewUser(null)} />
-        <CreateUserDialog
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-          roleOptions={roleOptions}
-        />
-        <InviteUserDialog
-          open={inviteOpen}
-          onClose={() => setInviteOpen(false)}
-          roleOptions={roleOptions}
-        />
+        <ViewUserDialog user={viewUser} onClose={handleViewClose} />
+        <CreateUserDialog open={createOpen} onClose={handleCreateClose} roleOptions={roleOptions} />
+        <InviteUserDialog open={inviteOpen} onClose={handleInviteClose} roleOptions={roleOptions} />
         <EditUserDialog
           open={!!editUser}
-          onClose={() => setEditUser(null)}
+          onClose={handleEditClose}
           user={editUser}
           roleOptions={roleOptions}
         />
@@ -1125,7 +1200,7 @@ export function UsersPage() {
           danger={pendingAction?.type === 'delete'}
           loading={isActivating || isDeactivating || isDeleting}
           onConfirm={handleConfirmAction}
-          onCancel={() => setPendingAction(null)}
+          onCancel={handlePendingCancel}
         />
 
         <ConfirmDialog
@@ -1136,9 +1211,9 @@ export function UsersPage() {
           danger
           loading={isRevoking}
           onConfirm={handleRevokeConfirm}
-          onCancel={() => setRevokeTarget(null)}
+          onCancel={handleRevokeCancel}
         />
       </Box>
     </TenantContextGuard>
   );
-}
+});

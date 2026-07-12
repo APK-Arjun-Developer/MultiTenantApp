@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { z } from 'zod';
+import { memo, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Box from '@mui/material/Box';
@@ -14,11 +13,11 @@ import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
+import { styles } from './ForgotPasswordPage.styles';
+import { forgotPasswordSchema } from './ForgotPasswordPage.types';
+import type { ForgotPasswordFormValues } from './ForgotPasswordPage.types';
 
-const schema = z.object({
-  email: z.string().email('Invalid email address'),
-});
-type FormValues = z.infer<typeof schema>;
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const fields: FieldConfig[] = [
   {
@@ -36,25 +35,48 @@ const variants = {
   exit: { opacity: 0, y: -12 },
 };
 
-export function ForgotPasswordPage() {
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
   const snackbar = useSnackbar();
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState('');
 
-  const onSubmit = async (values: FormValues) => {
-    try {
-      await forgotPassword({ email: values.email }).unwrap();
-      setSentEmail(values.email);
-      setSent(true);
-    } catch (err) {
-      const error = err as ApiError;
-      snackbar.error(error.message || 'No account found with that email address.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: ForgotPasswordFormValues) => {
+      try {
+        await forgotPassword({ email: values.email }).unwrap();
+        setSentEmail(values.email);
+        setSent(true);
+      } catch (err) {
+        const error = err as ApiError;
+        snackbar.error(error.message || 'No account found with that email address.');
+      }
+    },
+    [forgotPassword, snackbar],
+  );
+
+  const renderActions = useCallback(
+    ({ isSubmitting }: { isSubmitting: boolean }) => (
+      <LoadingButton
+        type="submit"
+        loading={isSubmitting || isLoading}
+        variant="contained"
+        fullWidth
+        size="large"
+        sx={styles.submitButton}
+      >
+        Send reset link
+      </LoadingButton>
+    ),
+    [isLoading],
+  );
+
+  const handleTryDifferentEmail = useCallback(() => setSent(false), []);
 
   return (
-    <Box sx={{ overflow: 'hidden' }}>
+    <Box sx={styles.root}>
       <AnimatePresence mode="wait" initial={false}>
         {!sent ? (
           <motion.div
@@ -65,36 +87,25 @@ export function ForgotPasswordPage() {
             exit="exit"
             transition={{ duration: 0.2 }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box sx={styles.titleRow}>
               <EmailIcon color="primary" />
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" sx={styles.titleText}>
                 Reset your password
               </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={styles.subtitle}>
               Enter the email address linked to your account. If it exists, we'll send a reset link.
             </Typography>
 
             <FormBuilder
-              schema={schema}
+              schema={forgotPasswordSchema}
               fields={fields}
               onSubmit={onSubmit}
-              renderActions={({ isSubmitting }) => (
-                <LoadingButton
-                  type="submit"
-                  loading={isSubmitting || isLoading}
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  sx={{ mt: 1 }}
-                >
-                  Send reset link
-                </LoadingButton>
-              )}
-              sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+              renderActions={renderActions}
+              sx={styles.formBuilder as never}
             />
 
-            <Box sx={{ textAlign: 'center', mt: 1 }}>
+            <Box sx={styles.backLinkBox}>
               <Button
                 component={Link}
                 to="/login"
@@ -115,14 +126,14 @@ export function ForgotPasswordPage() {
             exit="exit"
             transition={{ duration: 0.2 }}
           >
-            <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
-              <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main' }} />
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <Stack spacing={2} sx={styles.sentStack}>
+              <CheckCircleIcon sx={styles.sentIcon} />
+              <Typography variant="h6" sx={styles.sentTitle}>
                 Check your inbox
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 If an account is linked to{' '}
-                <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                <Box component="span" sx={styles.sentEmailHighlight}>
                   {sentEmail}
                 </Box>
                 , a reset link has been sent. Check your spam folder if you don't see it.
@@ -133,11 +144,11 @@ export function ForgotPasswordPage() {
                 variant="contained"
                 fullWidth
                 size="large"
-                sx={{ mt: 1 }}
+                sx={styles.sentBackButton}
               >
                 Back to sign in
               </Button>
-              <Button variant="text" size="small" onClick={() => setSent(false)}>
+              <Button variant="text" size="small" onClick={handleTryDifferentEmail}>
                 Try a different email
               </Button>
             </Stack>
@@ -146,4 +157,4 @@ export function ForgotPasswordPage() {
       </AnimatePresence>
     </Box>
   );
-}
+});

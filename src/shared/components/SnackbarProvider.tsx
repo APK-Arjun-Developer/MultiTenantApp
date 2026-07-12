@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode, type SyntheticEvent } from 'react';
+import React, { useCallback, useState, type ReactNode, type SyntheticEvent } from 'react';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 import {
@@ -6,16 +6,14 @@ import {
   DEFAULT_SNACKBAR_DURATION,
   type Severity,
 } from '@/shared/hooks/snackbarContext';
+import type { SnackbarState } from './SnackbarProvider.types';
+import { styles } from './SnackbarProvider.styles';
 
-interface SnackbarState {
-  open: boolean;
-  message: string;
-  severity: Severity;
-  duration: number;
-  key: number;
-}
-
-export function SnackbarProvider({ children }: { children: ReactNode }) {
+export const SnackbarProvider = React.memo(function SnackbarProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [state, setState] = useState<SnackbarState>({
     open: false,
     message: '',
@@ -39,10 +37,12 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
   const warning = useCallback((msg: string, dur?: number) => show(msg, 'warning', dur), [show]);
   const info = useCallback((msg: string, dur?: number) => show(msg, 'info', dur), [show]);
 
-  const handleClose = (_: SyntheticEvent | Event, reason?: string) => {
+  const handleClose = useCallback((_: SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') return;
     setState((prev) => ({ ...prev, open: false }));
-  };
+  }, []);
+
+  const handleAlertClose = useCallback((e: SyntheticEvent) => handleClose(e), [handleClose]);
 
   return (
     <SnackbarContext.Provider value={{ show, success, error, warning, info }}>
@@ -57,12 +57,12 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
         <Alert
           severity={state.severity}
           variant="filled"
-          onClose={(e: SyntheticEvent) => handleClose(e)}
-          sx={{ width: '100%', minWidth: 280 }}
+          onClose={handleAlertClose}
+          sx={styles.alert}
         >
           {state.message}
         </Alert>
       </Snackbar>
     </SnackbarContext.Provider>
   );
-}
+});

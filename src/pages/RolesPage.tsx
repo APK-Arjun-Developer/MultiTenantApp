@@ -1,5 +1,4 @@
-﻿import { useMemo, useState } from 'react';
-import { z } from 'zod';
+import { memo, useCallback, useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,7 +14,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { FormBuilder, FilterForm, FIELD_TYPE } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { LabelValue } from '@/shared/components/LabelValue';
@@ -32,23 +31,19 @@ import {
   useGetPermissionsQuery,
 } from '@/features/roles/api/rolesApi';
 import type { RoleDto, ApiError } from '@/types/api';
-
-// ─── Schemas ──────────────────────────────────────────────────────────────────
-
-const createSchema = z.object({
-  name: z.string().min(1, 'Role name is required').max(100),
-  description: z.string().optional(),
-  // AUTOCOMPLETE multiple returns option objects { value, label }
-  permissions: z.array(z.any()).min(1, 'At least one permission is required'),
-});
-type CreateValues = z.infer<typeof createSchema>;
-
-const editSchema = z.object({
-  name: z.string().min(1, 'Role name is required').max(100),
-  description: z.string().optional(),
-  permissions: z.array(z.any()).min(1, 'At least one permission is required'),
-});
-type EditValues = z.infer<typeof editSchema>;
+import { styles } from './RolesPage.styles';
+import type {
+  CreateValues,
+  EditValues,
+  PermissionOption,
+  CreateRoleDialogProps,
+  EditRoleDialogProps,
+  ViewRoleDialogProps,
+  RolesPageHeaderProps,
+  RolesFilterBarProps,
+  RolesFilter,
+} from './RolesPage.types';
+import { createSchema, editSchema } from './RolesPage.types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,19 +51,59 @@ function extractPermissionIds(raw: unknown[]): string[] {
   return raw.map((r) => (typeof r === 'string' ? r : (r as { value: string }).value));
 }
 
+// ─── Header sub-component ─────────────────────────────────────────────────────
+
+const RolesPageHeader = memo(function RolesPageHeader({
+  canCreate,
+  onCreateClick,
+}: RolesPageHeaderProps) {
+  return (
+    <Box sx={styles.header}>
+      <Box sx={styles.headerTitle}>
+        <AdminPanelSettingsIcon color="primary" />
+        <Typography variant="h5" sx={styles.titleText}>
+          Roles
+        </Typography>
+      </Box>
+      {canCreate && (
+        <Button variant="contained" startIcon={<AddIcon />} onClick={onCreateClick}>
+          Create role
+        </Button>
+      )}
+    </Box>
+  );
+});
+
+// ─── FilterBar sub-component ──────────────────────────────────────────────────
+
+const RolesFilterBar = memo(function RolesFilterBar({
+  fields,
+  onFilterChange,
+}: RolesFilterBarProps) {
+  return (
+    <Box sx={styles.filterBar}>
+      <FilterForm
+        fields={fields}
+        defaultValues={{ search: '', permissions: [] }}
+        onChange={(values) => onFilterChange(values as RolesFilter)}
+        showReset
+        spacing={2}
+      />
+    </Box>
+  );
+});
+
 // ─── Create dialog ────────────────────────────────────────────────────────────
 
-interface CreateRoleDialogProps {
-  open: boolean;
-  onClose: () => void;
-  permissionOptions: { value: string; label: string }[];
-}
-
-function CreateRoleDialog({ open, onClose, permissionOptions }: CreateRoleDialogProps) {
+const CreateRoleDialog = memo(function CreateRoleDialog({
+  open,
+  onClose,
+  permissionOptions,
+}: CreateRoleDialogProps) {
   const [createRole, { isLoading }] = useCreateRoleMutation();
   const snackbar = useSnackbar();
 
-  const fields = useMemo<FieldConfig[]>(
+  const fields = useMemo(
     () => [
       {
         name: 'name',
@@ -94,19 +129,22 @@ function CreateRoleDialog({ open, onClose, permissionOptions }: CreateRoleDialog
     [permissionOptions],
   );
 
-  const onSubmit = async (values: CreateValues) => {
-    try {
-      const result = await createRole({
-        name: values.name,
-        description: values.description || null,
-        permissions: extractPermissionIds(values.permissions),
-      }).unwrap();
-      snackbar.success(`Role "${result.name}" created.`);
-      onClose();
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to create role.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: CreateValues) => {
+      try {
+        const result = await createRole({
+          name: values.name,
+          description: values.description || null,
+          permissions: extractPermissionIds(values.permissions),
+        }).unwrap();
+        snackbar.success(`Role "${result.name}" created.`);
+        onClose();
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to create role.');
+      }
+    },
+    [createRole, snackbar, onClose],
+  );
 
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -120,23 +158,21 @@ function CreateRoleDialog({ open, onClose, permissionOptions }: CreateRoleDialog
           onCancel={onClose}
           submitText="Create role"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          sx={styles.formBuilder as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-interface EditRoleDialogProps {
-  open: boolean;
-  onClose: () => void;
-  role: RoleDto | null;
-  permissionOptions: { value: string; label: string }[];
-}
-
-function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDialogProps) {
+const EditRoleDialog = memo(function EditRoleDialog({
+  open,
+  onClose,
+  role,
+  permissionOptions,
+}: EditRoleDialogProps) {
   const [updateRole, { isLoading }] = useUpdateRoleMutation();
   const snackbar = useSnackbar();
 
@@ -145,7 +181,7 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
     [role, permissionOptions],
   );
 
-  const fields = useMemo<FieldConfig[]>(
+  const fields = useMemo(
     () => [
       {
         name: 'name',
@@ -173,22 +209,25 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
     [role, permissionOptions, defaultPermissions],
   );
 
-  const onSubmit = async (values: EditValues) => {
-    if (!role) return;
-    try {
-      const newName = values.name.trim();
-      await updateRole({
-        name: role.name,
-        newName: newName !== role.name ? newName : undefined,
-        description: values.description || null,
-        permissions: extractPermissionIds(values.permissions),
-      }).unwrap();
-      snackbar.success(`Role "${newName}" updated.`);
-      onClose();
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to update role.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: EditValues) => {
+      if (!role) return;
+      try {
+        const newName = values.name.trim();
+        await updateRole({
+          name: role.name,
+          newName: newName !== role.name ? newName : undefined,
+          description: values.description || null,
+          permissions: extractPermissionIds(values.permissions),
+        }).unwrap();
+        snackbar.success(`Role "${newName}" updated.`);
+        onClose();
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to update role.');
+      }
+    },
+    [updateRole, snackbar, onClose, role],
+  );
 
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -202,19 +241,19 @@ function EditRoleDialog({ open, onClose, role, permissionOptions }: EditRoleDial
           onCancel={onClose}
           submitText="Save changes"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          sx={styles.formBuilder as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── View dialog ──────────────────────────────────────────────────────────────
 
-function ViewRoleDialog({ role, onClose }: { role: RoleDto | null; onClose: () => void }) {
+const ViewRoleDialog = memo(function ViewRoleDialog({ role, onClose }: ViewRoleDialogProps) {
   return (
     <ViewDialog open={!!role} title="Role details" onClose={onClose}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={styles.viewDialogContent}>
         <LabelValue label="Name" value={role?.name} />
         <LabelValue label="Description" value={role?.description} />
         <LabelValue
@@ -227,7 +266,7 @@ function ViewRoleDialog({ role, onClose }: { role: RoleDto | null; onClose: () =
                     label={n}
                     size="small"
                     variant="outlined"
-                    sx={{ mr: 0.5, mb: 0.5 }}
+                    sx={styles.permissionChip}
                   />
                 ))
               : undefined
@@ -236,11 +275,11 @@ function ViewRoleDialog({ role, onClose }: { role: RoleDto | null; onClose: () =
       </Box>
     </ViewDialog>
   );
-}
+});
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function RolesPage() {
+export const RolesPage = memo(function RolesPage() {
   const snackbar = useSnackbar();
 
   const canList = usePermission('Roles.List');
@@ -249,7 +288,7 @@ export function RolesPage() {
   const canEdit = usePermission('Roles.Edit');
   const canDelete = usePermission('Roles.Delete');
 
-  const [rolesFilter, setRolesFilter] = useState<{ search: string; permissions: string[] }>({
+  const [rolesFilter, setRolesFilter] = useState<RolesFilter>({
     search: '',
     permissions: [],
   });
@@ -263,12 +302,12 @@ export function RolesPage() {
 
   const { data: permissionsData } = useGetPermissionsQuery();
 
-  const permissionOptions = useMemo(
+  const permissionOptions = useMemo<PermissionOption[]>(
     () => (permissionsData?.items ?? []).map((p) => ({ value: p.id, label: p.name })),
     [permissionsData],
   );
 
-  const rolesFilterFields = useMemo<FieldConfig[]>(
+  const rolesFilterFields = useMemo(
     () => [
       {
         name: 'search',
@@ -298,7 +337,18 @@ export function RolesPage() {
 
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
-  const handleDelete = async () => {
+  const handleOpenCreate = useCallback(() => setCreateOpen(true), []);
+  const handleCloseCreate = useCallback(() => setCreateOpen(false), []);
+  const handleCloseEdit = useCallback(() => setEditRole(null), []);
+  const handleCloseView = useCallback(() => setViewRole(null), []);
+  const handleCloseDelete = useCallback(() => setDeleteTarget(null), []);
+
+  const handleFilterChange = useCallback((values: RolesFilter) => {
+    setRolesFilter(values);
+    setPage(0);
+  }, []);
+
+  const handleDelete = useCallback(async () => {
     if (!deleteTarget) return;
     try {
       await deleteRole(deleteTarget.name).unwrap();
@@ -308,7 +358,7 @@ export function RolesPage() {
     } finally {
       setDeleteTarget(null);
     }
-  };
+  }, [deleteRole, deleteTarget, snackbar]);
 
   const columns = useMemo<ColumnDef<RoleDto>[]>(
     () => [
@@ -316,7 +366,7 @@ export function RolesPage() {
         header: 'Name',
         accessorKey: 'name',
         cell: ({ row }) => (
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          <Typography variant="body2" sx={styles.columnName}>
             {row.original.name}
           </Typography>
         ),
@@ -339,7 +389,7 @@ export function RolesPage() {
           const shown = names.slice(0, 3);
           const rest = names.length - shown.length;
           return (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            <Box sx={styles.chipRow}>
               {shown.map((n) => (
                 <Chip key={n} label={n} size="small" variant="outlined" />
               ))}
@@ -354,7 +404,7 @@ export function RolesPage() {
         header: 'Actions',
         id: 'actions',
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={styles.actionButtons}>
             {canView && (
               <Tooltip title="View">
                 <IconButton size="small" onClick={() => setViewRole(row.original)}>
@@ -384,43 +434,18 @@ export function RolesPage() {
         ),
       },
     ],
-    [canView, canEdit, canDelete, setEditRole, setViewRole, setDeleteTarget],
+    [canView, canEdit, canDelete],
   );
 
   return (
     <TenantContextGuard>
-      <Box>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <AdminPanelSettingsIcon color="primary" />
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Roles
-            </Typography>
-          </Box>
-          {canCreate && (
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-              Create role
-            </Button>
-          )}
-        </Box>
+      <Box sx={styles.root}>
+        <RolesPageHeader canCreate={canCreate} onCreateClick={handleOpenCreate} />
 
-        {/* Search + Permission filter */}
-        <Box sx={{ mb: 2 }}>
-          <FilterForm
-            fields={rolesFilterFields}
-            defaultValues={{ search: '', permissions: [] }}
-            onChange={(values) => {
-              setRolesFilter(values as typeof rolesFilter);
-              setPage(0);
-            }}
-            showReset
-            spacing={2}
-          />
-        </Box>
+        <RolesFilterBar fields={rolesFilterFields} onFilterChange={handleFilterChange} />
 
         {!canList ? (
-          <Box sx={{ textAlign: 'center', py: 6 }}>
+          <Box sx={styles.emptyState}>
             <Typography color="text.secondary">You don't have permission to list roles.</Typography>
           </Box>
         ) : (
@@ -435,20 +460,18 @@ export function RolesPage() {
           />
         )}
 
-        <ViewRoleDialog role={viewRole} onClose={() => setViewRole(null)} />
+        <ViewRoleDialog role={viewRole} onClose={handleCloseView} />
         <CreateRoleDialog
           open={createOpen}
-          onClose={() => setCreateOpen(false)}
+          onClose={handleCloseCreate}
           permissionOptions={permissionOptions}
         />
-
         <EditRoleDialog
           open={!!editRole}
-          onClose={() => setEditRole(null)}
+          onClose={handleCloseEdit}
           role={editRole}
           permissionOptions={permissionOptions}
         />
-
         <ConfirmDialog
           open={!!deleteTarget}
           title={`Delete "${deleteTarget?.name}"?`}
@@ -457,9 +480,9 @@ export function RolesPage() {
           danger
           loading={isDeleting}
           onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
+          onCancel={handleCloseDelete}
         />
       </Box>
     </TenantContextGuard>
   );
-}
+});

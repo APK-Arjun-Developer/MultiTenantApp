@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -67,9 +67,22 @@ import {
   useUpdateTenantPlanMutation,
 } from '@/features/subscriptions/api/subscriptionsApi';
 import { getTenantLogoUrl } from '@/features/tenantSettings/api/tenantSettingsApi';
-import type { TenantDto, TenantCreationInvitationDto, ApiError, PlanType } from '@/types/api';
+import type { ApiError, PlanType } from '@/types/api';
+import { styles } from './TenantsPage.styles';
+import type {
+  OnboardDialogProps,
+  InviteDialogProps,
+  EditDialogProps,
+  ViewTenantDialogProps,
+  ChangePlanDialogProps,
+  TenantsPageHeaderProps,
+  TenantsPageFilterBarProps,
+  TenantsInvitationsFilterBarProps,
+  TenantDto,
+  TenantCreationInvitationDto,
+} from './TenantsPage.types';
 
-// ─── Onboard dialog ───────────────────────────────────────────────────────────
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const onboardSchema = z.object({
   tenantName: z.string().min(1, 'Tenant name is required').max(200),
@@ -80,12 +93,144 @@ const onboardSchema = z.object({
 });
 type OnboardValues = z.infer<typeof onboardSchema>;
 
-interface OnboardDialogProps {
-  open: boolean;
-  onClose: () => void;
-}
+const inviteSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+type InviteValues = z.infer<typeof inviteSchema>;
 
-function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
+const editSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  isActive: z.boolean(),
+  ...addressZodShape,
+});
+type EditValues = z.infer<typeof editSchema>;
+
+const planSchema = z.object({
+  planType: z.string().min(1, 'Plan is required'),
+});
+type PlanValues = z.infer<typeof planSchema>;
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+const TenantsPageHeader = memo(function TenantsPageHeader({
+  canCreate,
+  onInviteClick,
+  onOnboardClick,
+}: TenantsPageHeaderProps) {
+  return (
+    <Box sx={styles.header}>
+      <Box sx={styles.headerTitle}>
+        <BusinessIcon color="primary" />
+        <Typography variant="h5" sx={styles.headerTitleText}>
+          Tenants
+        </Typography>
+      </Box>
+      {canCreate && (
+        <Box sx={styles.headerActions}>
+          <Button variant="outlined" startIcon={<SendIcon />} onClick={onInviteClick}>
+            Invite Tenant
+          </Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={onOnboardClick}>
+            New Tenant
+          </Button>
+        </Box>
+      )}
+    </Box>
+  );
+});
+
+const TenantsPageFilterBar = memo(function TenantsPageFilterBar({
+  onChange,
+}: TenantsPageFilterBarProps) {
+  const fields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'search',
+        label: 'Search',
+        type: FIELD_TYPE.SEARCH,
+        placeholder: 'Search tenants…',
+        grid: { xs: 12, sm: 5 },
+      },
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Active', value: 'active' },
+          { label: 'Inactive', value: 'inactive' },
+        ],
+        grid: { xs: 6, sm: 3 },
+      },
+      {
+        name: 'createdVia',
+        label: 'Created via',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Direct', value: 'Direct' },
+          { label: 'Invitation', value: 'Invitation' },
+        ],
+        grid: { xs: 6, sm: 4 },
+      },
+    ],
+    [],
+  );
+
+  return (
+    <Box sx={styles.filterBar}>
+      <FilterForm
+        fields={fields}
+        defaultValues={{ search: '', status: '', createdVia: '' }}
+        onChange={onChange}
+        showReset
+        spacing={2}
+      />
+    </Box>
+  );
+});
+
+const TenantsInvitationsFilterBar = memo(function TenantsInvitationsFilterBar({
+  onChange,
+}: TenantsInvitationsFilterBarProps) {
+  const fields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'status',
+        label: 'Status',
+        type: FIELD_TYPE.SELECT,
+        options: [
+          { label: 'All statuses', value: '' },
+          { label: 'Pending', value: 'Pending' },
+          { label: 'Accepted', value: 'Accepted' },
+          { label: 'Expired', value: 'Expired' },
+          { label: 'Revoked', value: 'Revoked' },
+        ],
+        grid: { xs: 12, sm: 4 },
+      },
+    ],
+    [],
+  );
+
+  return (
+    <Box sx={styles.filterBar}>
+      <FilterForm
+        fields={fields}
+        defaultValues={{ status: '' }}
+        onChange={onChange}
+        showReset
+        spacing={2}
+      />
+    </Box>
+  );
+});
+
+// ─── Onboard dialog ───────────────────────────────────────────────────────────
+
+const OnboardTenantDialog = memo(function OnboardTenantDialog({
+  open,
+  onClose,
+}: OnboardDialogProps) {
   const [onboardTenant, { isLoading }] = useOnboardTenantMutation();
   const snackbar = useSnackbar();
 
@@ -122,31 +267,71 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
     [],
   );
 
-  const onSubmit = async (values: OnboardValues) => {
-    try {
-      const tenantAddressPayload = buildTenantAddressPayload(values);
-      const userAddressPayload = buildAddressPayload(values);
+  const onSubmit = useCallback(
+    async (values: OnboardValues) => {
+      try {
+        const tenantAddressPayload = buildTenantAddressPayload(values);
+        const userAddressPayload = buildAddressPayload(values);
 
-      const result = await onboardTenant({
-        tenant: {
-          name: values.tenantName,
-          ...(tenantAddressPayload.address ? { address: tenantAddressPayload.address } : {}),
-        },
-        user: {
-          fullName: values.adminFullName,
-          email: values.adminEmail,
-          ...(userAddressPayload.address ? { address: userAddressPayload.address } : {}),
-        },
-      }).unwrap();
-      snackbar.success(
-        `Tenant "${result.name}" created. Setup email sent to ${result.adminEmail}.`,
-      );
-      onClose();
-    } catch (err) {
-      const error = err as ApiError;
-      snackbar.error(error.message || 'Failed to create tenant.');
-    }
-  };
+        const result = await onboardTenant({
+          tenant: {
+            name: values.tenantName,
+            ...(tenantAddressPayload.address ? { address: tenantAddressPayload.address } : {}),
+          },
+          user: {
+            fullName: values.adminFullName,
+            email: values.adminEmail,
+            ...(userAddressPayload.address ? { address: userAddressPayload.address } : {}),
+          },
+        }).unwrap();
+        snackbar.success(
+          `Tenant "${result.name}" created. Setup email sent to ${result.adminEmail}.`,
+        );
+        onClose();
+      } catch (err) {
+        const error = err as ApiError;
+        snackbar.error(error.message || 'Failed to create tenant.');
+      }
+    },
+    [onboardTenant, snackbar, onClose],
+  );
+
+  const renderActions = useCallback(
+    ({
+      isSubmitting,
+      isLastStep,
+      isFirstStep,
+      next,
+      back,
+    }: {
+      isSubmitting: boolean;
+      isLastStep: boolean;
+      isFirstStep: boolean;
+      next: () => void;
+      back: () => void;
+    }) => (
+      <Box sx={styles.wizardActions}>
+        <Button
+          type="button"
+          onClick={isFirstStep ? onClose : back}
+          variant="outlined"
+          sx={styles.wizardActionFlex}
+        >
+          {isFirstStep ? 'Cancel' : 'Back'}
+        </Button>
+        <LoadingButton
+          type={isLastStep ? 'submit' : 'button'}
+          loading={isSubmitting || (isLastStep && isLoading)}
+          onClick={isLastStep ? undefined : next}
+          variant="contained"
+          sx={styles.wizardActionFlex}
+        >
+          {isLastStep ? 'Create' : 'Next'}
+        </LoadingButton>
+      </Box>
+    ),
+    [onClose, isLoading],
+  );
 
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -168,73 +353,49 @@ function OnboardTenantDialog({ open, onClose }: OnboardDialogProps) {
             },
           ]}
           onSubmit={onSubmit}
-          renderActions={({ isSubmitting, isLastStep, isFirstStep, next, back }) => (
-            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-              <Button
-                type="button"
-                onClick={isFirstStep ? onClose : back}
-                variant="outlined"
-                sx={{ flex: 1 }}
-              >
-                {isFirstStep ? 'Cancel' : 'Back'}
-              </Button>
-              <LoadingButton
-                type={isLastStep ? 'submit' : 'button'}
-                loading={isSubmitting || (isLastStep && isLoading)}
-                onClick={isLastStep ? undefined : next}
-                variant="contained"
-                sx={{ flex: 1 }}
-              >
-                {isLastStep ? 'Create' : 'Next'}
-              </LoadingButton>
-            </Box>
-          )}
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          renderActions={renderActions}
+          sx={styles.formInDialog as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── Invite dialog ────────────────────────────────────────────────────────────
 
-const inviteSchema = z.object({
-  email: z.string().email('Invalid email address'),
-});
-type InviteValues = z.infer<typeof inviteSchema>;
-
-interface InviteDialogProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
+const InviteTenantDialog = memo(function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
   const [inviteTenant, { isLoading }] = useInviteTenantMutation();
   const snackbar = useSnackbar();
 
-  const fields: FieldConfig[] = [
-    {
-      name: 'email',
-      label: 'Email address',
-      type: FIELD_TYPE.TEXT,
-      required: true,
-      muiProps: {
-        type: 'email',
-        helperText:
-          'The invited user will set up their tenant name, address, and password via the invitation link.',
+  const fields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'email',
+        label: 'Email address',
+        type: FIELD_TYPE.TEXT,
+        required: true,
+        muiProps: {
+          type: 'email',
+          helperText:
+            'The invited user will set up their tenant name, address, and password via the invitation link.',
+        },
       },
-    },
-  ];
+    ],
+    [],
+  );
 
-  const onSubmit = async (values: InviteValues) => {
-    try {
-      await inviteTenant({ email: values.email }).unwrap();
-      snackbar.success(`Invitation sent to ${values.email}.`);
-      onClose();
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to send invitation.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: InviteValues) => {
+      try {
+        await inviteTenant({ email: values.email }).unwrap();
+        snackbar.success(`Invitation sent to ${values.email}.`);
+        onClose();
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to send invitation.');
+      }
+    },
+    [inviteTenant, snackbar, onClose],
+  );
 
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="xs" fullWidth>
@@ -248,28 +409,16 @@ function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
           onCancel={onClose}
           submitText="Send invitation"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          sx={styles.formInDialog as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-const editSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(200),
-  isActive: z.boolean(),
-  ...addressZodShape,
-});
-type EditValues = z.infer<typeof editSchema>;
-
-interface EditDialogProps {
-  tenant: TenantDto | null;
-  onClose: () => void;
-}
-
-function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
+const EditTenantDialog = memo(function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
   const [updateTenant, { isLoading }] = useUpdateTenantMutation();
   const snackbar = useSnackbar();
 
@@ -294,22 +443,25 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
     [tenant],
   );
 
-  const onSubmit = async (values: EditValues) => {
-    if (!tenant) return;
-    try {
-      await updateTenant({
-        id: tenant.id,
-        name: values.name,
-        isActive: values.isActive,
-        ...buildAddressPayload(values),
-      }).unwrap();
-      snackbar.success('Tenant updated.');
-      onClose();
-    } catch (err) {
-      const error = err as ApiError;
-      snackbar.error(error.message || 'Failed to update tenant.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: EditValues) => {
+      if (!tenant) return;
+      try {
+        await updateTenant({
+          id: tenant.id,
+          name: values.name,
+          isActive: values.isActive,
+          ...buildAddressPayload(values),
+        }).unwrap();
+        snackbar.success('Tenant updated.');
+        onClose();
+      } catch (err) {
+        const error = err as ApiError;
+        snackbar.error(error.message || 'Failed to update tenant.');
+      }
+    },
+    [tenant, updateTenant, snackbar, onClose],
+  );
 
   return (
     <Dialog open={!!tenant} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
@@ -323,24 +475,22 @@ function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
           onCancel={onClose}
           submitText="Save changes"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          sx={styles.formInDialog as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── View dialog ──────────────────────────────────────────────────────────────
 
-interface ViewTenantDialogProps {
-  tenant: TenantDto | null;
-  onClose: () => void;
-}
-
-function ViewTenantDialog({ tenant, onClose }: ViewTenantDialogProps) {
+const ViewTenantDialog = memo(function ViewTenantDialog({
+  tenant,
+  onClose,
+}: ViewTenantDialogProps) {
   return (
     <ViewDialog open={!!tenant} title="Tenant details" onClose={onClose}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={styles.viewDialogContent}>
         <LabelValue label="Name" value={tenant?.name} />
         <LabelValue label="Admin email" value={tenant?.adminEmail} />
         <LabelValue
@@ -364,11 +514,11 @@ function ViewTenantDialog({ tenant, onClose }: ViewTenantDialogProps) {
       </Box>
     </ViewDialog>
   );
-}
+});
 
 // ─── Plan badge ───────────────────────────────────────────────────────────────
 
-function PlanBadge({ plan }: { plan?: PlanType | string }) {
+const PlanBadge = memo(function PlanBadge({ plan }: { plan?: PlanType | string }) {
   return (
     <Chip
       label={plan ?? 'Free'}
@@ -377,49 +527,48 @@ function PlanBadge({ plan }: { plan?: PlanType | string }) {
       variant={plan === 'Pro' ? 'filled' : 'outlined'}
     />
   );
-}
+});
 
 // ─── Change plan dialog ───────────────────────────────────────────────────────
 
-interface ChangePlanDialogProps {
-  tenant: TenantDto | null;
-  onClose: () => void;
-}
-
-function ChangePlanDialog({ tenant, onClose }: ChangePlanDialogProps) {
+const ChangePlanDialog = memo(function ChangePlanDialog({
+  tenant,
+  onClose,
+}: ChangePlanDialogProps) {
   const snackbar = useSnackbar();
   const { data: plans = [] } = useGetSubscriptionPlansQuery();
   const [updatePlan, { isLoading }] = useUpdateTenantPlanMutation();
 
-  const planSchema = z.object({
-    planType: z.string().min(1, 'Plan is required'),
-  });
-  type PlanValues = z.infer<typeof planSchema>;
+  const planFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'planType',
+        label: 'Subscription plan',
+        type: FIELD_TYPE.SELECT,
+        required: true,
+        defaultValue: tenant?.planType ?? 'Free',
+        options: plans.map((p) => ({
+          label: `${p.name} — Max users: ${p.features.maxUsers === -1 ? 'Unlimited' : p.features.maxUsers}`,
+          value: p.planType,
+        })),
+      },
+    ],
+    [tenant, plans],
+  );
 
-  const planFields: FieldConfig[] = [
-    {
-      name: 'planType',
-      label: 'Subscription plan',
-      type: FIELD_TYPE.SELECT,
-      required: true,
-      defaultValue: tenant?.planType ?? 'Free',
-      options: plans.map((p) => ({
-        label: `${p.name} — Max users: ${p.features.maxUsers === -1 ? 'Unlimited' : p.features.maxUsers}`,
-        value: p.planType,
-      })),
+  const onSubmit = useCallback(
+    async (values: PlanValues) => {
+      if (!tenant) return;
+      try {
+        await updatePlan({ tenantId: tenant.id, planType: values.planType as PlanType }).unwrap();
+        snackbar.success(`Plan updated to ${values.planType} for "${tenant.name}".`);
+        onClose();
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to update plan.');
+      }
     },
-  ];
-
-  const onSubmit = async (values: PlanValues) => {
-    if (!tenant) return;
-    try {
-      await updatePlan({ tenantId: tenant.id, planType: values.planType as PlanType }).unwrap();
-      snackbar.success(`Plan updated to ${values.planType} for "${tenant.name}".`);
-      onClose();
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to update plan.');
-    }
-  };
+    [tenant, updatePlan, snackbar, onClose],
+  );
 
   return (
     <Dialog open={!!tenant} onClose={isLoading ? undefined : onClose} maxWidth="xs" fullWidth>
@@ -433,16 +582,16 @@ function ChangePlanDialog({ tenant, onClose }: ChangePlanDialogProps) {
           onCancel={onClose}
           submitText="Update plan"
           cancelText="Cancel"
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent', mt: 1 }}
+          sx={styles.formInDialogWithTopMargin as never}
         />
       </DialogContent>
     </Dialog>
   );
-}
+});
 
 // ─── Invitation status chip ───────────────────────────────────────────────────
 
-function InvitationStatusChip({ status }: { status: string }) {
+const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { status: string }) {
   const lower = status.toLowerCase();
   const color =
     lower === 'accepted'
@@ -453,11 +602,11 @@ function InvitationStatusChip({ status }: { status: string }) {
           ? 'warning'
           : 'error';
   return <Chip label={status} color={color} size="small" variant="outlined" />;
-}
+});
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function TenantsPage() {
+export const TenantsPage = memo(function TenantsPage() {
   const snackbar = useSnackbar();
 
   const canList = usePermission('Tenants.List');
@@ -465,6 +614,7 @@ export function TenantsPage() {
   const canCreate = usePermission('Tenants.Create');
   const canEdit = usePermission('Tenants.Edit');
   const canDelete = usePermission('Tenants.Delete');
+  const canEditSubscription = usePermission('Subscriptions.Edit');
 
   const [tab, setTab] = useState(0);
 
@@ -482,67 +632,11 @@ export function TenantsPage() {
   const [changePlanTenant, setChangePlanTenant] = useState<TenantDto | null>(null);
   const [logoTenant, setLogoTenant] = useState<TenantDto | null>(null);
 
-  const canEditSubscription = usePermission('Subscriptions.Edit');
-
   // Invitations tab
   const [invPage, setInvPage] = useState(0);
   const [invPageSize, setInvPageSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState('');
   const [pendingRevoke, setPendingRevoke] = useState<TenantCreationInvitationDto | null>(null);
-
-  const tenantFilterFields = useMemo<FieldConfig[]>(
-    () => [
-      {
-        name: 'search',
-        label: 'Search',
-        type: FIELD_TYPE.SEARCH,
-        placeholder: 'Search tenants…',
-        grid: { xs: 12, sm: 5 },
-      },
-      {
-        name: 'status',
-        label: 'Status',
-        type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All', value: '' },
-          { label: 'Active', value: 'active' },
-          { label: 'Inactive', value: 'inactive' },
-        ],
-        grid: { xs: 6, sm: 3 },
-      },
-      {
-        name: 'createdVia',
-        label: 'Created via',
-        type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All', value: '' },
-          { label: 'Direct', value: 'Direct' },
-          { label: 'Invitation', value: 'Invitation' },
-        ],
-        grid: { xs: 6, sm: 4 },
-      },
-    ],
-    [],
-  );
-
-  const invFilterFields = useMemo<FieldConfig[]>(
-    () => [
-      {
-        name: 'status',
-        label: 'Status',
-        type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All statuses', value: '' },
-          { label: 'Pending', value: 'Pending' },
-          { label: 'Accepted', value: 'Accepted' },
-          { label: 'Expired', value: 'Expired' },
-          { label: 'Revoked', value: 'Revoked' },
-        ],
-        grid: { xs: 12, sm: 4 },
-      },
-    ],
-    [],
-  );
 
   // Data
   const { data, isLoading } = useGetTenantsQuery({
@@ -572,10 +666,46 @@ export function TenantsPage() {
   const [uploadTenantLogo, { isLoading: isUploadingLogo }] = useUploadTenantLogoByAdminMutation();
   const [removeTenantLogo, { isLoading: isRemovingLogo }] = useRemoveTenantLogoByAdminMutation();
 
-  const tenants = data?.items ?? [];
-  const totalCount = data?.totalCount ?? 0;
+  const tenants = useMemo(() => data?.items ?? [], [data]);
+  const totalCount = useMemo(() => data?.totalCount ?? 0, [data]);
 
-  const handleDelete = async () => {
+  // ─── Callbacks ────────────────────────────────────────────────────────────
+
+  const handleTabChange = useCallback((_: React.SyntheticEvent, v: number) => setTab(v), []);
+
+  const handleOnboardOpen = useCallback(() => setOnboardOpen(true), []);
+  const handleOnboardClose = useCallback(() => setOnboardOpen(false), []);
+  const handleInviteOpen = useCallback(() => setInviteOpen(true), []);
+  const handleInviteClose = useCallback(() => setInviteOpen(false), []);
+
+  const handleViewClose = useCallback(() => setViewTenant(null), []);
+  const handleEditClose = useCallback(() => setEditTenant(null), []);
+  const handleChangePlanClose = useCallback(() => setChangePlanTenant(null), []);
+  const handleLogoClose = useCallback(() => setLogoTenant(null), []);
+  const handleDeleteCancel = useCallback(() => setDeleteTenant(null), []);
+  const handleRevokeCancel = useCallback(() => setPendingRevoke(null), []);
+
+  const handleTenantFilterChange = useCallback((values: Record<string, unknown>) => {
+    setTenantFilter(values as typeof tenantFilter);
+    setPage(0);
+  }, []);
+
+  const handleInvFilterChange = useCallback((values: Record<string, unknown>) => {
+    setStatusFilter((values.status as string) ?? '');
+    setInvPage(0);
+  }, []);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setPage(0);
+  }, []);
+
+  const handleInvPageSizeChange = useCallback((size: number) => {
+    setInvPageSize(size);
+    setInvPage(0);
+  }, []);
+
+  const handleDelete = useCallback(async () => {
     if (!deleteTenant) return;
     try {
       await deleteTenantMutation({ id: deleteTenant.id }).unwrap();
@@ -585,9 +715,9 @@ export function TenantsPage() {
       const error = err as ApiError;
       snackbar.error(error.message || 'Failed to delete tenant.');
     }
-  };
+  }, [deleteTenant, deleteTenantMutation, snackbar]);
 
-  const handleRevokeInvitation = async () => {
+  const handleRevokeInvitation = useCallback(async () => {
     if (!pendingRevoke) return;
     try {
       await revokeTenantInvitation(pendingRevoke.id).unwrap();
@@ -596,29 +726,35 @@ export function TenantsPage() {
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to revoke invitation.');
     }
-  };
+  }, [pendingRevoke, revokeTenantInvitation, snackbar]);
 
-  const handleResendInvitation = async (inv: TenantCreationInvitationDto) => {
-    try {
-      await resendTenantInvitation(inv.id).unwrap();
-      snackbar.success(`Invitation resent to ${inv.email}.`);
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to resend invitation.');
-    }
-  };
+  const handleResendInvitation = useCallback(
+    async (inv: TenantCreationInvitationDto) => {
+      try {
+        await resendTenantInvitation(inv.id).unwrap();
+        snackbar.success(`Invitation resent to ${inv.email}.`);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to resend invitation.');
+      }
+    },
+    [resendTenantInvitation, snackbar],
+  );
 
-  const handleUploadLogo = async (file: File) => {
-    if (!logoTenant) return;
-    try {
-      const updated = await uploadTenantLogo({ tenantId: logoTenant.id, file }).unwrap();
-      setLogoTenant(updated);
-      snackbar.success('Company logo updated.');
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to upload logo.');
-    }
-  };
+  const handleUploadLogo = useCallback(
+    async (file: File) => {
+      if (!logoTenant) return;
+      try {
+        const updated = await uploadTenantLogo({ tenantId: logoTenant.id, file }).unwrap();
+        setLogoTenant(updated);
+        snackbar.success('Company logo updated.');
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to upload logo.');
+      }
+    },
+    [logoTenant, uploadTenantLogo, snackbar],
+  );
 
-  const handleRemoveLogo = async () => {
+  const handleRemoveLogo = useCallback(async () => {
     if (!logoTenant) return;
     try {
       const updated = await removeTenantLogo(logoTenant.id).unwrap();
@@ -627,225 +763,204 @@ export function TenantsPage() {
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to remove logo.');
     }
-  };
+  }, [logoTenant, removeTenantLogo, snackbar]);
 
-  const tenantColumns: ColumnDef<TenantDto>[] = [
-    {
-      id: 'logo',
-      header: '',
-      size: 48,
-      cell: ({ row }) => {
-        const logoSrc = row.original.profileFileId
-          ? getTenantLogoUrl(row.original.profileFileId)
-          : undefined;
-        return (
-          <Avatar
-            src={logoSrc}
-            sx={{ width: 36, height: 36, cursor: 'pointer', fontSize: 14 }}
-            onClick={() => setLogoTenant(row.original)}
-          >
-            {row.original.name.charAt(0).toUpperCase()}
-          </Avatar>
-        );
+  // ─── Column defs ──────────────────────────────────────────────────────────
+
+  const tenantColumns = useMemo<ColumnDef<TenantDto>[]>(
+    () => [
+      {
+        id: 'logo',
+        header: '',
+        size: 48,
+        cell: ({ row }) => {
+          const logoSrc = row.original.profileFileId
+            ? getTenantLogoUrl(row.original.profileFileId)
+            : undefined;
+          return (
+            <Avatar
+              src={logoSrc}
+              sx={styles.avatarLogo}
+              onClick={() => setLogoTenant(row.original)}
+            >
+              {row.original.name.charAt(0).toUpperCase()}
+            </Avatar>
+          );
+        },
       },
-    },
-    {
-      accessorKey: 'name',
-      header: 'Name',
-      cell: ({ row }) => (
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            {row.original.name}
-          </Typography>
-          {row.original.adminEmail && (
-            <Typography variant="caption" color="text.secondary">
-              {row.original.adminEmail}
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ row }) => (
+          <Box>
+            <Typography variant="body2" sx={styles.tenantNameCell}>
+              {row.original.name}
             </Typography>
-          )}
-        </Box>
-      ),
-    },
-    {
-      accessorKey: 'planType',
-      header: 'Plan',
-      cell: ({ row }) => <PlanBadge plan={row.original.planType} />,
-    },
-    {
-      accessorKey: 'createdVia',
-      header: 'Created via',
-      cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
-    },
-    {
-      accessorKey: 'isActive',
-      header: 'Status',
-      cell: ({ row }) => (
-        <Chip
-          label={row.original.isActive ? 'Active' : 'Inactive'}
-          color={row.original.isActive ? 'success' : 'default'}
-          size="small"
-          variant="outlined"
-        />
-      ),
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => (
-        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-          {canView && (
-            <Tooltip title="View">
-              <IconButton size="small" onClick={() => setViewTenant(row.original)}>
-                <VisibilityIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {canEdit && (
-            <Tooltip title="Edit">
-              <IconButton size="small" onClick={() => setEditTenant(row.original)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {canEditSubscription && (
-            <Tooltip title="Change plan">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => setChangePlanTenant(row.original)}
-              >
-                <WorkspacePremiumIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {canDelete && (
-            <Tooltip title="Delete">
-              <IconButton size="small" color="error" onClick={() => setDeleteTenant(row.original)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      ),
-    },
-  ];
+            {row.original.adminEmail && (
+              <Typography variant="caption" color="text.secondary">
+                {row.original.adminEmail}
+              </Typography>
+            )}
+          </Box>
+        ),
+      },
+      {
+        accessorKey: 'planType',
+        header: 'Plan',
+        cell: ({ row }) => <PlanBadge plan={row.original.planType} />,
+      },
+      {
+        accessorKey: 'createdVia',
+        header: 'Created via',
+        cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
+      },
+      {
+        accessorKey: 'isActive',
+        header: 'Status',
+        cell: ({ row }) => (
+          <Chip
+            label={row.original.isActive ? 'Active' : 'Inactive'}
+            color={row.original.isActive ? 'success' : 'default'}
+            size="small"
+            variant="outlined"
+          />
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <Box sx={styles.actionsCell}>
+            {canView && (
+              <Tooltip title="View">
+                <IconButton size="small" onClick={() => setViewTenant(row.original)}>
+                  <VisibilityIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canEdit && (
+              <Tooltip title="Edit">
+                <IconButton size="small" onClick={() => setEditTenant(row.original)}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canEditSubscription && (
+              <Tooltip title="Change plan">
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => setChangePlanTenant(row.original)}
+                >
+                  <WorkspacePremiumIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip title="Delete">
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setDeleteTenant(row.original)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        ),
+      },
+    ],
+    [canView, canEdit, canEditSubscription, canDelete],
+  );
 
-  const invitationColumns: ColumnDef<TenantCreationInvitationDto>[] = [
-    {
-      accessorKey: 'email',
-      header: 'Email',
-      cell: ({ row }) => <Typography variant="body2">{row.original.email}</Typography>,
-    },
-    {
-      id: 'status',
-      header: 'Status',
-      cell: ({ row }) => <InvitationStatusChip status={row.original.status} />,
-    },
-    {
-      accessorKey: 'expiresAt',
-      header: 'Expires',
-      cell: ({ row }) => (
-        <Typography variant="body2" color="text.secondary">
-          {new Date(row.original.expiresAt).toLocaleDateString()}
-        </Typography>
-      ),
-    },
-    ...(canCreate
-      ? ([
-          {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => {
-              const inv = row.original;
-              const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-              if (!isPending) return null;
-              return (
-                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                  <Tooltip title="Resend invitation">
-                    <span>
-                      <IconButton
-                        size="small"
-                        color="info"
-                        disabled={isResendingInvitation}
-                        onClick={() => handleResendInvitation(inv)}
-                      >
-                        {isResendingInvitation ? (
-                          <CircularProgress size={14} />
-                        ) : (
-                          <ForwardToInboxIcon fontSize="small" />
-                        )}
+  const invitationColumns = useMemo<ColumnDef<TenantCreationInvitationDto>[]>(
+    () => [
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        cell: ({ row }) => <Typography variant="body2">{row.original.email}</Typography>,
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) => <InvitationStatusChip status={row.original.status} />,
+      },
+      {
+        accessorKey: 'expiresAt',
+        header: 'Expires',
+        cell: ({ row }) => (
+          <Typography variant="body2" color="text.secondary">
+            {new Date(row.original.expiresAt).toLocaleDateString()}
+          </Typography>
+        ),
+      },
+      ...(canCreate
+        ? ([
+            {
+              id: 'actions',
+              header: '',
+              cell: ({ row }) => {
+                const inv = row.original;
+                const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
+                if (!isPending) return null;
+                return (
+                  <Box sx={styles.actionsCell}>
+                    <Tooltip title="Resend invitation">
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="info"
+                          disabled={isResendingInvitation}
+                          onClick={() => handleResendInvitation(inv)}
+                        >
+                          {isResendingInvitation ? (
+                            <CircularProgress size={14} />
+                          ) : (
+                            <ForwardToInboxIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="Revoke invitation">
+                      <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
+                        <BlockIcon fontSize="small" />
                       </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Revoke invitation">
-                    <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
-                      <BlockIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              );
+                    </Tooltip>
+                  </Box>
+                );
+              },
             },
-          },
-        ] as ColumnDef<TenantCreationInvitationDto>[])
-      : []),
-  ];
+          ] as ColumnDef<TenantCreationInvitationDto>[])
+        : []),
+    ],
+    [canCreate, isResendingInvitation, handleResendInvitation],
+  );
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <BusinessIcon color="primary" />
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Tenants
-          </Typography>
-        </Box>
-        {canCreate && (
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="outlined" startIcon={<SendIcon />} onClick={() => setInviteOpen(true)}>
-              Invite Tenant
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setOnboardOpen(true)}
-            >
-              New Tenant
-            </Button>
-          </Box>
-        )}
-      </Box>
+    <Box sx={styles.root}>
+      <TenantsPageHeader
+        canCreate={canCreate}
+        onInviteClick={handleInviteOpen}
+        onOnboardClick={handleOnboardOpen}
+      />
 
-      {/* Tabs */}
-      <Tabs
-        value={tab}
-        onChange={(_, v) => setTab(v)}
-        sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
-      >
+      <Tabs value={tab} onChange={handleTabChange} sx={styles.tabsRow}>
         <Tab label="Tenants" />
         <Tab label="Invitations" />
       </Tabs>
 
       {/* Tenants tab */}
       {tab === 0 && !canList && (
-        <Box sx={{ textAlign: 'center', py: 6 }}>
+        <Box sx={styles.emptyPermission}>
           <Typography color="text.secondary">You don't have permission to list tenants.</Typography>
         </Box>
       )}
       {tab === 0 && canList && (
         <Box>
-          <Box sx={{ mb: 2 }}>
-            <FilterForm
-              fields={tenantFilterFields}
-              defaultValues={{ search: '', status: '', createdVia: '' }}
-              onChange={(values) => {
-                setTenantFilter(values as typeof tenantFilter);
-                setPage(0);
-              }}
-              showReset
-              spacing={2}
-            />
-          </Box>
-
+          <TenantsPageFilterBar onChange={handleTenantFilterChange} />
           <DataTable
             data={tenants}
             columns={tenantColumns}
@@ -854,17 +969,14 @@ export function TenantsPage() {
             page={page}
             pageSize={pageSize}
             onPageChange={setPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setPage(0);
-            }}
+            onPageSizeChange={handlePageSizeChange}
           />
         </Box>
       )}
 
       {/* Invitations tab */}
       {tab === 1 && !canList && (
-        <Box sx={{ textAlign: 'center', py: 6 }}>
+        <Box sx={styles.emptyPermission}>
           <Typography color="text.secondary">
             You don't have permission to list invitations.
           </Typography>
@@ -872,19 +984,7 @@ export function TenantsPage() {
       )}
       {tab === 1 && canList && (
         <Box>
-          <Box sx={{ mb: 2 }}>
-            <FilterForm
-              fields={invFilterFields}
-              defaultValues={{ status: '' }}
-              onChange={(values) => {
-                setStatusFilter((values.status as string) ?? '');
-                setInvPage(0);
-              }}
-              showReset
-              spacing={2}
-            />
-          </Box>
-
+          <TenantsInvitationsFilterBar onChange={handleInvFilterChange} />
           <DataTable
             data={invitationsData?.items ?? []}
             columns={invitationColumns}
@@ -893,24 +993,21 @@ export function TenantsPage() {
             page={invPage}
             pageSize={invPageSize}
             onPageChange={setInvPage}
-            onPageSizeChange={(size) => {
-              setInvPageSize(size);
-              setInvPage(0);
-            }}
+            onPageSizeChange={handleInvPageSizeChange}
           />
         </Box>
       )}
 
       {/* Dialogs */}
-      <OnboardTenantDialog open={onboardOpen} onClose={() => setOnboardOpen(false)} />
-      <InviteTenantDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
-      <ViewTenantDialog tenant={viewTenant} onClose={() => setViewTenant(null)} />
-      <EditTenantDialog tenant={editTenant} onClose={() => setEditTenant(null)} />
-      <ChangePlanDialog tenant={changePlanTenant} onClose={() => setChangePlanTenant(null)} />
+      <OnboardTenantDialog open={onboardOpen} onClose={handleOnboardClose} />
+      <InviteTenantDialog open={inviteOpen} onClose={handleInviteClose} />
+      <ViewTenantDialog tenant={viewTenant} onClose={handleViewClose} />
+      <EditTenantDialog tenant={editTenant} onClose={handleEditClose} />
+      <ChangePlanDialog tenant={changePlanTenant} onClose={handleChangePlanClose} />
 
       <AvatarManageModal
         open={!!logoTenant}
-        onClose={() => setLogoTenant(null)}
+        onClose={handleLogoClose}
         src={logoTenant?.profileFileId ? getTenantLogoUrl(logoTenant.profileFileId) : null}
         initials={logoTenant?.name?.charAt(0)?.toUpperCase() ?? '?'}
         title="Company logo"
@@ -927,7 +1024,7 @@ export function TenantsPage() {
         danger
         loading={isDeleting}
         onConfirm={handleDelete}
-        onCancel={() => setDeleteTenant(null)}
+        onCancel={handleDeleteCancel}
       />
 
       <ConfirmDialog
@@ -938,8 +1035,8 @@ export function TenantsPage() {
         danger
         loading={isRevoking}
         onConfirm={handleRevokeInvitation}
-        onCancel={() => setPendingRevoke(null)}
+        onCancel={handleRevokeCancel}
       />
     </Box>
   );
-}
+});

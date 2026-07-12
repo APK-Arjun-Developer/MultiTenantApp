@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { z } from 'zod';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -13,56 +12,24 @@ import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schem
 import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import {
-  requiredAddressZodShape,
-  getAddressFields,
-  buildAddressPayload,
-} from '@/shared/forms/addressFields';
+import { getAddressFields, buildAddressPayload } from '@/shared/forms/addressFields';
 import type { ApiError, SetPasswordResponse } from '@/types/api';
-
-// ─── Schemas ──────────────────────────────────────────────────────────────────
-
-const passwordRule = z
-  .string()
-  .min(8, 'At least 8 characters')
-  .regex(/[A-Z]/, 'Must include an uppercase letter')
-  .regex(/[0-9]/, 'Must include a number')
-  .regex(/[^A-Za-z0-9]/, 'Must include a special character');
-
-// Direct creation: admin already set the name — only need passwords.
-const directPasswordSchema = z
-  .object({
-    password: passwordRule,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  });
-
-// Invitation flow: user sets their own name + address.
-const fullSetupSchema = z
-  .object({
-    fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
-    password: passwordRule,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-    ...requiredAddressZodShape,
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  });
-
-type DirectPasswordValues = z.infer<typeof directPasswordSchema>;
-type FullSetupValues = z.infer<typeof fullSetupSchema>;
+import { styles } from './AccountSetupPage.styles';
+import { directPasswordSchema, fullSetupSchema } from './AccountSetupPage.types';
+import type {
+  DirectPasswordValues,
+  FullSetupValues,
+  SetupInvalidProps,
+  SetupSuccessProps,
+} from './AccountSetupPage.types';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SetupInvalid({ message }: { message?: string | null }) {
+const SetupInvalid = memo(function SetupInvalid({ message }: SetupInvalidProps) {
   return (
-    <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
-      <ErrorIcon sx={{ fontSize: 48, color: 'error.main' }} />
-      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+    <Stack spacing={2} sx={styles.invalidIconRoot}>
+      <ErrorIcon sx={styles.invalidIcon} />
+      <Typography variant="h6" sx={styles.invalidTitle}>
         Setup link expired or invalid
       </Typography>
       <Typography variant="body2" color="text.secondary">
@@ -75,24 +42,24 @@ function SetupInvalid({ message }: { message?: string | null }) {
         variant="contained"
         fullWidth
         size="large"
-        sx={{ mt: 1 }}
+        sx={styles.invalidButton}
       >
         Go to sign in
       </Button>
     </Stack>
   );
-}
+});
 
-function SetupSuccess({ result }: { result: SetPasswordResponse }) {
+const SetupSuccess = memo(function SetupSuccess({ result }: SetupSuccessProps) {
   return (
-    <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
-      <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main' }} />
-      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+    <Stack spacing={2} sx={styles.successIconRoot}>
+      <CheckCircleIcon sx={styles.successIcon} />
+      <Typography variant="h6" sx={styles.successTitle}>
         Account is ready!
       </Typography>
       <Typography variant="body2" color="text.secondary">
         Your password has been set. Sign in with{' '}
-        <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+        <Box component="span" sx={styles.successEmailHighlight}>
           {result.email}
         </Box>
         .
@@ -103,17 +70,17 @@ function SetupSuccess({ result }: { result: SetPasswordResponse }) {
         variant="contained"
         fullWidth
         size="large"
-        sx={{ mt: 1 }}
+        sx={styles.successButton}
       >
         Sign in
       </Button>
     </Stack>
   );
-}
+});
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function AccountSetupPage() {
+export const AccountSetupPage = memo(function AccountSetupPage() {
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -126,88 +93,153 @@ export function AccountSetupPage() {
   const [result, setResult] = useState<SetPasswordResponse | null>(null);
 
   // Password-only fields (direct creation — admin already set full name)
-  const passwordFields: FieldConfig[] = [
-    {
-      name: 'password',
-      label: 'New password',
-      type: FIELD_TYPE.PASSWORD,
-      required: true,
-      muiProps: { autoComplete: 'new-password', autoFocus: true },
-    },
-    {
-      name: 'confirmPassword',
-      label: 'Confirm password',
-      type: FIELD_TYPE.PASSWORD,
-      required: true,
-      muiProps: { autoComplete: 'new-password' },
-    },
-  ];
+  const passwordFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'password',
+        label: 'New password',
+        type: FIELD_TYPE.PASSWORD,
+        required: true,
+        muiProps: { autoComplete: 'new-password', autoFocus: true },
+      },
+      {
+        name: 'confirmPassword',
+        label: 'Confirm password',
+        type: FIELD_TYPE.PASSWORD,
+        required: true,
+        muiProps: { autoComplete: 'new-password' },
+      },
+    ],
+    [],
+  );
 
   // Full account fields (invitation flow — user must set their own name)
-  const accountFields: FieldConfig[] = [
-    {
-      name: 'fullName',
-      label: 'Full name',
-      type: FIELD_TYPE.TEXT,
-      required: true,
-      defaultValue: validation?.fullName ?? '',
-      muiProps: { autoComplete: 'name', autoFocus: true },
-    },
-    {
-      name: 'password',
-      label: 'New password',
-      type: FIELD_TYPE.PASSWORD,
-      required: true,
-      muiProps: { autoComplete: 'new-password' },
-    },
-    {
-      name: 'confirmPassword',
-      label: 'Confirm password',
-      type: FIELD_TYPE.PASSWORD,
-      required: true,
-      muiProps: { autoComplete: 'new-password' },
-    },
-  ];
+  const accountFields = useMemo<FieldConfig[]>(
+    () => [
+      {
+        name: 'fullName',
+        label: 'Full name',
+        type: FIELD_TYPE.TEXT,
+        required: true,
+        defaultValue: validation?.fullName ?? '',
+        muiProps: { autoComplete: 'name', autoFocus: true },
+      },
+      {
+        name: 'password',
+        label: 'New password',
+        type: FIELD_TYPE.PASSWORD,
+        required: true,
+        muiProps: { autoComplete: 'new-password' },
+      },
+      {
+        name: 'confirmPassword',
+        label: 'Confirm password',
+        type: FIELD_TYPE.PASSWORD,
+        required: true,
+        muiProps: { autoComplete: 'new-password' },
+      },
+    ],
+    [validation?.fullName],
+  );
 
-  const addressFields: FieldConfig[] = getAddressFields(undefined, undefined, true);
+  const addressFields = useMemo<FieldConfig[]>(
+    () => getAddressFields(undefined, undefined, true),
+    [],
+  );
 
-  const onSubmitDirect = async (values: DirectPasswordValues) => {
-    try {
-      const response = await setPassword({
-        token,
-        password: values.password,
-        confirmPassword: values.confirmPassword,
-      }).unwrap();
-      setResult(response);
-    } catch (err) {
-      snackbar.error(
-        (err as ApiError).message || 'Failed to set password. The link may have expired.',
-      );
-    }
-  };
+  const onSubmitDirect = useCallback(
+    async (values: DirectPasswordValues) => {
+      try {
+        const response = await setPassword({
+          token,
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+        }).unwrap();
+        setResult(response);
+      } catch (err) {
+        snackbar.error(
+          (err as ApiError).message || 'Failed to set password. The link may have expired.',
+        );
+      }
+    },
+    [setPassword, token, snackbar],
+  );
 
-  const onSubmitFull = async (values: FullSetupValues) => {
-    try {
-      const response = await setPassword({
-        token,
-        password: values.password,
-        confirmPassword: values.confirmPassword,
-        fullName: values.fullName,
-        ...buildAddressPayload(values),
-      }).unwrap();
-      setResult(response);
-    } catch (err) {
-      snackbar.error(
-        (err as ApiError).message || 'Failed to set password. The link may have expired.',
-      );
-    }
-  };
+  const onSubmitFull = useCallback(
+    async (values: FullSetupValues) => {
+      try {
+        const response = await setPassword({
+          token,
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+          fullName: values.fullName,
+          ...buildAddressPayload(values),
+        }).unwrap();
+        setResult(response);
+      } catch (err) {
+        snackbar.error(
+          (err as ApiError).message || 'Failed to set password. The link may have expired.',
+        );
+      }
+    },
+    [setPassword, token, snackbar],
+  );
+
+  const renderDirectActions = useCallback(
+    ({ isSubmitting: formSubmitting }: { isSubmitting: boolean }) => (
+      <LoadingButton
+        type="submit"
+        loading={formSubmitting || isSubmitting}
+        variant="contained"
+        fullWidth
+        size="large"
+        sx={styles.submitButton}
+      >
+        Activate account
+      </LoadingButton>
+    ),
+    [isSubmitting],
+  );
+
+  const renderWizardActions = useCallback(
+    ({
+      isSubmitting: formSubmitting,
+      isLastStep,
+      next,
+      back,
+      isFirstStep,
+    }: {
+      isSubmitting: boolean;
+      isLastStep: boolean;
+      isFirstStep: boolean;
+      next: () => void;
+      back: () => void;
+    }) => (
+      <Box sx={styles.wizardActionsRow}>
+        {!isFirstStep && (
+          <Button type="button" onClick={back} variant="outlined" sx={styles.wizardBackButton}>
+            Back
+          </Button>
+        )}
+        <LoadingButton
+          type={isLastStep ? 'submit' : 'button'}
+          loading={formSubmitting || (isLastStep && isSubmitting)}
+          onClick={isLastStep ? undefined : next}
+          variant="contained"
+          sx={styles.wizardNextButton}
+        >
+          {isLastStep ? 'Activate account' : 'Next'}
+        </LoadingButton>
+      </Box>
+    ),
+    [isSubmitting],
+  );
 
   if (!token) return <SetupInvalid message="No setup token found in the link." />;
 
   if (isValidating) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={styles.loadingBox}>
         <CircularProgress size={28} />
       </Box>
     );
@@ -219,16 +251,16 @@ export function AccountSetupPage() {
 
   const header = (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+      <Box sx={styles.headerTitleRow}>
         <AccountCircleIcon color="primary" />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography variant="h6" sx={styles.headerTitle}>
           Set up your account
         </Typography>
       </Box>
       {validation.email && (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        <Typography variant="body2" color="text.secondary" sx={styles.headerSubtitle}>
           Setting up account for{' '}
-          <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          <Box component="span" sx={styles.headerEmailHighlight}>
             {validation.email}
           </Box>
         </Typography>
@@ -246,19 +278,8 @@ export function AccountSetupPage() {
           schema={directPasswordSchema}
           fields={passwordFields}
           onSubmit={onSubmitDirect}
-          renderActions={({ isSubmitting: formSubmitting }) => (
-            <LoadingButton
-              type="submit"
-              loading={formSubmitting || isSubmitting}
-              variant="contained"
-              fullWidth
-              size="large"
-              sx={{ mt: 1 }}
-            >
-              Activate account
-            </LoadingButton>
-          )}
-          sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+          renderActions={renderDirectActions}
+          sx={styles.formBuilder as never}
         />
       </Box>
     );
@@ -284,26 +305,9 @@ export function AccountSetupPage() {
           },
         ]}
         onSubmit={onSubmitFull}
-        renderActions={({ isSubmitting: formSubmitting, isLastStep, next, back, isFirstStep }) => (
-          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-            {!isFirstStep && (
-              <Button type="button" onClick={back} variant="outlined" sx={{ flex: 1 }}>
-                Back
-              </Button>
-            )}
-            <LoadingButton
-              type={isLastStep ? 'submit' : 'button'}
-              loading={formSubmitting || (isLastStep && isSubmitting)}
-              onClick={isLastStep ? undefined : next}
-              variant="contained"
-              sx={{ flex: 1 }}
-            >
-              {isLastStep ? 'Activate account' : 'Next'}
-            </LoadingButton>
-          </Box>
-        )}
-        sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+        renderActions={renderWizardActions}
+        sx={styles.formBuilder as never}
       />
     </Box>
   );
-}
+});

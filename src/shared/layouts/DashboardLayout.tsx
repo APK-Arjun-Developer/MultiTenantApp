@@ -1,4 +1,4 @@
-import { useState, Suspense } from 'react';
+import { memo, useState, useCallback, useMemo, Suspense } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { usePageTitle } from '@/shared/hooks';
 import { AnimatePresence } from 'framer-motion';
@@ -18,7 +18,8 @@ import { useStopImpersonationMutation } from '@/features/impersonation/api/imper
 import { authApi } from '@/features/auth/api/authApi';
 import { apiSlice } from '@/shared/api/apiSlice';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import type { ApiError, SystemRole } from '@/types/api';
+import type { ApiError } from '@/types/api';
+import type { NavItem } from './DashboardLayout.types';
 import Alert from '@mui/material/Alert';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
@@ -46,16 +47,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleIcon from '@mui/icons-material/People';
-
-const DRAWER_WIDTH = 240;
-
-interface NavItem {
-  text: string;
-  icon: React.ReactElement;
-  path: string;
-  allowedRoles?: SystemRole[];
-  permission?: string;
-}
+import { styles, DRAWER_WIDTH } from './DashboardLayout.styles';
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -111,15 +103,135 @@ const NAV_ITEMS: NavItem[] = [
 // Pages where SystemAdmin needs the TenantPicker to select a tenant context
 const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/audit-logs'];
 
-function PageLoader() {
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+interface DashboardNavItemProps {
+  item: NavItem;
+  onClose: () => void;
+}
+
+const DashboardNavItem = memo(function DashboardNavItem({ item, onClose }: DashboardNavItemProps) {
+  const { text, icon, path } = item;
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, py: 8 }}>
+    <ListItem key={path} disablePadding>
+      <NavLink to={path} style={{ width: '100%', textDecoration: 'none', color: 'inherit' }}>
+        {({ isActive }) => (
+          <ListItemButton selected={isActive} onClick={onClose} sx={styles.navItem}>
+            <ListItemIcon sx={styles.navItemIcon}>{icon}</ListItemIcon>
+            <ListItemText primary={text} />
+          </ListItemButton>
+        )}
+      </NavLink>
+    </ListItem>
+  );
+});
+
+interface DashboardSidebarProps {
+  visibleNavItems: NavItem[];
+  onClose: () => void;
+}
+
+const DashboardSidebar = memo(function DashboardSidebar({
+  visibleNavItems,
+  onClose,
+}: DashboardSidebarProps) {
+  return (
+    <Box sx={styles.drawer}>
+      <Toolbar>
+        <Typography variant="h6" sx={styles.drawerTitle} noWrap>
+          MultiTenant
+        </Typography>
+      </Toolbar>
+      <Divider />
+      <List sx={styles.navList}>
+        {visibleNavItems.map((item) => (
+          <DashboardNavItem key={item.path} item={item} onClose={onClose} />
+        ))}
+      </List>
+    </Box>
+  );
+});
+
+interface DashboardAppBarProps {
+  themeMode: 'light' | 'dark';
+  showTenantPicker: boolean;
+  onDrawerToggle: () => void;
+  onThemeToggle: () => void;
+  avatarSrc: string | undefined;
+  initials: string;
+}
+
+const DashboardAppBar = memo(function DashboardAppBar({
+  themeMode,
+  showTenantPicker,
+  onDrawerToggle,
+  onThemeToggle,
+  avatarSrc,
+  initials,
+}: DashboardAppBarProps) {
+  return (
+    <AppBar position="fixed" elevation={0} sx={styles.appBar}>
+      <Toolbar sx={styles.appBarToolbar}>
+        <IconButton edge="start" onClick={onDrawerToggle} sx={styles.menuButton}>
+          <MenuIcon />
+        </IconButton>
+
+        {/* Tenant picker — SystemAdmin on tenant-scoped pages only */}
+        {showTenantPicker && <TenantPicker />}
+
+        <Box sx={styles.toolbarSpacer} />
+
+        <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
+          <IconButton onClick={onThemeToggle}>
+            {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
+        </Tooltip>
+
+        <DashboardUserSection avatarSrc={avatarSrc} initials={initials} />
+      </Toolbar>
+    </AppBar>
+  );
+});
+
+interface DashboardUserSectionProps {
+  avatarSrc: string | undefined;
+  initials: string;
+}
+
+const DashboardUserSection = memo(function DashboardUserSection({
+  avatarSrc,
+  initials,
+}: DashboardUserSectionProps) {
+  return (
+    <Tooltip title="Profile">
+      <IconButton component={Link} to="/profile" sx={styles.profileButton}>
+        <Avatar
+          src={avatarSrc}
+          slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+          sx={styles.userAvatar}
+        >
+          {!avatarSrc && initials}
+        </Avatar>
+      </IconButton>
+    </Tooltip>
+  );
+});
+
+const PageLoader = memo(function PageLoader() {
+  return (
+    <Box sx={styles.pageLoader}>
       <CircularProgress />
     </Box>
   );
-}
+});
 
-export function DashboardLayout() {
+// ---------------------------------------------------------------------------
+// Main layout
+// ---------------------------------------------------------------------------
+
+export const DashboardLayout = memo(function DashboardLayout() {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
@@ -137,27 +249,55 @@ export function DashboardLayout() {
   usePageTitle();
 
   const { data: profile } = useGetCurrentUserQuery();
-  const navAvatarSrc = profile?.profileFileId ? getUserAvatarUrl(profile.id) : undefined;
 
-  const visibleNavItems = NAV_ITEMS.filter((item) => {
-    if (item.allowedRoles && (!user?.systemRole || !item.allowedRoles.includes(user.systemRole)))
-      return false;
-    if (item.permission && permissionsLoaded && !permissions.includes(item.permission))
-      return false;
-    return true;
-  });
+  const navAvatarSrc = useMemo(
+    () => (profile?.profileFileId ? getUserAvatarUrl(profile.id) : undefined),
+    [profile?.profileFileId, profile?.id],
+  );
+
+  const visibleNavItems = useMemo(
+    () =>
+      NAV_ITEMS.filter((item) => {
+        if (
+          item.allowedRoles &&
+          (!user?.systemRole || !item.allowedRoles.includes(user.systemRole))
+        )
+          return false;
+        if (item.permission && permissionsLoaded && !permissions.includes(item.permission))
+          return false;
+        return true;
+      }),
+    [user?.systemRole, permissions, permissionsLoaded],
+  );
 
   // Show TenantPicker only on pages that need a tenant context
-  const showTenantPicker =
-    isSystemAdmin &&
-    TENANT_CONTEXT_PATHS.some(
-      (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
-    );
+  const showTenantPicker = useMemo(
+    () =>
+      isSystemAdmin &&
+      TENANT_CONTEXT_PATHS.some(
+        (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
+      ),
+    [isSystemAdmin, location.pathname],
+  );
 
-  const handleThemeToggle = () => dispatch(toggleTheme());
-  const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
+  const initials = useMemo(
+    () =>
+      user?.fullName
+        ? user.fullName
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
+        : '?',
+    [user?.fullName],
+  );
 
-  const handleStopImpersonation = async () => {
+  const handleThemeToggle = useCallback(() => dispatch(toggleTheme()), [dispatch]);
+  const handleDrawerToggle = useCallback(() => setMobileOpen((prev) => !prev), []);
+  const handleDrawerClose = useCallback(() => setMobileOpen(false), []);
+
+  const handleStopImpersonation = useCallback(async () => {
     try {
       await stopImpersonation().unwrap();
       dispatch(apiSlice.util.resetApiState());
@@ -166,148 +306,39 @@ export function DashboardLayout() {
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to stop impersonation.');
     }
-  };
-
-  const initials = user?.fullName
-    ? user.fullName
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : '?';
-
-  const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Toolbar>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }} noWrap>
-          MultiTenant
-        </Typography>
-      </Toolbar>
-      <Divider />
-      <List sx={{ flex: 1, pt: 1 }}>
-        {visibleNavItems.map(({ text, icon, path }) => (
-          <ListItem key={path} disablePadding>
-            <NavLink to={path} style={{ width: '100%', textDecoration: 'none', color: 'inherit' }}>
-              {({ isActive }) => (
-                <ListItemButton
-                  selected={isActive}
-                  onClick={() => setMobileOpen(false)}
-                  sx={{
-                    mx: 1,
-                    borderRadius: 2,
-                    '&.Mui-selected': {
-                      bgcolor: 'primary.main',
-                      color: 'primary.contrastText',
-                      '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
-                      '&:hover': { bgcolor: 'primary.dark' },
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 40 }}>{icon}</ListItemIcon>
-                  <ListItemText primary={text} />
-                </ListItemButton>
-              )}
-            </NavLink>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-  );
+  }, [stopImpersonation, dispatch, snackbar]);
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <AppBar
-        position="fixed"
-        elevation={0}
-        sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-        }}
-      >
-        <Toolbar sx={{ gap: 1 }}>
-          <IconButton
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 1, display: { md: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
+    <Box sx={styles.root}>
+      <DashboardAppBar
+        themeMode={themeMode}
+        showTenantPicker={showTenantPicker}
+        onDrawerToggle={handleDrawerToggle}
+        onThemeToggle={handleThemeToggle}
+        avatarSrc={navAvatarSrc}
+        initials={initials}
+      />
 
-          {/* Tenant picker — SystemAdmin on tenant-scoped pages only */}
-          {showTenantPicker && <TenantPicker />}
-
-          <Box sx={{ flex: 1 }} />
-
-          <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
-            <IconButton onClick={handleThemeToggle}>
-              {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Profile">
-            <IconButton component={Link} to="/profile" sx={{ ml: 0.5 }}>
-              <Avatar
-                src={navAvatarSrc}
-                slotProps={{ img: { crossOrigin: 'use-credentials' } }}
-                sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 13 }}
-              >
-                {!navAvatarSrc && initials}
-              </Avatar>
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
-      </AppBar>
-
-      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
+      <Box component="nav" sx={styles.nav}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
-          }}
+          sx={styles.drawerTemporary}
         >
-          {drawerContent}
+          <DashboardSidebar visibleNavItems={visibleNavItems} onClose={handleDrawerClose} />
         </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': {
-              width: DRAWER_WIDTH,
-              boxSizing: 'border-box',
-              borderRight: 1,
-              borderColor: 'divider',
-            },
-          }}
-          open
-        >
-          {drawerContent}
+        <Drawer variant="permanent" sx={styles.drawerPermanent} open>
+          <DashboardSidebar visibleNavItems={visibleNavItems} onClose={handleDrawerClose} />
         </Drawer>
       </Box>
 
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-          p: 3,
-          mt: '64px',
-        }}
-      >
+      <Box component="main" sx={styles.mainContent}>
         {isImpersonating && impersonatedBy && (
           <Alert
             severity="warning"
-            sx={{ mb: 2, borderRadius: 2 }}
+            sx={styles.impersonationAlert}
             action={
               <Button
                 color="warning"
@@ -316,7 +347,9 @@ export function DashboardLayout() {
                 disabled={isStopping}
                 onClick={handleStopImpersonation}
               >
-                {isStopping ? <CircularProgress size={14} sx={{ mr: 0.5 }} /> : null}
+                {isStopping ? (
+                  <CircularProgress size={14} sx={styles.stopImpersonationSpinner} />
+                ) : null}
                 Stop Impersonation
               </Button>
             }
@@ -335,4 +368,6 @@ export function DashboardLayout() {
       </Box>
     </Box>
   );
-}
+});
+
+export { DRAWER_WIDTH };

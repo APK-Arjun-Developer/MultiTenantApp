@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { z } from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
@@ -25,14 +24,13 @@ import {
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
+import { styles } from './LoginPage.styles';
+import { loginSchema } from './LoginPage.types';
+import type { LoginValues, Step, OtpInputProps } from './LoginPage.types';
 
-// ─── Schemas & field config ──────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-type LoginValues = z.infer<typeof loginSchema>;
+const OTP_LENGTH = 6;
 
 const loginFields: FieldConfig[] = [
   {
@@ -51,60 +49,73 @@ const loginFields: FieldConfig[] = [
   },
 ];
 
+const stepVariants = {
+  enter: (dir: number) => ({ opacity: 0, x: dir * 40 }),
+  center: { opacity: 1, x: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
+};
+
 // ─── OTP Input ───────────────────────────────────────────────────────────────
 
-const OTP_LENGTH = 6;
-
-interface OtpInputProps {
-  value: string;
-  onChange: (v: string) => void;
-  disabled?: boolean;
-}
-
-function OtpInput({ value, onChange, disabled }: OtpInputProps) {
+const OtpInput = memo(function OtpInput({ value, onChange, disabled }: OtpInputProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(OTP_LENGTH, '').split('').slice(0, OTP_LENGTH);
+  const digits = useMemo(
+    () => value.padEnd(OTP_LENGTH, '').split('').slice(0, OTP_LENGTH),
+    [value],
+  );
 
-  const update = (nextDigits: string[]) => onChange(nextDigits.join('').trimEnd());
+  const update = useCallback(
+    (nextDigits: string[]) => onChange(nextDigits.join('').trimEnd()),
+    [onChange],
+  );
 
-  const handleChange = (i: number, raw: string) => {
-    const digit = raw.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[i] = digit;
-    update(next);
-    if (digit && i < OTP_LENGTH - 1) inputRefs.current[i + 1]?.focus();
-  };
+  const handleChange = useCallback(
+    (i: number, raw: string) => {
+      const digit = raw.replace(/\D/g, '').slice(-1);
+      const next = [...digits];
+      next[i] = digit;
+      update(next);
+      if (digit && i < OTP_LENGTH - 1) inputRefs.current[i + 1]?.focus();
+    },
+    [digits, update],
+  );
 
-  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace') {
-      if (digits[i]) {
-        const next = [...digits];
-        next[i] = '';
-        update(next);
-      } else if (i > 0) {
+  const handleKeyDown = useCallback(
+    (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace') {
+        if (digits[i]) {
+          const next = [...digits];
+          next[i] = '';
+          update(next);
+        } else if (i > 0) {
+          inputRefs.current[i - 1]?.focus();
+        }
+      } else if (e.key === 'ArrowLeft' && i > 0) {
         inputRefs.current[i - 1]?.focus();
+      } else if (e.key === 'ArrowRight' && i < OTP_LENGTH - 1) {
+        inputRefs.current[i + 1]?.focus();
       }
-    } else if (e.key === 'ArrowLeft' && i > 0) {
-      inputRefs.current[i - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && i < OTP_LENGTH - 1) {
-      inputRefs.current[i + 1]?.focus();
-    }
-  };
+    },
+    [digits, update],
+  );
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
-    if (!pasted) return;
-    const next = Array(OTP_LENGTH).fill('');
-    pasted.split('').forEach((ch, i) => {
-      next[i] = ch;
-    });
-    update(next);
-    inputRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
-  };
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      e.preventDefault();
+      const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
+      if (!pasted) return;
+      const next = Array(OTP_LENGTH).fill('');
+      pasted.split('').forEach((ch, i) => {
+        next[i] = ch;
+      });
+      update(next);
+      inputRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
+    },
+    [update],
+  );
 
   return (
-    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+    <Box sx={styles.otpInputRow}>
       {digits.map((digit, i) => (
         <InputBase
           key={i}
@@ -122,32 +133,16 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e as React.KeyboardEvent<HTMLInputElement>)}
           onPaste={handlePaste}
-          sx={{
-            width: 48,
-            height: 56,
-            border: '2px solid',
-            borderColor: digit ? 'primary.main' : 'divider',
-            borderRadius: 1.5,
-            transition: 'border-color 0.15s',
-            '&.Mui-focused': { borderColor: 'primary.main' },
-          }}
+          sx={styles.otpDigitBox(!!digit)}
         />
       ))}
     </Box>
   );
-}
+});
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-type Step = 'login' | 'verify';
-
-const stepVariants = {
-  enter: (dir: number) => ({ opacity: 0, x: dir * 40 }),
-  center: { opacity: 1, x: 0 },
-  exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
-};
-
-export function LoginPage() {
+export const LoginPage = memo(function LoginPage() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [loginMutation, { isLoading: isLoggingIn }] = useLoginMutation();
   const [verifyEmailMutation, { isLoading: isVerifying }] = useVerifyEmailMutation();
@@ -168,46 +163,52 @@ export function LoginPage() {
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  const goToVerify = (email: string) => {
+  const goToVerify = useCallback((email: string) => {
     setDirection(1);
     setPendingEmail(email);
     setOtp('');
     setStep('verify');
-  };
+  }, []);
 
-  const goToLogin = () => {
+  const goToLogin = useCallback(() => {
     setDirection(-1);
     setStep('login');
     setOtp('');
-  };
+  }, []);
 
-  const sendOtp = async (email: string, silent = false) => {
-    try {
-      await resendVerificationMutation({ email }).unwrap();
-      setCooldown(60);
-      if (!silent) snackbar.success('A new code has been sent to your email.');
-    } catch {
-      // server always returns 200 for this endpoint — failure is infra-level
-    }
-  };
-
-  const onLoginSubmit = async (values: LoginValues) => {
-    try {
-      await loginMutation({ email: values.email, password: values.password }).unwrap();
-    } catch (err) {
-      const error = err as ApiError;
-      if (error.status === 400 && error.message?.includes('not been verified')) {
-        goToVerify(values.email);
-        await sendOtp(values.email, true);
-      } else {
-        snackbar.error(
-          error.message || 'Invalid credentials. Please check your email and password.',
-        );
+  const sendOtp = useCallback(
+    async (email: string, silent = false) => {
+      try {
+        await resendVerificationMutation({ email }).unwrap();
+        setCooldown(60);
+        if (!silent) snackbar.success('A new code has been sent to your email.');
+      } catch {
+        // server always returns 200 for this endpoint — failure is infra-level
       }
-    }
-  };
+    },
+    [resendVerificationMutation, snackbar],
+  );
 
-  const onVerifySubmit = async () => {
+  const onLoginSubmit = useCallback(
+    async (values: LoginValues) => {
+      try {
+        await loginMutation({ email: values.email, password: values.password }).unwrap();
+      } catch (err) {
+        const error = err as ApiError;
+        if (error.status === 400 && error.message?.includes('not been verified')) {
+          goToVerify(values.email);
+          await sendOtp(values.email, true);
+        } else {
+          snackbar.error(
+            error.message || 'Invalid credentials. Please check your email and password.',
+          );
+        }
+      }
+    },
+    [loginMutation, goToVerify, sendOtp, snackbar],
+  );
+
+  const onVerifySubmit = useCallback(async () => {
     if (otp.length !== OTP_LENGTH) return;
     try {
       await verifyEmailMutation({ email: pendingEmail, otp }).unwrap();
@@ -217,12 +218,38 @@ export function LoginPage() {
       const error = err as ApiError;
       snackbar.error(error.message || 'Invalid or expired verification code.');
     }
-  };
+  }, [otp, verifyEmailMutation, pendingEmail, snackbar, goToLogin]);
+
+  const handleVerifyFormSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      onVerifySubmit();
+    },
+    [onVerifySubmit],
+  );
+
+  const handleResendOtp = useCallback(() => sendOtp(pendingEmail), [sendOtp, pendingEmail]);
+
+  const renderLoginActions = useCallback(
+    ({ isSubmitting }: { isSubmitting: boolean }) => (
+      <LoadingButton
+        type="submit"
+        loading={isSubmitting || isLoggingIn}
+        variant="contained"
+        fullWidth
+        size="large"
+        sx={styles.loginSubmitButton}
+      >
+        Sign in
+      </LoadingButton>
+    ),
+    [isLoggingIn],
+  );
 
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <Box sx={{ overflow: 'hidden' }}>
+    <Box sx={styles.root}>
       <AnimatePresence mode="wait" custom={direction} initial={false}>
         {step === 'login' ? (
           <motion.div
@@ -234,10 +261,10 @@ export function LoginPage() {
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+            <Typography variant="h6" sx={styles.loginTitle}>
               Sign in to your account
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={styles.loginSubtitle}>
               Enter your credentials to continue
             </Typography>
 
@@ -246,31 +273,16 @@ export function LoginPage() {
               schema={loginSchema}
               fields={loginFields}
               onSubmit={onLoginSubmit}
-              renderActions={({ isSubmitting }) => (
-                <LoadingButton
-                  type="submit"
-                  loading={isSubmitting || isLoggingIn}
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  sx={{ mt: 1 }}
-                >
-                  Sign in
-                </LoadingButton>
-              )}
-              sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+              renderActions={renderLoginActions}
+              sx={styles.loginFormBuilder as never}
             />
 
-            <Box sx={{ textAlign: 'right', mt: 1 }}>
+            <Box sx={styles.forgotPasswordLink}>
               <Typography
                 component={Link}
                 to="/forgot-password"
                 variant="body2"
-                sx={{
-                  color: 'primary.main',
-                  textDecoration: 'none',
-                  '&:hover': { textDecoration: 'underline' },
-                }}
+                sx={styles.forgotPasswordAnchor}
               >
                 Forgot password?
               </Typography>
@@ -287,32 +299,25 @@ export function LoginPage() {
             transition={{ duration: 0.2, ease: 'easeOut' }}
           >
             <Box>
-              <IconButton onClick={goToLogin} size="small" sx={{ mb: 1, ml: -0.5 }}>
+              <IconButton onClick={goToLogin} size="small" sx={styles.verifyBackButton}>
                 <ArrowBackIcon fontSize="small" />
               </IconButton>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box sx={styles.verifyTitleRow}>
                 <MarkEmailReadIcon color="primary" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" sx={styles.verifyTitleText}>
                   Verify your email
                 </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              <Typography variant="body2" color="text.secondary" sx={styles.verifySubtitle}>
                 We sent a 6-digit code to{' '}
-                <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                <Box component="span" sx={styles.verifyEmailHighlight}>
                   {pendingEmail}
                 </Box>
                 . Enter it below to confirm your address.
               </Typography>
 
-              <Stack
-                component="form"
-                spacing={3}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onVerifySubmit();
-                }}
-              >
+              <Stack component="form" spacing={3} onSubmit={handleVerifyFormSubmit}>
                 <OtpInput value={otp} onChange={setOtp} disabled={isVerifying} />
 
                 <LoadingButton
@@ -326,11 +331,11 @@ export function LoginPage() {
                   Verify email
                 </LoadingButton>
 
-                <Box sx={{ textAlign: 'center' }}>
+                <Box sx={styles.resendBox}>
                   {cooldown > 0 ? (
                     <Typography variant="body2" color="text.secondary">
                       Resend code in{' '}
-                      <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                      <Box component="span" sx={styles.cooldownHighlight}>
                         {cooldown}s
                       </Box>
                     </Typography>
@@ -340,7 +345,7 @@ export function LoginPage() {
                       variant="text"
                       size="small"
                       loading={isResending}
-                      onClick={() => sendOtp(pendingEmail)}
+                      onClick={handleResendOtp}
                     >
                       Resend code
                     </LoadingButton>
@@ -353,4 +358,4 @@ export function LoginPage() {
       </AnimatePresence>
     </Box>
   );
-}
+});

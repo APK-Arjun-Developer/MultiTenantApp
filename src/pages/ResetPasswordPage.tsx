@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
-import { z } from 'zod';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -18,27 +18,11 @@ import { useValidateResetTokenQuery, useResetPasswordMutation } from '@/features
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
-import CircularProgress from '@mui/material/CircularProgress';
+import { styles } from './ResetPasswordPage.styles';
+import { resetPasswordSchema } from './ResetPasswordPage.types';
+import type { ResetPasswordFormValues, TokenInvalidProps } from './ResetPasswordPage.types';
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
-
-const passwordRule = z
-  .string()
-  .min(8, 'At least 8 characters')
-  .regex(/[A-Z]/, 'Must include an uppercase letter')
-  .regex(/[0-9]/, 'Must include a number')
-  .regex(/[^A-Za-z0-9]/, 'Must include a special character');
-
-const schema = z
-  .object({
-    password: passwordRule,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-  })
-  .refine((d) => d.password === d.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  });
-type FormValues = z.infer<typeof schema>;
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const resetFields: FieldConfig[] = [
   {
@@ -57,13 +41,13 @@ const resetFields: FieldConfig[] = [
   },
 ];
 
-// ─── States ──────────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-function TokenInvalid({ message }: { message?: string | null }) {
+const TokenInvalid = memo(function TokenInvalid({ message }: TokenInvalidProps) {
   return (
-    <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
-      <ErrorIcon sx={{ fontSize: 48, color: 'error.main' }} />
-      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+    <Stack spacing={2} sx={styles.invalidStack}>
+      <ErrorIcon sx={styles.invalidIcon} />
+      <Typography variant="h6" sx={styles.invalidTitle}>
         Link expired or invalid
       </Typography>
       <Typography variant="body2" color="text.secondary">
@@ -75,7 +59,7 @@ function TokenInvalid({ message }: { message?: string | null }) {
         variant="contained"
         fullWidth
         size="large"
-        sx={{ mt: 1 }}
+        sx={styles.invalidRequestButton}
       >
         Request a new link
       </Button>
@@ -84,13 +68,13 @@ function TokenInvalid({ message }: { message?: string | null }) {
       </Button>
     </Stack>
   );
-}
+});
 
-function ResetSuccess() {
+const ResetSuccess = memo(function ResetSuccess() {
   return (
-    <Stack spacing={2} sx={{ alignItems: 'center', textAlign: 'center' }}>
-      <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main' }} />
-      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+    <Stack spacing={2} sx={styles.successStack}>
+      <CheckCircleIcon sx={styles.successIcon} />
+      <Typography variant="h6" sx={styles.successTitle}>
         Password updated
       </Typography>
       <Typography variant="body2" color="text.secondary">
@@ -102,17 +86,17 @@ function ResetSuccess() {
         variant="contained"
         fullWidth
         size="large"
-        sx={{ mt: 1 }}
+        sx={styles.successButton}
       >
         Sign in
       </Button>
     </Stack>
   );
-}
+});
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export function ResetPasswordPage() {
+export const ResetPasswordPage = memo(function ResetPasswordPage() {
   const formRef = useRef<FormBuilderHandle>(null);
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
@@ -126,27 +110,58 @@ export function ResetPasswordPage() {
 
   const [done, setDone] = useState(false);
 
-  const onSubmit = async (values: FormValues) => {
-    try {
-      await resetPassword({
-        token,
-        newPassword: values.password,
-        confirmPassword: values.confirmPassword,
-      }).unwrap();
-      setDone(true);
-      snackbar.success('Password reset successfully!');
-      setTimeout(() => navigate('/login'), 2000);
-    } catch (err) {
-      const error = err as ApiError;
-      snackbar.error(error.message || 'Failed to reset password. Please try again.');
-    }
-  };
+  const onSubmit = useCallback(
+    async (values: ResetPasswordFormValues) => {
+      try {
+        await resetPassword({
+          token,
+          newPassword: values.password,
+          confirmPassword: values.confirmPassword,
+        }).unwrap();
+        setDone(true);
+        snackbar.success('Password reset successfully!');
+        setTimeout(() => navigate('/login'), 2000);
+      } catch (err) {
+        const error = err as ApiError;
+        snackbar.error(error.message || 'Failed to reset password. Please try again.');
+      }
+    },
+    [resetPassword, token, snackbar, navigate],
+  );
+
+  const renderActions = useCallback(
+    ({ isSubmitting }: { isSubmitting: boolean }) => (
+      <LoadingButton
+        type="submit"
+        loading={isSubmitting || isResetting}
+        variant="contained"
+        fullWidth
+        size="large"
+        sx={styles.submitButton}
+      >
+        Reset password
+      </LoadingButton>
+    ),
+    [isResetting],
+  );
+
+  const emailSubtitle = useMemo(() => {
+    if (!validation?.email) return null;
+    return (
+      <Typography variant="body2" color="text.secondary" sx={styles.emailSubtitle}>
+        Resetting password for{' '}
+        <Box component="span" sx={styles.emailHighlight}>
+          {validation.email}
+        </Box>
+      </Typography>
+    );
+  }, [validation?.email]);
 
   if (!token) return <TokenInvalid message="No reset token found in the link." />;
 
   if (isValidating) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+      <Box sx={styles.loadingBox}>
         <CircularProgress size={28} />
       </Box>
     );
@@ -158,46 +173,28 @@ export function ResetPasswordPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+      <Box sx={styles.titleRow}>
         <LockResetIcon color="primary" />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography variant="h6" sx={styles.titleText}>
           Set new password
         </Typography>
       </Box>
-      {validation.email && (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Resetting password for{' '}
-          <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            {validation.email}
-          </Box>
-        </Typography>
-      )}
+      {emailSubtitle}
 
       <FormBuilder
         ref={formRef}
-        schema={schema}
+        schema={resetPasswordSchema}
         fields={resetFields}
         onSubmit={onSubmit}
-        renderActions={({ isSubmitting }) => (
-          <LoadingButton
-            type="submit"
-            loading={isSubmitting || isResetting}
-            variant="contained"
-            fullWidth
-            size="large"
-            sx={{ mt: 1 }}
-          >
-            Reset password
-          </LoadingButton>
-        )}
-        sx={{ boxShadow: 'none', p: 0, bgcolor: 'transparent' }}
+        renderActions={renderActions}
+        sx={styles.formBuilder as never}
       />
 
-      <Box sx={{ textAlign: 'center', mt: 1 }}>
+      <Box sx={styles.backLinkBox}>
         <Button component={Link} to="/login" variant="text" size="small">
           Back to sign in
         </Button>
       </Box>
     </Box>
   );
-}
+});

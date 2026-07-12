@@ -1,12 +1,11 @@
+import React from 'react';
 import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import type { PageTransitionProps } from './PageTransition.types';
 
-interface PageTransitionProps {
-  children: ReactNode;
-  motionKey?: string;
-}
-
-export function PageTransition({ children, motionKey }: PageTransitionProps) {
+export const PageTransition = React.memo(function PageTransition({
+  children,
+  motionKey,
+}: PageTransitionProps) {
   return (
     <motion.div
       key={motionKey}
@@ -19,4 +18,4 @@ export function PageTransition({ children, motionKey }: PageTransitionProps) {
       {children}
     </motion.div>
   );
-}
+});

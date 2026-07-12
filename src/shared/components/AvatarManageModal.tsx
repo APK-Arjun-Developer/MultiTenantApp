@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -10,19 +11,10 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { AvatarUpload } from './AvatarUpload';
+import type { AvatarManageModalProps } from './AvatarManageModal.types';
+import { styles } from './AvatarManageModal.styles';
 
-interface AvatarManageModalProps {
-  open: boolean;
-  onClose: () => void;
-  src?: string | null;
-  initials: string;
-  title: string;
-  uploading?: boolean;
-  onUpload: (file: File) => void;
-  onRemove?: () => void;
-}
-
-export function AvatarManageModal({
+export const AvatarManageModal = React.memo(function AvatarManageModal({
   open,
   onClose,
   src,
@@ -32,10 +24,14 @@ export function AvatarManageModal({
   onUpload,
   onRemove,
 }: AvatarManageModalProps) {
+  const handleClose = useCallback(() => {
+    if (!uploading) onClose();
+  }, [uploading, onClose]);
+
   return (
-    <Dialog open={open} onClose={uploading ? undefined : onClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+    <Dialog open={open} onClose={uploading ? undefined : handleClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={styles.dialogTitle}>
+        <Typography variant="subtitle1" sx={styles.titleText}>
           {title}
         </Typography>
         <IconButton size="small" onClick={onClose} disabled={uploading}>
@@ -44,7 +40,7 @@ export function AvatarManageModal({
       </DialogTitle>
       <Divider />
       <DialogContent>
-        <Stack spacing={3} sx={{ alignItems: 'center', py: 1 }}>
+        <Stack spacing={3} sx={styles.stack}>
           <AvatarUpload
             src={src}
             initials={initials}
@@ -54,12 +50,8 @@ export function AvatarManageModal({
             onRemove={onRemove}
           />
 
-          <Box sx={{ width: '100%' }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: 'block', textAlign: 'center', mb: 2 }}
-            >
+          <Box sx={styles.captionBox}>
+            <Typography variant="caption" color="text.secondary" sx={styles.caption}>
               Click the photo above to change it
             </Typography>
 
@@ -80,4 +72,4 @@ export function AvatarManageModal({
       </DialogContent>
     </Dialog>
   );
-}
+});

@@ -1,41 +1,39 @@
+import React, { useCallback, useMemo } from 'react';
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import { styles } from './ErrorPage.styles';
 
-export function ErrorPage() {
+export const ErrorPage = React.memo(function ErrorPage() {
   const error = useRouteError();
   const navigate = useNavigate();
 
-  let message = 'An unexpected error occurred.';
-  if (isRouteErrorResponse(error)) {
-    message = typeof error.data === 'string' ? error.data : error.statusText;
-  } else if (error instanceof Error) {
-    message = error.message;
-  }
+  const message = useMemo(() => {
+    if (isRouteErrorResponse(error)) {
+      return typeof error.data === 'string' ? error.data : error.statusText;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return 'An unexpected error occurred.';
+  }, [error]);
+
+  const handleBack = useCallback(() => {
+    navigate('/dashboard', { replace: true });
+  }, [navigate]);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        gap: 2,
-        p: 3,
-        textAlign: 'center',
-      }}
-    >
-      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+    <Box sx={styles.container}>
+      <Typography variant="h4" sx={styles.title}>
         Something went wrong
       </Typography>
-      <Typography color="text.secondary" sx={{ maxWidth: 480 }}>
+      <Typography color="text.secondary" sx={styles.message}>
         {message}
       </Typography>
-      <Button variant="contained" onClick={() => navigate('/dashboard', { replace: true })}>
+      <Button variant="contained" onClick={handleBack}>
         Back to Dashboard
       </Button>
     </Box>
   );
-}
+});

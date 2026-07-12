@@ -1,4 +1,5 @@
-import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table';
+import React, { useCallback, useMemo } from 'react';
+import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
@@ -10,19 +11,10 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import type { DataTableProps } from './DataTable.types';
+import { styles } from './DataTable.styles';
 
-interface DataTableProps<TData> {
-  data: TData[];
-  columns: ColumnDef<TData>[];
-  isLoading?: boolean;
-  totalCount?: number;
-  page?: number;
-  pageSize?: number;
-  onPageChange?: (page: number) => void;
-  onPageSizeChange?: (pageSize: number) => void;
-}
-
-export function DataTable<TData>({
+export const DataTable = React.memo(function DataTable<TData>({
   data,
   columns,
   isLoading = false,
@@ -32,7 +24,6 @@ export function DataTable<TData>({
   onPageChange,
   onPageSizeChange,
 }: DataTableProps<TData>) {
-  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -40,7 +31,25 @@ export function DataTable<TData>({
     manualPagination: true,
   });
 
-  const showPagination = totalCount !== undefined && onPageChange !== undefined;
+  const showPagination = useMemo(
+    () => totalCount !== undefined && onPageChange !== undefined,
+    [totalCount, onPageChange],
+  );
+
+  const handlePageChange = useCallback(
+    (_: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
+      onPageChange?.(newPage);
+    },
+    [onPageChange],
+  );
+
+  const handleRowsPerPageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      onPageSizeChange?.(Number(e.target.value));
+      onPageChange?.(0);
+    },
+    [onPageSizeChange, onPageChange],
+  );
 
   return (
     <Paper>
@@ -50,10 +59,7 @@ export function DataTable<TData>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableCell
-                    key={header.id}
-                    sx={{ fontWeight: 600, bgcolor: 'background.default', whiteSpace: 'nowrap' }}
-                  >
+                  <TableCell key={header.id} sx={styles.headerCell}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -65,13 +71,13 @@ export function DataTable<TData>({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} sx={{ textAlign: 'center', py: 5 }}>
+                <TableCell colSpan={columns.length} sx={styles.centeredCell}>
                   <CircularProgress size={28} />
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} sx={{ textAlign: 'center', py: 5 }}>
+                <TableCell colSpan={columns.length} sx={styles.centeredCell}>
                   <Typography variant="body2" color="text.secondary">
                     No records found
                   </Typography>
@@ -92,25 +98,18 @@ export function DataTable<TData>({
         </Table>
       </TableContainer>
       {showPagination && (
-        <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
+        <Box sx={styles.paginationContainer}>
           <TablePagination
             component="div"
-            count={totalCount}
+            count={totalCount!}
             page={page}
             rowsPerPage={pageSize}
             rowsPerPageOptions={[5, 10, 25, 50]}
-            onPageChange={(_, newPage) => onPageChange(newPage)}
-            onRowsPerPageChange={
-              onPageSizeChange
-                ? (e) => {
-                    onPageSizeChange(Number(e.target.value));
-                    onPageChange(0);
-                  }
-                : undefined
-            }
+            onPageChange={handlePageChange}
+            onRowsPerPageChange={onPageSizeChange ? handleRowsPerPageChange : undefined}
           />
         </Box>
       )}
     </Paper>
   );
-}
+}) as <TData>(props: DataTableProps<TData>) => React.ReactElement;
