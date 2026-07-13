@@ -296,6 +296,8 @@ export const RolesPage = memo(function RolesPage() {
   });
   const debouncedSearch = useDebounce(rolesFilter.search, 400);
   const [page, setPage] = useState(0);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editRole, setEditRole] = useState<RoleDto | null>(null);
@@ -335,9 +337,20 @@ export const RolesPage = memo(function RolesPage() {
     pageSize: 20,
     search: debouncedSearch || undefined,
     permissionIds: rolesFilter.permissions.length > 0 ? rolesFilter.permissions : undefined,
+    sortBy,
+    sortOrder: sortBy ? sortOrder : undefined,
   });
 
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
+
+  const handleSortChange = useCallback(
+    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
+      setSortBy(newSortBy);
+      setSortOrder(newSortOrder ?? 'asc');
+      setPage(0);
+    },
+    [],
+  );
 
   const handleOpenCreate = useCallback(() => setCreateOpen(true), []);
   const handleCloseCreate = useCallback(() => setCreateOpen(false), []);
@@ -459,6 +472,10 @@ export const RolesPage = memo(function RolesPage() {
             pageSize={20}
             totalCount={rolesData?.totalCount ?? 0}
             onPageChange={setPage}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            sortableColumns={['name']}
+            onSortChange={handleSortChange}
           />
         )}
 

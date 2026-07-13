@@ -8,6 +8,11 @@ export const styles = {
 
   headerCell: {} as Sx,
 
+  sortableHeaderCell: {
+    cursor: 'pointer',
+    userSelect: 'none',
+  } as Sx,
+
   centeredCell: {
     textAlign: 'center',
     py: 8,

@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -221,12 +221,18 @@ const ProfileCompanySection = memo(function ProfileCompanySection({
   );
 });
 
+const PROFILE_TABS = ['profile', 'address'] as const;
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const ProfilePage = memo(function ProfilePage() {
   const snackbar = useSnackbar();
   const navigate = useNavigate();
-  const [tab, setTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = useMemo(() => {
+    const idx = (PROFILE_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
+    return idx >= 0 ? idx : 0;
+  }, [searchParams]);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
@@ -291,9 +297,12 @@ export const ProfilePage = memo(function ProfilePage() {
     [tenantSettings?.profileFileId],
   );
 
-  const handleTabChange = useCallback((_e: React.SyntheticEvent, v: unknown) => {
-    setTab(v as number);
-  }, []);
+  const handleTabChange = useCallback(
+    (_e: React.SyntheticEvent, v: unknown) => {
+      setSearchParams({ tab: PROFILE_TABS[v as number] }, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   const onProfileSubmit = useCallback(
     async (values: ProfileValues) => {

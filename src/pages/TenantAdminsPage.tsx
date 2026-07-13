@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -435,6 +436,8 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
   return <Chip label={status} color={color} size="small" variant="outlined" />;
 });
 
+const ADMINS_TABS = ['admins', 'invitations'] as const;
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const TenantAdminsPage = memo(function TenantAdminsPage() {
@@ -453,7 +456,11 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
   const canResend = usePermission('Onboarding.Resend');
   const canRevoke = usePermission('Onboarding.Revoke');
 
-  const [tab, setTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = useMemo(() => {
+    const idx = (ADMINS_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
+    return idx >= 0 ? idx : 0;
+  }, [searchParams]);
 
   // Admins tab
   const [adminsFilter, setAdminsFilter] = useState({
@@ -465,6 +472,8 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
   const debouncedSearch = useDebounce(adminsFilter.search, 300);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const [createOpen, setCreateOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -542,6 +551,8 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
           ? false
           : undefined,
     createdVia: (adminsFilter.createdVia as 'Direct' | 'Invitation') || undefined,
+    sortBy,
+    sortOrder: sortBy ? sortOrder : undefined,
   });
 
   const adminsInvFilterFields = useMemo<FieldConfig[]>(
@@ -648,9 +659,21 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
 
   // ─── Callbacks ──────────────────────────────────────────────────────────────
 
-  const handleTabChange = useCallback((_: React.SyntheticEvent, v: number) => {
-    setTab(v);
-  }, []);
+  const handleSortChange = useCallback(
+    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
+      setSortBy(newSortBy);
+      setSortOrder(newSortOrder ?? 'asc');
+      setPage(0);
+    },
+    [],
+  );
+
+  const handleTabChange = useCallback(
+    (_: React.SyntheticEvent, v: number) => {
+      setSearchParams({ tab: ADMINS_TABS[v] }, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   const handleOpenCreate = useCallback(() => setCreateOpen(true), []);
   const handleCloseCreate = useCallback(() => setCreateOpen(false), []);
@@ -1074,6 +1097,10 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            sortableColumns={['fullName']}
+            onSortChange={handleSortChange}
           />
         </Box>
       )}

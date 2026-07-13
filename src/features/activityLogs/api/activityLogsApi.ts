@@ -17,6 +17,8 @@ export const activityLogsApi = apiSlice.injectEndpoints({
           action: params?.action,
           dateFrom: params?.dateFrom,
           dateTo: params?.dateTo,
+          sortBy: params?.sortBy,
+          sortOrder: params?.sortOrder,
         },
       }),
       providesTags: ['ActivityLog'],

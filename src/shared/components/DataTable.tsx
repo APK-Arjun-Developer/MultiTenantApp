@@ -10,6 +10,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
+import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
 import InboxIcon from '@mui/icons-material/Inbox';
 import type { DataTableProps } from './DataTable.types';
@@ -24,6 +25,10 @@ export const DataTable = React.memo(function DataTable<TData>({
   pageSize = 10,
   onPageChange,
   onPageSizeChange,
+  sortBy,
+  sortOrder,
+  sortableColumns,
+  onSortChange,
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
@@ -31,6 +36,22 @@ export const DataTable = React.memo(function DataTable<TData>({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
   });
+
+  const handleSortClick = useCallback(
+    (columnId: string) => {
+      if (!onSortChange) return;
+      if (sortBy === columnId) {
+        if (sortOrder === 'asc') {
+          onSortChange(columnId, 'desc');
+        } else {
+          onSortChange(undefined, undefined);
+        }
+      } else {
+        onSortChange(columnId, 'asc');
+      }
+    },
+    [sortBy, sortOrder, onSortChange],
+  );
 
   const showPagination = useMemo(
     () => totalCount !== undefined && onPageChange !== undefined,
@@ -59,13 +80,29 @@ export const DataTable = React.memo(function DataTable<TData>({
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableCell key={header.id} sx={styles.headerCell}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableCell>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const isSortable =
+                    !!sortableColumns?.includes(header.column.id) && !!onSortChange;
+                  const isActive = sortBy === header.column.id;
+                  return (
+                    <TableCell
+                      key={header.id}
+                      sx={isSortable ? styles.sortableHeaderCell : styles.headerCell}
+                    >
+                      {header.isPlaceholder ? null : isSortable ? (
+                        <TableSortLabel
+                          active={isActive}
+                          direction={isActive ? (sortOrder ?? 'asc') : 'asc'}
+                          onClick={() => handleSortClick(header.column.id)}
+                        >
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableSortLabel>
+                      ) : (
+                        flexRender(header.column.columnDef.header, header.getContext())
+                      )}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHead>

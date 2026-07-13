@@ -9,4 +9,8 @@ export interface DataTableProps<TData> {
   pageSize?: number;
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  sortableColumns?: string[];
+  onSortChange?: (sortBy: string | undefined, sortOrder: 'asc' | 'desc' | undefined) => void;
 }

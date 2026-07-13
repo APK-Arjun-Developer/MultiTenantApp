@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
@@ -502,6 +503,8 @@ const UsersInvitationsFilterBar = memo(function UsersInvitationsFilterBar({
   );
 });
 
+const USERS_TABS = ['users', 'invitations'] as const;
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const UsersPage = memo(function UsersPage() {
@@ -524,12 +527,18 @@ export const UsersPage = memo(function UsersPage() {
   const canRevoke = usePermission('Onboarding.Revoke');
 
   // Tabs
-  const [tab, setTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = useMemo(() => {
+    const idx = (USERS_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
+    return idx >= 0 ? idx : 0;
+  }, [searchParams]);
 
   // Users tab state
   const [userFilter, setUserFilter] = useState({ search: '', status: '', createdVia: '' });
   const debouncedSearch = useDebounce(userFilter.search, 400);
   const [usersPage, setUsersPage] = useState(0);
+  const [usersSortBy, setUsersSortBy] = useState<string | undefined>(undefined);
+  const [usersSortOrder, setUsersSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Dialogs
   const [createOpen, setCreateOpen] = useState(false);
@@ -612,6 +621,8 @@ export const UsersPage = memo(function UsersPage() {
     isActive:
       userFilter.status === 'active' ? true : userFilter.status === 'inactive' ? false : undefined,
     createdVia: (userFilter.createdVia as 'Direct' | 'Invitation') || undefined,
+    sortBy: usersSortBy,
+    sortOrder: usersSortBy ? usersSortOrder : undefined,
   });
 
   const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
@@ -650,7 +661,21 @@ export const UsersPage = memo(function UsersPage() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
-  const handleTabChange = useCallback((_: React.SyntheticEvent, v: number) => setTab(v), []);
+  const handleUsersSortChange = useCallback(
+    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
+      setUsersSortBy(newSortBy);
+      setUsersSortOrder(newSortOrder ?? 'asc');
+      setUsersPage(0);
+    },
+    [],
+  );
+
+  const handleTabChange = useCallback(
+    (_: React.SyntheticEvent, v: number) => {
+      setSearchParams({ tab: USERS_TABS[v] }, { replace: true });
+    },
+    [setSearchParams],
+  );
 
   const handleCreateOpen = useCallback(() => setCreateOpen(true), []);
   const handleCreateClose = useCallback(() => setCreateOpen(false), []);
@@ -1136,6 +1161,10 @@ export const UsersPage = memo(function UsersPage() {
               pageSize={20}
               totalCount={usersData?.totalCount ?? 0}
               onPageChange={setUsersPage}
+              sortBy={usersSortBy}
+              sortOrder={usersSortOrder}
+              sortableColumns={['fullName', 'lastLoginAt']}
+              onSortChange={handleUsersSortChange}
             />
           </Box>
         )}

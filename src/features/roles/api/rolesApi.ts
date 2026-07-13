@@ -12,6 +12,8 @@ export interface GetRolesParams {
   pageSize?: number;
   search?: string;
   permissionIds?: string[];
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export const rolesApi = apiSlice.injectEndpoints({
@@ -24,6 +26,8 @@ export const rolesApi = apiSlice.injectEndpoints({
           pageSize: params?.pageSize ?? 100,
           search: params?.search,
           permissionIds: params?.permissionIds,
+          sortBy: params?.sortBy,
+          sortOrder: params?.sortOrder,
         },
       }),
       providesTags: ['Role'],

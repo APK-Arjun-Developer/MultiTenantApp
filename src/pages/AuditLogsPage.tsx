@@ -106,6 +106,8 @@ export const AuditLogsPage = memo(function AuditLogsPage() {
   const dispatch = useAppDispatch();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [auditFilter, setAuditFilter] = useState<AuditFilter>({
     module: '',
     dateFrom: '',
@@ -150,7 +152,18 @@ export const AuditLogsPage = memo(function AuditLogsPage() {
     module: auditFilter.module || undefined,
     dateFrom: debouncedDateFrom || undefined,
     dateTo: debouncedDateTo ? `${debouncedDateTo}T23:59:59Z` : undefined,
+    sortBy,
+    sortOrder: sortBy ? sortOrder : undefined,
   });
+
+  const handleSortChange = useCallback(
+    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
+      setSortBy(newSortBy);
+      setSortOrder(newSortOrder ?? 'asc');
+      setPage(0);
+    },
+    [],
+  );
 
   const handleFilterChange = useCallback((values: AuditFilter) => {
     setAuditFilter(values);
@@ -280,6 +293,10 @@ export const AuditLogsPage = memo(function AuditLogsPage() {
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={handlePageSizeChange}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          sortableColumns={['createdAt']}
+          onSortChange={handleSortChange}
         />
       </Box>
     </TenantContextGuard>

@@ -4,9 +4,7 @@ type Sx = SxProps<Theme>;
 
 export const styles = {
   // Page root container
-  root: {
-    maxWidth: 600,
-  } as Sx,
+  root: {} as Sx,
 
   // Page header row (icon + title)
   pageHeader: {

@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -608,6 +609,8 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
   return <Chip label={status} color={color} size="small" variant="filled" />;
 });
 
+const TENANTS_TABS = ['tenants', 'invitations'] as const;
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const TenantsPage = memo(function TenantsPage() {
@@ -620,13 +623,19 @@ export const TenantsPage = memo(function TenantsPage() {
   const canDelete = usePermission('Tenants.Delete');
   const canEditSubscription = usePermission('Subscriptions.Edit');
 
-  const [tab, setTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = useMemo(() => {
+    const idx = (TENANTS_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
+    return idx >= 0 ? idx : 0;
+  }, [searchParams]);
 
   // Tenants tab
   const [tenantFilter, setTenantFilter] = useState({ search: '', status: '', createdVia: '' });
   const debouncedSearch = useDebounce(tenantFilter.search, 300);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const [onboardOpen, setOnboardOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -654,6 +663,8 @@ export const TenantsPage = memo(function TenantsPage() {
           ? false
           : undefined,
     createdVia: (tenantFilter.createdVia as 'Direct' | 'Invitation') || undefined,
+    sortBy,
+    sortOrder: sortBy ? sortOrder : undefined,
   });
 
   const { data: invitationsData, isLoading: isLoadingInvitations } =
@@ -675,7 +686,21 @@ export const TenantsPage = memo(function TenantsPage() {
 
   // ─── Callbacks ────────────────────────────────────────────────────────────
 
-  const handleTabChange = useCallback((_: React.SyntheticEvent, v: number) => setTab(v), []);
+  const handleTabChange = useCallback(
+    (_: React.SyntheticEvent, v: number) => {
+      setSearchParams({ tab: TENANTS_TABS[v] }, { replace: true });
+    },
+    [setSearchParams],
+  );
+
+  const handleSortChange = useCallback(
+    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
+      setSortBy(newSortBy);
+      setSortOrder(newSortOrder ?? 'asc');
+      setPage(0);
+    },
+    [],
+  );
 
   const handleOnboardOpen = useCallback(() => setOnboardOpen(true), []);
   const handleOnboardClose = useCallback(() => setOnboardOpen(false), []);
@@ -974,6 +999,10 @@ export const TenantsPage = memo(function TenantsPage() {
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={handlePageSizeChange}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            sortableColumns={['name']}
+            onSortChange={handleSortChange}
           />
         </Box>
       )}

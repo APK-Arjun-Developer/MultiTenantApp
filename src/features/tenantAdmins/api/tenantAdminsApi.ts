@@ -17,6 +17,8 @@ export interface GetTenantAdminsParams {
   tenantId?: string;
   isActive?: boolean;
   createdVia?: 'Direct' | 'Invitation';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface GetTenantAdminInvitationsParams {
@@ -40,6 +42,8 @@ export const tenantAdminsApi = apiSlice.injectEndpoints({
           tenantId: params?.tenantId,
           isActive: params?.isActive,
           createdVia: params?.createdVia,
+          sortBy: params?.sortBy,
+          sortOrder: params?.sortOrder,
         },
         skipTenantHeader: true,
       }),
