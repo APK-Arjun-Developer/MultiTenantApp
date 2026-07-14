@@ -1,17 +1,16 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
   root: {
     overflow: 'hidden',
-  } as Sx,
+  },
 
   titleRow: {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
     mb: 0.5,
-  } as Sx,
+  },
 
   titleIconBox: {
     width: 28,
@@ -24,35 +23,35 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 10px rgba(124,58,237,0.28)',
-  } as Sx,
+  },
 
   titleText: {
     fontWeight: 700,
-  } as Sx,
+  },
 
   subtitle: {
     mb: 2,
-  } as Sx,
+  },
 
   formBuilder: {
     boxShadow: 'none',
     p: 0,
     bgcolor: 'transparent',
-  } as Sx,
+  },
 
   submitButton: {
     mt: 1,
-  } as Sx,
+  },
 
   backLinkBox: {
     textAlign: 'center',
     mt: 1,
-  } as Sx,
+  },
 
   sentStack: {
     alignItems: 'center',
     textAlign: 'center',
-  } as Sx,
+  },
 
   sentIconBox: {
     width: 64,
@@ -63,23 +62,26 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  } as Sx,
+  },
 
   sentIcon: {
     fontSize: '2rem',
     color: 'success.main',
-  } as Sx,
+  },
 
   sentTitle: {
     fontWeight: 600,
-  } as Sx,
+  },
 
   sentEmailHighlight: {
     fontWeight: 600,
     color: 'text.primary',
-  } as Sx,
+  },
 
   sentBackButton: {
     mt: 1,
-  } as Sx,
-} as const;
+  },
+  titleIconSize: {
+    fontSize: '0.875rem',
+  },
+} as const satisfies Record<string, Sx>;

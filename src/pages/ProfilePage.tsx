@@ -425,7 +425,7 @@ export const ProfilePage = memo(function ProfilePage() {
       {/* Page header */}
       <Box sx={styles.pageHeader}>
         <Box sx={styles.pageIconBox}>
-          <AccountCircleIcon sx={{ fontSize: '1.125rem' }} />
+          <AccountCircleIcon sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.pageTitle}>
           Profile

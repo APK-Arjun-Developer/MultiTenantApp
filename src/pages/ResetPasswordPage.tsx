@@ -179,7 +179,7 @@ export const ResetPasswordPage = memo(function ResetPasswordPage() {
     <Box>
       <Box sx={styles.titleRow}>
         <Box sx={styles.titleIconBox}>
-          <LockResetIcon sx={{ fontSize: '0.875rem' }} />
+          <LockResetIcon sx={styles.titleIconSize} />
         </Box>
         <Typography variant="h6" sx={styles.titleText}>
           Set new password

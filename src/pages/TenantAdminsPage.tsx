@@ -122,7 +122,7 @@ const TenantAdminsPageHeader = memo(function TenantAdminsPageHeader({
     <Box sx={styles.headerRow}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <ManageAccountsIcon sx={{ fontSize: '1.125rem' }} />
+          <ManageAccountsIcon sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.headerTitleText}>
           Tenant Admins

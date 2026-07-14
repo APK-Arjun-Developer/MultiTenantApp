@@ -1,12 +1,11 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-
-type Sx = SxProps<Theme>;
+﻿import { alpha } from '@mui/material/styles';
+import type { Sx } from '@/types/styles';
 
 export const styles = {
   // ── Page root ──────────────────────────────────────────────────────────────
   pageRoot: {
     pb: 4,
-  } as Sx,
+  },
 
   // ── Welcome header ─────────────────────────────────────────────────────────
   welcomeHeader: {
@@ -14,7 +13,7 @@ export const styles = {
     alignItems: 'center',
     gap: 1.5,
     mb: 0.75,
-  } as Sx,
+  },
 
   welcomeIconBox: {
     width: 36,
@@ -27,17 +26,17 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 16px rgba(124,58,237,0.35)',
-  } as Sx,
+  },
 
   welcomeTitle: {
     fontWeight: 700,
     letterSpacing: '-0.02em',
-  } as Sx,
+  },
 
   welcomeSubtitle: {
     mt: 0.25,
     mb: 3,
-  } as Sx,
+  },
 
   // ── StatCard ───────────────────────────────────────────────────────────────
   statCardPaper: {
@@ -52,7 +51,7 @@ export const styles = {
       borderColor: '#A78BFA',
       boxShadow: '0 0 0 1px rgba(124,58,237,0.2), 0 4px 16px rgba(124,58,237,0.08)',
     },
-  } as Sx,
+  },
 
   statCardIconBox: {
     display: 'flex',
@@ -63,13 +62,13 @@ export const styles = {
     borderRadius: 2,
     flexShrink: 0,
     '& svg': { fontSize: '1.375rem' },
-  } as Sx,
+  },
 
   statCardValue: {
     fontWeight: 700,
     lineHeight: 1.1,
     letterSpacing: '-0.02em',
-  } as Sx,
+  },
 
   // ── SystemAdminDashboard ───────────────────────────────────────────────────
   systemAdminStatsGrid: {
@@ -77,29 +76,29 @@ export const styles = {
     flexWrap: 'wrap',
     gap: 2,
     mt: 3,
-  } as Sx,
+  },
 
   systemAdminChartsRow: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: 3,
     mt: 4,
-  } as Sx,
+  },
 
   planChartPaper: {
     p: 2.5,
     flex: '1 1 300px',
     maxWidth: 400,
-  } as Sx,
+  },
 
   planChartTitle: {
     fontWeight: 600,
     mb: 2,
-  } as Sx,
+  },
 
   planChartSkeletonCircle: {
     mx: 'auto',
-  } as Sx,
+  },
 
   // ── TenantAdminDashboard ───────────────────────────────────────────────────
   tenantAdminStatsGrid: {
@@ -107,64 +106,76 @@ export const styles = {
     flexWrap: 'wrap',
     gap: 2,
     mt: 3,
-  } as Sx,
+  },
 
   tenantAdminChartSection: {
     mt: 4,
-  } as Sx,
+  },
 
   invitationChartPaper: {
     p: 2.5,
     maxWidth: 540,
-  } as Sx,
+  },
 
   invitationChartTitle: {
     fontWeight: 600,
     mb: 2,
-  } as Sx,
+  },
 
   // ── TenantUserDashboard ────────────────────────────────────────────────────
   tenantUserProfilePaper: {
     mt: 3,
     p: 3,
     maxWidth: 480,
-  } as Sx,
+  },
 
   tenantUserProfileTitle: {
     fontWeight: 600,
     mb: 2,
-  } as Sx,
+  },
 
   tenantUserDivider: {
     mb: 2,
-  } as Sx,
+  },
 
   tenantUserProfileFields: {
     display: 'flex',
     flexDirection: 'column',
     gap: 1.5,
-  } as Sx,
+  },
 
   tenantUserProfileRow: {
     display: 'flex',
     alignItems: 'center',
     gap: 1.5,
-  } as Sx,
+  },
 
   tenantUserRolesRow: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: 1.5,
-  } as Sx,
+  },
 
   tenantUserRoleIcon: {
     mt: 0.25,
-  } as Sx,
+  },
 
   tenantUserRolesChips: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: 0.5,
     mt: 0.5,
-  } as Sx,
-} as const;
+  },
+  skeletonRounded: {
+    borderRadius: 1,
+  },
+} as const satisfies Record<string, Sx>;
+
+export function statCardIconBoxColor(hex: string): Sx {
+  return {
+    background: `linear-gradient(135deg, ${alpha(hex, 0.15)} 0%, ${alpha(hex, 0.28)} 100%)`,
+    boxShadow: `0 0 14px ${alpha(hex, 0.18)}`,
+    color: hex,
+    border: `1px solid ${alpha(hex, 0.2)}`,
+  };
+}

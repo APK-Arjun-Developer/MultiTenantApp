@@ -1,10 +1,8 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
   // InvitationInvalid
-  invalidStack: { alignItems: 'center', textAlign: 'center' } as Sx,
+  invalidStack: { alignItems: 'center', textAlign: 'center' },
   invalidIconBox: {
     width: 64,
     height: 64,
@@ -14,13 +12,13 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  } as Sx,
-  invalidIcon: { fontSize: '2rem', color: 'error.main' } as Sx,
-  invalidTitle: { fontWeight: 700 } as Sx,
-  invalidButton: { mt: 1 } as Sx,
+  },
+  invalidIcon: { fontSize: '2rem', color: 'error.main' },
+  invalidTitle: { fontWeight: 700 },
+  invalidButton: { mt: 1 },
 
   // InvitationSuccess
-  successStack: { alignItems: 'center', textAlign: 'center' } as Sx,
+  successStack: { alignItems: 'center', textAlign: 'center' },
   successIconBox: {
     width: 64,
     height: 64,
@@ -30,19 +28,19 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  } as Sx,
-  successIcon: { fontSize: '2rem', color: 'success.main' } as Sx,
-  successTitle: { fontWeight: 700 } as Sx,
-  successNameSpan: { fontWeight: 600, color: 'text.primary' } as Sx,
-  successRolesSpan: { fontWeight: 600, color: 'text.primary' } as Sx,
-  successButton: { mt: 1 } as Sx,
+  },
+  successIcon: { fontSize: '2rem', color: 'success.main' },
+  successTitle: { fontWeight: 700 },
+  successNameSpan: { fontWeight: 600, color: 'text.primary' },
+  successRolesSpan: { fontWeight: 600, color: 'text.primary' },
+  successButton: { mt: 1 },
 
   // Loading state
-  loadingBox: { display: 'flex', justifyContent: 'center', py: 4 } as Sx,
+  loadingBox: { display: 'flex', justifyContent: 'center', py: 4 },
 
   // New-tenant flow wrapper
-  newTenantRoot: {} as Sx,
-  newTenantHeader: { display: 'flex', alignItems: 'center', gap: 1, mb: 2 } as Sx,
+  newTenantRoot: {},
+  newTenantHeader: { display: 'flex', alignItems: 'center', gap: 1, mb: 2 },
   headerIconBox: {
     width: 28,
     height: 28,
@@ -54,24 +52,27 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 10px rgba(124,58,237,0.28)',
-  } as Sx,
-  newTenantTitle: { fontWeight: 700 } as Sx,
-  newTenantSubtitle: { mb: 2 } as Sx,
-  newTenantEmailField: { mb: 2 } as Sx,
+  },
+  newTenantTitle: { fontWeight: 700 },
+  newTenantSubtitle: { mb: 2 },
+  newTenantEmailField: { mb: 2 },
 
   // Admin/user flow wrapper
-  adminUserRoot: {} as Sx,
-  adminUserHeader: { display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 } as Sx,
-  adminUserTitle: { fontWeight: 700 } as Sx,
-  adminUserSubtitle: { mb: 1 } as Sx,
-  adminUserTenantRow: { display: 'flex', alignItems: 'center', gap: 1, mb: 2 } as Sx,
-  adminUserTenantName: { fontWeight: 700 } as Sx,
-  adminUserEmailField: { mb: 2 } as Sx,
+  adminUserRoot: {},
+  adminUserHeader: { display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 },
+  adminUserTitle: { fontWeight: 700 },
+  adminUserSubtitle: { mb: 1 },
+  adminUserTenantRow: { display: 'flex', alignItems: 'center', gap: 1, mb: 2 },
+  adminUserTenantName: { fontWeight: 700 },
+  adminUserEmailField: { mb: 2 },
 
   // Wizard renderActions
-  wizardActions: { display: 'flex', gap: 1, mt: 1 } as Sx,
-  wizardActionButton: { flex: 1 } as Sx,
+  wizardActions: { display: 'flex', gap: 1, mt: 1 },
+  wizardActionButton: { flex: 1 },
 
   // FormWizard container override
-  formWizardContainer: { boxShadow: 'none', p: 0, bgcolor: 'transparent' } as Sx,
-} as const;
+  formWizardContainer: { boxShadow: 'none', p: 0, bgcolor: 'transparent' },
+  headerIconSize: {
+    fontSize: '0.875rem',
+  },
+} as const satisfies Record<string, Sx>;

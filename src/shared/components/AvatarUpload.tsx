@@ -15,7 +15,7 @@ import Tooltip from '@mui/material/Tooltip';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import CloseIcon from '@mui/icons-material/Close';
 import type { AvatarUploadProps } from './AvatarUpload.types';
-import { styles } from './AvatarUpload.styles';
+import { styles, hiddenInputStyle } from './AvatarUpload.styles';
 
 const OUTPUT_SIZE = 512;
 const MIN_VALID_PX = 16; // discard crop values smaller than this — they're bogus initial fires
@@ -181,7 +181,7 @@ export const AvatarUpload = React.memo(function AvatarUpload({
           ref={inputRef}
           type="file"
           accept="image/jpeg,image/png,image/gif,image/webp"
-          style={{ display: 'none' }}
+          style={hiddenInputStyle}
           onChange={handleFileChange}
         />
       </Box>

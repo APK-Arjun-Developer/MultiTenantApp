@@ -399,7 +399,7 @@ const UsersPageHeader = memo(function UsersPageHeader({
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <PeopleIcon sx={{ fontSize: '1.125rem' }} />
+          <PeopleIcon sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.titleText}>
           Users

@@ -1,12 +1,11 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
   outerBox: {
     position: 'relative',
     display: 'inline-flex',
     flexShrink: 0,
-  } as Sx,
+  },
   clickable: (uploading: boolean): Sx => ({
     cursor: uploading ? 'default' : 'pointer',
     position: 'relative',
@@ -26,7 +25,7 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  } as Sx,
+  },
   overlaySpinner: (_size: number): Sx => ({
     color: 'white',
   }),
@@ -48,13 +47,13 @@ export const styles = {
       borderColor: 'error.main',
       color: 'error.main',
     },
-  } as Sx,
+  },
   removeIcon: {
     fontSize: 13,
-  } as Sx,
+  },
   cropDialogContent: {
     p: 0,
-  } as Sx,
+  },
   cropBox: (bgcolor: string): Sx => ({
     position: 'relative',
     width: '100%',
@@ -65,9 +64,11 @@ export const styles = {
     px: 3,
     pt: 2,
     pb: 1,
-  } as Sx,
+  },
   dialogActions: {
     px: 3,
     pb: 2,
-  } as Sx,
+  },
 } as const;
+
+export const hiddenInputStyle = { display: 'none' } as const;

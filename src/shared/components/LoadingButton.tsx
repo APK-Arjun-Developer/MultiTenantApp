@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import type { LoadingButtonProps } from './LoadingButton.types';
-import { styles } from './LoadingButton.styles';
+import { styles, buttonRootStyle } from './LoadingButton.styles';
 
 export const LoadingButton = React.memo(function LoadingButton({
   loading = false,
@@ -13,7 +13,7 @@ export const LoadingButton = React.memo(function LoadingButton({
   ...rest
 }: LoadingButtonProps) {
   return (
-    <Button disabled={loading || disabled} sx={{ position: 'relative', ...sx }} {...rest}>
+    <Button disabled={loading || disabled} style={buttonRootStyle} sx={sx} {...rest}>
       <Box component="span" sx={loading ? styles.spinnerHidden : styles.spinnerVisible}>
         {children}
       </Box>

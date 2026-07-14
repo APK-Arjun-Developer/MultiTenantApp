@@ -1,22 +1,20 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
-  root: {} as Sx,
+  root: {},
 
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     mb: 3,
-  } as Sx,
+  },
 
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: 1.5,
-  } as Sx,
+  },
 
   pageIconBox: {
     width: 32,
@@ -29,23 +27,23 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 12px rgba(124,58,237,0.3)',
-  } as Sx,
+  },
 
   headerTitleText: {
     fontWeight: 700,
     letterSpacing: '-0.01em',
-  } as Sx,
+  },
 
   headerActions: {
     display: 'flex',
     gap: 1,
-  } as Sx,
+  },
 
   tabsRow: {
     mb: 2,
     borderBottom: 1,
     borderColor: 'divider',
-  } as Sx,
+  },
 
   emptyPermission: {
     display: 'flex',
@@ -55,17 +53,17 @@ export const styles = {
     py: 10,
     textAlign: 'center',
     color: 'text.disabled',
-  } as Sx,
+  },
 
   filterBar: {
     mb: 2,
-  } as Sx,
+  },
 
   actionsCell: {
     display: 'flex',
     gap: 0.5,
     justifyContent: 'flex-end',
-  } as Sx,
+  },
 
   avatarLogo: {
     width: 34,
@@ -81,38 +79,45 @@ export const styles = {
     '&:hover': {
       borderColor: 'primary.light',
     },
-  } as Sx,
+  },
 
   viewDialogContent: {
     display: 'flex',
     flexDirection: 'column',
     gap: 2,
-  } as Sx,
+  },
 
   wizardActions: {
     display: 'flex',
     gap: 1,
     mt: 1,
-  } as Sx,
+  },
 
   wizardActionFlex: {
     flex: 1,
-  } as Sx,
+  },
 
   formInDialog: {
     boxShadow: 'none',
     p: 0,
     bgcolor: 'transparent',
-  } as Sx,
+  },
 
   formInDialogWithTopMargin: {
     boxShadow: 'none',
     p: 0,
     bgcolor: 'transparent',
     mt: 1,
-  } as Sx,
+  },
 
   tenantNameCell: {
     fontWeight: 500,
-  } as Sx,
-} as const;
+  },
+  pageIconSize: {
+    fontSize: '1.125rem',
+  },
+  planBadgeFree: {
+    color: 'text.disabled',
+    borderColor: 'divider',
+  },
+} as const satisfies Record<string, Sx>;

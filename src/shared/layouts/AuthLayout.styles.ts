@@ -1,6 +1,4 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-
-type Sx = SxProps<Theme>;
+import type { Sx } from '@/types/styles';
 
 export const styles = {
   root: {
@@ -11,21 +9,21 @@ export const styles = {
     justifyContent: 'center',
     bgcolor: 'background.default',
     px: 2,
-  } as Sx,
+  },
 
   logoContainer: {
     mb: 3,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-  } as Sx,
+  },
 
   brandRow: {
     display: 'flex',
     alignItems: 'center',
     gap: 1.25,
     mb: 0.5,
-  } as Sx,
+  },
 
   brandMark: {
     width: 32,
@@ -41,30 +39,30 @@ export const styles = {
     letterSpacing: '-0.02em',
     flexShrink: 0,
     boxShadow: '0 0 14px rgba(124,58,237,0.4)',
-  } as Sx,
+  },
 
   title: {
     fontWeight: 800,
     letterSpacing: '-0.02em',
     color: 'text.primary',
-  } as Sx,
+  },
 
   subtitle: {
     mt: 0.25,
-  } as Sx,
+  },
 
   card: {
     width: '100%',
     maxWidth: 440,
-  } as Sx,
+  },
 
   cardContent: {
     p: 4,
-  } as Sx,
+  },
 
   pageLoader: {
     display: 'flex',
     justifyContent: 'center',
     py: 4,
-  } as Sx,
-} as const;
+  },
+} as const satisfies Record<string, Sx>;

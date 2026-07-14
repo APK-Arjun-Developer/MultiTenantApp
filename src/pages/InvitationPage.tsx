@@ -438,7 +438,7 @@ export const InvitationPage = memo(function InvitationPage() {
       <Box sx={styles.newTenantRoot}>
         <Box sx={styles.newTenantHeader}>
           <Box sx={styles.headerIconBox}>
-            <PersonAddIcon sx={{ fontSize: '0.875rem' }} />
+            <PersonAddIcon sx={styles.headerIconSize} />
           </Box>
           <Typography variant="h6" sx={styles.newTenantTitle}>
             Create your tenant account
@@ -475,7 +475,7 @@ export const InvitationPage = memo(function InvitationPage() {
     <Box sx={styles.adminUserRoot}>
       <Box sx={styles.adminUserHeader}>
         <Box sx={styles.headerIconBox}>
-          <PersonAddIcon sx={{ fontSize: '0.875rem' }} />
+          <PersonAddIcon sx={styles.headerIconSize} />
         </Box>
         <Typography variant="h6" sx={styles.adminUserTitle}>
           Accept invitation

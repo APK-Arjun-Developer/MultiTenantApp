@@ -1,16 +1,15 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
   root: {
     overflow: 'hidden',
-  } as Sx,
+  },
 
   otpInputRow: {
     display: 'flex',
     gap: 1,
     justifyContent: 'center',
-  } as Sx,
+  },
 
   otpDigitBox: (filled: boolean) =>
     ({
@@ -26,44 +25,44 @@ export const styles = {
   loginTitle: {
     fontWeight: 600,
     mb: 0.5,
-  } as Sx,
+  },
 
   loginSubtitle: {
     mb: 2,
-  } as Sx,
+  },
 
   loginFormBuilder: {
     boxShadow: 'none',
     p: 0,
     bgcolor: 'transparent',
-  } as Sx,
+  },
 
   loginSubmitButton: {
     mt: 1,
-  } as Sx,
+  },
 
   forgotPasswordLink: {
     textAlign: 'right',
     mt: 1,
-  } as Sx,
+  },
 
   forgotPasswordAnchor: {
     color: 'primary.main',
     textDecoration: 'none',
     '&:hover': { textDecoration: 'underline' },
-  } as Sx,
+  },
 
   verifyBackButton: {
     mb: 1,
     ml: -0.5,
-  } as Sx,
+  },
 
   verifyTitleRow: {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
     mb: 0.5,
-  } as Sx,
+  },
 
   titleIconBox: {
     width: 28,
@@ -76,27 +75,37 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 10px rgba(124,58,237,0.28)',
-  } as Sx,
+  },
 
   verifyTitleText: {
     fontWeight: 700,
-  } as Sx,
+  },
 
   verifySubtitle: {
     mb: 3,
-  } as Sx,
+  },
 
   verifyEmailHighlight: {
     fontWeight: 600,
     color: 'text.primary',
-  } as Sx,
+  },
 
   cooldownHighlight: {
     fontWeight: 600,
     color: 'text.primary',
-  } as Sx,
+  },
 
   resendBox: {
     textAlign: 'center',
-  } as Sx,
+  },
+  verifyTitleIconSize: {
+    fontSize: '0.875rem',
+  },
+} as const;
+
+export const otpInputStyle = {
+  textAlign: 'center',
+  fontSize: 22,
+  fontWeight: 700,
+  padding: 0,
 } as const;

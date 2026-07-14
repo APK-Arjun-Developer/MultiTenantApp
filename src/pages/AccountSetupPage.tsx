@@ -257,7 +257,7 @@ export const AccountSetupPage = memo(function AccountSetupPage() {
     <Box>
       <Box sx={styles.headerTitleRow}>
         <Box sx={styles.headerIconBox}>
-          <AccountCircleIcon sx={{ fontSize: '0.875rem' }} />
+          <AccountCircleIcon sx={styles.headerIconSize} />
         </Box>
         <Typography variant="h6" sx={styles.headerTitle}>
           Set up your account

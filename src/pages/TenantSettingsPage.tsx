@@ -95,7 +95,7 @@ export const TenantSettingsPage = memo(function TenantSettingsPage() {
     <Box sx={styles.root}>
       <Box sx={styles.pageHeader}>
         <Box sx={styles.pageIconBox}>
-          <SettingsIcon sx={{ fontSize: '1.125rem' }} />
+          <SettingsIcon sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.pageTitle}>
           Tenant Settings

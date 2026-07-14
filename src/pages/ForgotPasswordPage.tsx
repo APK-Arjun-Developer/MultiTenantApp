@@ -89,7 +89,7 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
           >
             <Box sx={styles.titleRow}>
               <Box sx={styles.titleIconBox}>
-                <EmailIcon sx={{ fontSize: '0.875rem' }} />
+                <EmailIcon sx={styles.titleIconSize} />
               </Box>
               <Typography variant="h6" sx={styles.titleText}>
                 Reset your password

@@ -1,12 +1,10 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
   // Page root container
   root: {
     maxWidth: 680,
-  } as Sx,
+  },
 
   // Page header row (icon + title)
   pageHeader: {
@@ -14,7 +12,7 @@ export const styles = {
     alignItems: 'center',
     gap: 1.5,
     mb: 3,
-  } as Sx,
+  },
 
   pageIconBox: {
     width: 32,
@@ -27,26 +25,29 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 12px rgba(124,58,237,0.3)',
-  } as Sx,
+  },
 
   // Page title text
   pageTitle: {
     fontWeight: 700,
     letterSpacing: '-0.01em',
-  } as Sx,
+  },
 
   // FormBuilder card
-  formCard: {} as Sx,
+  formCard: {},
 
   // Save button top margin
   saveButton: {
     mt: 1,
-  } as Sx,
+  },
 
   // Loading spinner wrapper
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
     py: 8,
-  } as Sx,
-} as const;
+  },
+  pageIconSize: {
+    fontSize: '1.125rem',
+  },
+} as const satisfies Record<string, Sx>;

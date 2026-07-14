@@ -1,5 +1,4 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+import type { Sx } from '@/types/styles';
 
 export const styles = {
   loadingContainer: {
@@ -7,5 +6,5 @@ export const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     height: '100vh',
-  } as Sx,
-} as const;
+  },
+} as const satisfies Record<string, Sx>;

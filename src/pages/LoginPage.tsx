@@ -24,7 +24,7 @@ import {
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
-import { styles } from './LoginPage.styles';
+import { styles, otpInputStyle } from './LoginPage.styles';
 import { loginSchema } from './LoginPage.types';
 import type { LoginValues, Step, OtpInputProps } from './LoginPage.types';
 
@@ -128,7 +128,7 @@ const OtpInput = memo(function OtpInput({ value, onChange, disabled }: OtpInputP
             maxLength: 1,
             inputMode: 'numeric',
             pattern: '[0-9]*',
-            style: { textAlign: 'center', fontSize: 22, fontWeight: 700, padding: 0 },
+            style: otpInputStyle,
           }}
           onChange={(e) => handleChange(i, e.target.value)}
           onKeyDown={(e) => handleKeyDown(i, e as React.KeyboardEvent<HTMLInputElement>)}
@@ -305,7 +305,7 @@ export const LoginPage = memo(function LoginPage() {
 
               <Box sx={styles.verifyTitleRow}>
                 <Box sx={styles.titleIconBox}>
-                  <MarkEmailReadIcon sx={{ fontSize: '0.875rem' }} />
+                  <MarkEmailReadIcon sx={styles.verifyTitleIconSize} />
                 </Box>
                 <Typography variant="h6" sx={styles.verifyTitleText}>
                   Verify your email

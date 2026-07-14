@@ -122,7 +122,7 @@ const TenantsPageHeader = memo(function TenantsPageHeader({
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <BusinessIcon sx={{ fontSize: '1.125rem' }} />
+          <BusinessIcon sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.headerTitleText}>
           Tenants
@@ -529,7 +529,7 @@ const PlanBadge = memo(function PlanBadge({ plan }: { plan?: PlanType | string }
       color={isPro ? 'primary' : 'default'}
       size="small"
       variant={isPro ? 'filled' : 'outlined'}
-      sx={isPro ? undefined : { color: 'text.disabled', borderColor: 'divider' }}
+      sx={isPro ? undefined : styles.planBadgeFree}
     />
   );
 });

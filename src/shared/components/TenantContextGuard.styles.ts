@@ -1,5 +1,4 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+import type { Sx } from '@/types/styles';
 
 export const styles = {
   emptyState: {
@@ -10,7 +9,7 @@ export const styles = {
     py: 12,
     gap: 1.5,
     textAlign: 'center',
-  } as Sx,
+  },
 
   iconBox: {
     width: 64,
@@ -22,21 +21,21 @@ export const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     mb: 0.5,
-  } as Sx,
+  },
 
   icon: {
     fontSize: '2rem',
     color: 'primary.main',
     opacity: 0.75,
-  } as Sx,
+  },
 
   heading: {
     fontWeight: 600,
     color: 'text.primary',
-  } as Sx,
+  },
 
   body: {
     maxWidth: 300,
     color: 'text.secondary',
-  } as Sx,
-} as const;
+  },
+} as const satisfies Record<string, Sx>;

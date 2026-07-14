@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import type { PageTransitionProps } from './PageTransition.types';
+import { motionDivStyle } from './PageTransition.styles';
 
 export const PageTransition = React.memo(function PageTransition({
   children,
@@ -13,7 +14,7 @@ export const PageTransition = React.memo(function PageTransition({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
-      style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+      style={motionDivStyle}
     >
       {children}
     </motion.div>

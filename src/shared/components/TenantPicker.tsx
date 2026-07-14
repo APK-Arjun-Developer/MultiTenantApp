@@ -47,9 +47,8 @@ export const TenantPicker = React.memo(function TenantPicker() {
   const renderValue = useCallback(
     (value: string) => (
       <Box sx={styles.renderValueBox}>
-        <Box sx={styles.renderValueDot} />
         <Typography variant="body2" sx={styles.renderValueText}>
-          {value === PLATFORM_VALUE ? 'Platform view' : (selectedTenantName ?? value)}
+          {value === PLATFORM_VALUE ? 'Select Tenant' : (selectedTenantName ?? value)}
         </Typography>
       </Box>
     ),
@@ -69,11 +68,11 @@ export const TenantPicker = React.memo(function TenantPicker() {
         sx={styles.select}
         renderValue={renderValue}
       >
-        <MenuItem value={PLATFORM_VALUE}>
+        {/* <MenuItem value={PLATFORM_VALUE}>
           <Typography variant="body2" color="text.secondary" sx={styles.platformMenuItem}>
             Platform view (all tenants)
           </Typography>
-        </MenuItem>
+        </MenuItem> */}
         {tenants.map((tenant) => (
           <MenuItem key={tenant.id} value={tenant.id}>
             <Typography variant="body2" sx={styles.tenantMenuItemText}>

@@ -1,5 +1,4 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+import type { Sx } from '@/types/styles';
 
 export const styles = {
   root: {
@@ -12,7 +11,7 @@ export const styles = {
     bgcolor: 'background.default',
     textAlign: 'center',
     p: 4,
-  } as Sx,
+  },
 
   heading: {
     fontWeight: 800,
@@ -23,15 +22,15 @@ export const styles = {
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
-  } as Sx,
+  },
 
   subtitle: {
     fontWeight: 600,
     letterSpacing: '-0.01em',
     mt: 0.5,
-  } as Sx,
+  },
 
   goButton: {
     mt: 2,
-  } as Sx,
-} as const;
+  },
+} as const satisfies Record<string, Sx>;

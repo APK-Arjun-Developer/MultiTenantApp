@@ -1,9 +1,8 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+import type { Sx } from '@/types/styles';
 
 export const styles = {
   alert: {
     width: '100%',
     minWidth: 280,
-  } as Sx,
-} as const;
+  },
+} as const satisfies Record<string, Sx>;

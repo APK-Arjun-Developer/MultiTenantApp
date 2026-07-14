@@ -25,6 +25,7 @@ import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import ButtonBase from '@mui/material/ButtonBase';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
@@ -47,7 +48,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import MenuIcon from '@mui/icons-material/Menu';
 import PeopleIcon from '@mui/icons-material/People';
-import { styles, DRAWER_WIDTH } from './DashboardLayout.styles';
+import { styles, navLinkStyle, DRAWER_WIDTH } from './DashboardLayout.styles';
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -55,7 +56,6 @@ const NAV_ITEMS: NavItem[] = [
     icon: <DashboardIcon />,
     path: '/dashboard',
   },
-  // Tenant management (TenantAdmin + SystemAdmin acting as a tenant)
   {
     text: 'Users',
     icon: <PeopleIcon />,
@@ -70,14 +70,12 @@ const NAV_ITEMS: NavItem[] = [
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
     permission: 'Roles.View',
   },
-  // Audit log (SystemAdmin only)
   {
     text: 'Audit Log',
     icon: <HistoryIcon />,
     path: '/audit-logs',
     allowedRoles: ['SystemAdmin'],
   },
-  // Platform management (SystemAdmin only)
   {
     text: 'Tenants',
     icon: <BusinessIcon />,
@@ -92,7 +90,6 @@ const NAV_ITEMS: NavItem[] = [
     allowedRoles: ['SystemAdmin'],
     permission: 'Tenants.View',
   },
-  // Account
   {
     text: 'Profile',
     icon: <AccountCircleIcon />,
@@ -100,7 +97,6 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// Pages where SystemAdmin needs the TenantPicker to select a tenant context
 const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/audit-logs'];
 
 // ---------------------------------------------------------------------------
@@ -109,56 +105,96 @@ const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/audit-logs'];
 
 interface DashboardNavItemProps {
   item: NavItem;
+  collapsed: boolean;
   onClose: () => void;
 }
 
-const DashboardNavItem = memo(function DashboardNavItem({ item, onClose }: DashboardNavItemProps) {
+const DashboardNavItem = memo(function DashboardNavItem({
+  item,
+  collapsed,
+  onClose,
+}: DashboardNavItemProps) {
   const { text, icon, path } = item;
+
+  const navLink = (
+    <NavLink to={path} style={navLinkStyle}>
+      {({ isActive }) => (
+        <ListItemButton
+          selected={isActive}
+          onClick={onClose}
+          sx={collapsed ? styles.navItemCollapsed : styles.navItem}
+        >
+          <ListItemIcon sx={collapsed ? styles.navItemIconCollapsed : styles.navItemIcon}>
+            {icon}
+          </ListItemIcon>
+          <ListItemText
+            primary={text}
+            slotProps={{
+              primary: { sx: isActive ? styles.navItemLabelActive : styles.navItemLabel },
+            }}
+            sx={collapsed ? styles.navItemTextCollapsed : styles.navItemText}
+          />
+        </ListItemButton>
+      )}
+    </NavLink>
+  );
+
   return (
-    <ListItem key={path} disablePadding>
-      <NavLink to={path} style={{ width: '100%', textDecoration: 'none', color: 'inherit' }}>
-        {({ isActive }) => (
-          <ListItemButton selected={isActive} onClick={onClose} sx={styles.navItem}>
-            <ListItemIcon sx={styles.navItemIcon}>{icon}</ListItemIcon>
-            <ListItemText
-              primary={text}
-              slotProps={{
-                primary: { style: { fontSize: '0.8125rem', fontWeight: isActive ? 600 : 500 } },
-              }}
-            />
-          </ListItemButton>
-        )}
-      </NavLink>
+    <ListItem disablePadding>
+      {collapsed ? (
+        <Tooltip title={text} placement="right" arrow>
+          {navLink}
+        </Tooltip>
+      ) : (
+        navLink
+      )}
     </ListItem>
   );
 });
 
 interface DashboardSidebarProps {
   visibleNavItems: NavItem[];
+  collapsed: boolean;
   onClose: () => void;
+  onBrandClick: () => void;
 }
 
 const DashboardSidebar = memo(function DashboardSidebar({
   visibleNavItems,
+  collapsed,
   onClose,
+  onBrandClick,
 }: DashboardSidebarProps) {
   const mainItems = visibleNavItems.filter((item) => item.path !== '/profile');
   const accountItems = visibleNavItems.filter((item) => item.path === '/profile');
 
   return (
     <Box sx={styles.drawer}>
-      <Toolbar>
-        <Box sx={styles.brandContainer}>
-          <Box sx={styles.brandMark}>M</Box>
-          <Typography variant="h6" sx={styles.drawerTitle} noWrap>
-            MultiTenant
-          </Typography>
-        </Box>
+      <Toolbar sx={collapsed ? styles.sidebarToolbarCollapsed : styles.sidebarToolbar}>
+        <Tooltip title={collapsed ? 'Expand' : 'Collapse'} placement="right">
+          <ButtonBase
+            onClick={onBrandClick}
+            sx={collapsed ? styles.brandContainerCollapsed : styles.brandContainer}
+            focusRipple
+          >
+            <Box sx={styles.brandMark}>M</Box>
+            <Typography
+              variant="h6"
+              sx={[
+                styles.drawerTitle,
+                collapsed ? styles.brandTitleCollapsed : styles.brandTitleExpanded,
+              ]}
+              noWrap
+            >
+              MultiTenant
+            </Typography>
+          </ButtonBase>
+        </Tooltip>
       </Toolbar>
       <Divider />
       <List sx={styles.navList}>
         {mainItems.map((item) => (
-          <DashboardNavItem key={item.path} item={item} onClose={onClose} />
+          <DashboardNavItem key={item.path} item={item} collapsed={collapsed} onClose={onClose} />
         ))}
       </List>
       {accountItems.length > 0 && (
@@ -166,7 +202,12 @@ const DashboardSidebar = memo(function DashboardSidebar({
           <Divider />
           <List sx={styles.navBottomList}>
             {accountItems.map((item) => (
-              <DashboardNavItem key={item.path} item={item} onClose={onClose} />
+              <DashboardNavItem
+                key={item.path}
+                item={item}
+                collapsed={collapsed}
+                onClose={onClose}
+              />
             ))}
           </List>
         </>
@@ -178,6 +219,7 @@ const DashboardSidebar = memo(function DashboardSidebar({
 interface DashboardAppBarProps {
   themeMode: 'light' | 'dark';
   showTenantPicker: boolean;
+  sidebarCollapsed: boolean;
   onDrawerToggle: () => void;
   onThemeToggle: () => void;
   avatarSrc: string | undefined;
@@ -187,19 +229,23 @@ interface DashboardAppBarProps {
 const DashboardAppBar = memo(function DashboardAppBar({
   themeMode,
   showTenantPicker,
+  sidebarCollapsed,
   onDrawerToggle,
   onThemeToggle,
   avatarSrc,
   initials,
 }: DashboardAppBarProps) {
   return (
-    <AppBar position="fixed" elevation={0} sx={styles.appBar}>
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={[styles.appBar, sidebarCollapsed ? styles.appBarCollapsed : styles.appBarExpanded]}
+    >
       <Toolbar sx={styles.appBarToolbar}>
         <IconButton edge="start" onClick={onDrawerToggle} sx={styles.menuButton}>
           <MenuIcon />
         </IconButton>
 
-        {/* Tenant picker — SystemAdmin on tenant-scoped pages only */}
         {showTenantPicker && <TenantPicker />}
 
         <Box sx={styles.toolbarSpacer} />
@@ -262,6 +308,7 @@ export const DashboardLayout = memo(function DashboardLayout() {
   const user = useAppSelector(selectCurrentUser);
   const themeMode = useAppSelector(selectThemeMode);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const permissions = useAppSelector(selectPermissions);
   const permissionsLoaded = useAppSelector(selectPermissionsLoaded);
@@ -295,7 +342,6 @@ export const DashboardLayout = memo(function DashboardLayout() {
     [user?.systemRole, permissions, permissionsLoaded],
   );
 
-  // Show TenantPicker only on pages that need a tenant context
   const showTenantPicker = useMemo(
     () =>
       isSystemAdmin &&
@@ -321,6 +367,7 @@ export const DashboardLayout = memo(function DashboardLayout() {
   const handleThemeToggle = useCallback(() => dispatch(toggleTheme()), [dispatch]);
   const handleDrawerToggle = useCallback(() => setMobileOpen((prev) => !prev), []);
   const handleDrawerClose = useCallback(() => setMobileOpen(false), []);
+  const handleSidebarToggle = useCallback(() => setSidebarCollapsed((prev) => !prev), []);
 
   const handleStopImpersonation = useCallback(async () => {
     try {
@@ -338,13 +385,18 @@ export const DashboardLayout = memo(function DashboardLayout() {
       <DashboardAppBar
         themeMode={themeMode}
         showTenantPicker={showTenantPicker}
+        sidebarCollapsed={sidebarCollapsed}
         onDrawerToggle={handleDrawerToggle}
         onThemeToggle={handleThemeToggle}
         avatarSrc={navAvatarSrc}
         initials={initials}
       />
 
-      <Box component="nav" sx={styles.nav}>
+      <Box
+        component="nav"
+        sx={[styles.nav, sidebarCollapsed ? styles.navCollapsed : styles.navExpanded]}
+      >
+        {/* Mobile: full-width temporary drawer, no collapse */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -352,10 +404,29 @@ export const DashboardLayout = memo(function DashboardLayout() {
           ModalProps={{ keepMounted: true }}
           sx={styles.drawerTemporary}
         >
-          <DashboardSidebar visibleNavItems={visibleNavItems} onClose={handleDrawerClose} />
+          <DashboardSidebar
+            visibleNavItems={visibleNavItems}
+            collapsed={false}
+            onClose={handleDrawerClose}
+            onBrandClick={handleDrawerClose}
+          />
         </Drawer>
-        <Drawer variant="permanent" sx={styles.drawerPermanent} open>
-          <DashboardSidebar visibleNavItems={visibleNavItems} onClose={handleDrawerClose} />
+
+        {/* Desktop: permanent drawer, collapsible */}
+        <Drawer
+          variant="permanent"
+          sx={[
+            styles.drawerPermanent,
+            sidebarCollapsed ? styles.drawerPermanentCollapsed : styles.drawerPermanentExpanded,
+          ]}
+          open
+        >
+          <DashboardSidebar
+            visibleNavItems={visibleNavItems}
+            collapsed={sidebarCollapsed}
+            onClose={handleDrawerClose}
+            onBrandClick={handleSidebarToggle}
+          />
         </Drawer>
       </Box>
 

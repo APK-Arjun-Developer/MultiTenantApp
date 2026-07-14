@@ -1,11 +1,10 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
   invalidStack: {
     alignItems: 'center',
     textAlign: 'center',
-  } as Sx,
+  },
 
   invalidIconBox: {
     width: 64,
@@ -16,25 +15,25 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  } as Sx,
+  },
 
   invalidIcon: {
     fontSize: '2rem',
     color: 'error.main',
-  } as Sx,
+  },
 
   invalidTitle: {
     fontWeight: 700,
-  } as Sx,
+  },
 
   invalidRequestButton: {
     mt: 1,
-  } as Sx,
+  },
 
   successStack: {
     alignItems: 'center',
     textAlign: 'center',
-  } as Sx,
+  },
 
   successIconBox: {
     width: 64,
@@ -45,33 +44,33 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  } as Sx,
+  },
 
   successIcon: {
     fontSize: '2rem',
     color: 'success.main',
-  } as Sx,
+  },
 
   successTitle: {
     fontWeight: 700,
-  } as Sx,
+  },
 
   successButton: {
     mt: 1,
-  } as Sx,
+  },
 
   loadingBox: {
     display: 'flex',
     justifyContent: 'center',
     py: 4,
-  } as Sx,
+  },
 
   titleRow: {
     display: 'flex',
     alignItems: 'center',
     gap: 1,
     mb: 0.5,
-  } as Sx,
+  },
 
   titleIconBox: {
     width: 28,
@@ -84,33 +83,36 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 10px rgba(124,58,237,0.28)',
-  } as Sx,
+  },
 
   titleText: {
     fontWeight: 700,
-  } as Sx,
+  },
 
   emailSubtitle: {
     mb: 2,
-  } as Sx,
+  },
 
   emailHighlight: {
     fontWeight: 600,
     color: 'text.primary',
-  } as Sx,
+  },
 
   formBuilder: {
     boxShadow: 'none',
     p: 0,
     bgcolor: 'transparent',
-  } as Sx,
+  },
 
   submitButton: {
     mt: 1,
-  } as Sx,
+  },
 
   backLinkBox: {
     textAlign: 'center',
     mt: 1,
-  } as Sx,
-} as const;
+  },
+  titleIconSize: {
+    fontSize: '0.875rem',
+  },
+} as const satisfies Record<string, Sx>;

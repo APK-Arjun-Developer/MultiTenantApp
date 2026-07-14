@@ -30,7 +30,7 @@ import {
 import { useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useGetDashboardStatsQuery } from '@/features/dashboard/api/dashboardApi';
-import { styles } from './DashboardPage.styles';
+import { styles, statCardIconBoxColor } from './DashboardPage.styles';
 import type { StatCardProps, StatCardColor } from './DashboardPage.types';
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
@@ -59,21 +59,7 @@ const StatCard = memo(function StatCard({
 
   return (
     <Paper variant="outlined" sx={styles.statCardPaper}>
-      <Box
-        sx={
-          [
-            styles.statCardIconBox,
-            {
-              background: `linear-gradient(135deg, ${alpha(hex, 0.15)} 0%, ${alpha(hex, 0.28)} 100%)`,
-              boxShadow: `0 0 14px ${alpha(hex, 0.18)}`,
-              color: hex,
-              border: `1px solid ${alpha(hex, 0.2)}`,
-            },
-          ] as never
-        }
-      >
-        {icon}
-      </Box>
+      <Box sx={[styles.statCardIconBox, statCardIconBoxColor(hex)] as never}>{icon}</Box>
       <Box>
         <Typography variant="h4" sx={styles.statCardValue}>
           {isLoading ? <Skeleton width={48} /> : (value ?? 0)}
@@ -287,7 +273,7 @@ const TenantAdminDashboard = memo(function TenantAdminDashboard() {
             Invitation Overview
           </Typography>
           {isLoading ? (
-            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
+            <Skeleton variant="rectangular" height={200} sx={styles.skeletonRounded} />
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={invitationData} barSize={36}>

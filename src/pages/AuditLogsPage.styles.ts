@@ -1,20 +1,18 @@
-import type { SxProps, Theme } from '@mui/material/styles';
-
-type Sx = SxProps<Theme>;
+﻿import type { Sx } from '@/types/styles';
 
 export const styles = {
-  root: {} as Sx,
+  root: {},
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     mb: 3,
-  } as Sx,
+  },
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: 1.5,
-  } as Sx,
+  },
   pageIconBox: {
     width: 32,
     height: 32,
@@ -26,24 +24,27 @@ export const styles = {
     color: '#fff',
     flexShrink: 0,
     boxShadow: '0 0 12px rgba(124,58,237,0.3)',
-  } as Sx,
+  },
   titleText: {
     fontWeight: 700,
     letterSpacing: '-0.01em',
-  } as Sx,
+  },
   filterBar: {
     mb: 2,
-  } as Sx,
+  },
   timeCell: {
     whiteSpace: 'nowrap',
-  } as Sx,
+  },
   actionCell: {
     fontWeight: 500,
-  } as Sx,
+  },
   descriptionCell: {
     maxWidth: 360,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-  } as Sx,
-} as const;
+  },
+  pageIconSize: {
+    fontSize: '1.125rem',
+  },
+} as const satisfies Record<string, Sx>;
