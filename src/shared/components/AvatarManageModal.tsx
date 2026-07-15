@@ -8,11 +8,10 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { AvatarUpload } from './AvatarUpload';
 import type { AvatarManageModalProps } from './AvatarManageModal.types';
 import { styles } from './AvatarManageModal.styles';
+import { Icon } from '@/shared/components/Icon';
 
 export const AvatarManageModal = React.memo(function AvatarManageModal({
   open,
@@ -35,7 +34,7 @@ export const AvatarManageModal = React.memo(function AvatarManageModal({
           {title}
         </Typography>
         <IconButton size="small" onClick={onClose} disabled={uploading}>
-          <CloseIcon fontSize="small" />
+          <Icon name="Close" fontSize="small" />
         </IconButton>
       </DialogTitle>
       <Divider />
@@ -59,7 +58,7 @@ export const AvatarManageModal = React.memo(function AvatarManageModal({
               <Button
                 variant="outlined"
                 color="error"
-                startIcon={<DeleteIcon />}
+                startIcon={<Icon name="Delete" />}
                 fullWidth
                 disabled={uploading}
                 onClick={onRemove}

@@ -70,14 +70,13 @@ export const styles = {
     height: 34,
     cursor: 'pointer',
     fontSize: '0.8125rem',
-    borderRadius: 1.5,
-    bgcolor: 'action.selected',
+    bgcolor: 'primary.dark',
     border: '1.5px solid',
-    borderColor: 'divider',
+    borderColor: 'primary.light',
     boxSizing: 'border-box',
-    transition: 'border-color 0.15s ease',
+    transition: 'box-shadow 0.15s ease',
     '&:hover': {
-      borderColor: 'primary.light',
+      boxShadow: '0 0 0 2px rgba(124,58,237,0.35)',
     },
   },
 

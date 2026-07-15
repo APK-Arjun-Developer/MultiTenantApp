@@ -5,9 +5,6 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import LockResetIcon from '@mui/icons-material/LockReset';
 import {
   FormBuilder,
   FIELD_TYPE,
@@ -21,6 +18,7 @@ import type { ApiError } from '@/types/api';
 import { styles } from './ResetPasswordPage.styles';
 import { resetPasswordSchema } from './ResetPasswordPage.types';
 import type { ResetPasswordFormValues, TokenInvalidProps } from './ResetPasswordPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -47,7 +45,7 @@ const TokenInvalid = memo(function TokenInvalid({ message }: TokenInvalidProps) 
   return (
     <Stack spacing={2} sx={styles.invalidStack}>
       <Box sx={styles.invalidIconBox}>
-        <ErrorIcon sx={styles.invalidIcon} />
+        <Icon name="Error" sx={styles.invalidIcon} />
       </Box>
       <Typography variant="h6" sx={styles.invalidTitle}>
         Link expired or invalid
@@ -76,7 +74,7 @@ const ResetSuccess = memo(function ResetSuccess() {
   return (
     <Stack spacing={2} sx={styles.successStack}>
       <Box sx={styles.successIconBox}>
-        <CheckCircleIcon sx={styles.successIcon} />
+        <Icon name="CheckCircle" sx={styles.successIcon} />
       </Box>
       <Typography variant="h6" sx={styles.successTitle}>
         Password updated
@@ -179,7 +177,7 @@ export const ResetPasswordPage = memo(function ResetPasswordPage() {
     <Box>
       <Box sx={styles.titleRow}>
         <Box sx={styles.titleIconBox}>
-          <LockResetIcon sx={styles.titleIconSize} />
+          <Icon name="LockReset" sx={styles.titleIconSize} />
         </Box>
         <Typography variant="h6" sx={styles.titleText}>
           Set new password

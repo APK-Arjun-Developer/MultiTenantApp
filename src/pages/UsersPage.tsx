@@ -14,17 +14,6 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import BlockIcon from '@mui/icons-material/Block';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ClearIcon from '@mui/icons-material/Clear';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import EmailIcon from '@mui/icons-material/Email';
-import PeopleIcon from '@mui/icons-material/People';
-import SendIcon from '@mui/icons-material/Send';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
@@ -94,6 +83,7 @@ import type {
   UserDto,
   UserInvitationDto,
 } from './UsersPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Filter defaults (module-level stable references) ─────────────────────────
 
@@ -410,7 +400,7 @@ const UsersPageHeader = memo(function UsersPageHeader({
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <PeopleIcon sx={styles.pageIconSize} />
+          <Icon name="People" sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.titleText}>
           Users
@@ -424,7 +414,7 @@ const UsersPageHeader = memo(function UsersPageHeader({
             <span>
               <Button
                 variant="outlined"
-                startIcon={<SendIcon />}
+                startIcon={<Icon name="Send" />}
                 disabled={atUserLimit}
                 onClick={onInviteOpen}
               >
@@ -440,7 +430,7 @@ const UsersPageHeader = memo(function UsersPageHeader({
             <span>
               <Button
                 variant="contained"
-                startIcon={<AddIcon />}
+                startIcon={<Icon name="Add" />}
                 disabled={atUserLimit}
                 onClick={onCreateOpen}
               >
@@ -913,14 +903,14 @@ export const UsersPage = memo(function UsersPage() {
               {canView && (
                 <Tooltip title="View">
                   <IconButton size="small" onClick={() => viewDialog.onOpen(user)}>
-                    <VisibilityIcon fontSize="small" />
+                    <Icon name="Visibility" fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
               {canEdit && (
                 <Tooltip title="Edit">
                   <IconButton size="small" onClick={() => editDialog.onOpen(user)}>
-                    <EditIcon fontSize="small" />
+                    <Icon name="Edit" fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
@@ -935,7 +925,7 @@ export const UsersPage = memo(function UsersPage() {
                       {isResendingSetup ? (
                         <CircularProgress size={14} />
                       ) : (
-                        <SendIcon fontSize="small" />
+                        <Icon name="Send" fontSize="small" />
                       )}
                     </IconButton>
                   </span>
@@ -953,9 +943,9 @@ export const UsersPage = memo(function UsersPage() {
                     }
                   >
                     {user.isActive ? (
-                      <BlockIcon fontSize="small" />
+                      <Icon name="Block" fontSize="small" />
                     ) : (
-                      <CheckCircleIcon fontSize="small" />
+                      <Icon name="CheckCircle" fontSize="small" />
                     )}
                   </IconButton>
                 </Tooltip>
@@ -969,7 +959,7 @@ export const UsersPage = memo(function UsersPage() {
                       disabled={isImpersonating}
                       onClick={() => handleImpersonate(user)}
                     >
-                      <SupervisorAccountIcon fontSize="small" />
+                      <Icon name="SupervisorAccount" fontSize="small" />
                     </IconButton>
                   </span>
                 </Tooltip>
@@ -981,7 +971,7 @@ export const UsersPage = memo(function UsersPage() {
                     color="error"
                     onClick={() => pendingActionDialog.onOpen({ type: 'delete', user })}
                   >
-                    <DeleteIcon fontSize="small" />
+                    <Icon name="Delete" fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
@@ -1055,7 +1045,7 @@ export const UsersPage = memo(function UsersPage() {
                             {isResendingInvitation ? (
                               <CircularProgress size={14} />
                             ) : (
-                              <EmailIcon fontSize="small" />
+                              <Icon name="Email" fontSize="small" />
                             )}
                           </IconButton>
                         </span>
@@ -1068,7 +1058,7 @@ export const UsersPage = memo(function UsersPage() {
                           color="error"
                           onClick={() => revokeDialog.onOpen(inv)}
                         >
-                          <ClearIcon fontSize="small" />
+                          <Icon name="Clear" fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}

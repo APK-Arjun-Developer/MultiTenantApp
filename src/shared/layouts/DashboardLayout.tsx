@@ -38,61 +38,52 @@ import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import BusinessIcon from '@mui/icons-material/Business';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import HistoryIcon from '@mui/icons-material/History';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import MenuIcon from '@mui/icons-material/Menu';
-import PeopleIcon from '@mui/icons-material/People';
 import { styles, navLinkStyle, DRAWER_WIDTH } from './DashboardLayout.styles';
+import { Icon } from '@/shared/components/Icon';
 
 const NAV_ITEMS: NavItem[] = [
   {
     text: 'Dashboard',
-    icon: <DashboardIcon />,
+    icon: <Icon name="Dashboard" />,
     path: '/dashboard',
   },
   {
     text: 'Users',
-    icon: <PeopleIcon />,
+    icon: <Icon name="People" />,
     path: '/users',
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
     permission: 'Users.View',
   },
   {
     text: 'Roles',
-    icon: <AdminPanelSettingsIcon />,
+    icon: <Icon name="AdminPanelSettings" />,
     path: '/roles',
     allowedRoles: ['TenantAdmin', 'SystemAdmin'],
     permission: 'Roles.View',
   },
   {
     text: 'Audit Log',
-    icon: <HistoryIcon />,
+    icon: <Icon name="History" />,
     path: '/audit-logs',
     allowedRoles: ['SystemAdmin'],
   },
   {
     text: 'Tenants',
-    icon: <BusinessIcon />,
+    icon: <Icon name="Business" />,
     path: '/tenants',
     allowedRoles: ['SystemAdmin'],
     permission: 'Tenants.View',
   },
   {
     text: 'Tenant Admins',
-    icon: <ManageAccountsIcon />,
+    icon: <Icon name="ManageAccounts" />,
     path: '/tenant-admins',
     allowedRoles: ['SystemAdmin'],
     permission: 'Tenants.View',
   },
   {
     text: 'Profile',
-    icon: <AccountCircleIcon />,
+    icon: <Icon name="AccountCircle" />,
     path: '/profile',
   },
 ];
@@ -243,7 +234,7 @@ const DashboardAppBar = memo(function DashboardAppBar({
     >
       <Toolbar sx={styles.appBarToolbar}>
         <IconButton edge="start" onClick={onDrawerToggle} sx={styles.menuButton}>
-          <MenuIcon />
+          <Icon name="Menu" />
         </IconButton>
 
         {showTenantPicker && <TenantPicker />}
@@ -253,9 +244,9 @@ const DashboardAppBar = memo(function DashboardAppBar({
         <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
           <IconButton onClick={onThemeToggle} sx={styles.themeToggle}>
             {themeMode === 'dark' ? (
-              <Brightness7Icon fontSize="small" />
+              <Icon name="Brightness7" fontSize="small" />
             ) : (
-              <Brightness4Icon fontSize="small" />
+              <Icon name="Brightness4" fontSize="small" />
             )}
           </IconButton>
         </Tooltip>

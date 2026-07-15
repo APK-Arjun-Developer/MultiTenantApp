@@ -5,9 +5,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import EmailIcon from '@mui/icons-material/Email';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
 import { LoadingButton } from '@/shared/components/LoadingButton';
@@ -16,6 +13,7 @@ import type { ApiError } from '@/types/api';
 import { styles } from './ForgotPasswordPage.styles';
 import { forgotPasswordSchema } from './ForgotPasswordPage.types';
 import type { ForgotPasswordFormValues } from './ForgotPasswordPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -89,7 +87,7 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
           >
             <Box sx={styles.titleRow}>
               <Box sx={styles.titleIconBox}>
-                <EmailIcon sx={styles.titleIconSize} />
+                <Icon name="Email" sx={styles.titleIconSize} />
               </Box>
               <Typography variant="h6" sx={styles.titleText}>
                 Reset your password
@@ -113,7 +111,7 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
                 to="/login"
                 variant="text"
                 size="small"
-                startIcon={<ArrowBackIcon fontSize="small" />}
+                startIcon={<Icon name="ArrowBack" fontSize="small" />}
               >
                 Back to sign in
               </Button>
@@ -130,7 +128,7 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
           >
             <Stack spacing={2} sx={styles.sentStack}>
               <Box sx={styles.sentIconBox}>
-                <CheckCircleIcon sx={styles.sentIcon} />
+                <Icon name="CheckCircle" sx={styles.sentIcon} />
               </Box>
               <Typography variant="h6" sx={styles.sentTitle}>
                 Check your inbox

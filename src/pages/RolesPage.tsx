@@ -9,11 +9,6 @@ import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FilterForm, FIELD_TYPE } from 'mui-schema-form-builder';
 import { DataTable } from '@/shared/components/DataTable';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
@@ -49,6 +44,7 @@ import type {
   RolesFilter,
 } from './RolesPage.types';
 import { createSchema, editSchema } from './RolesPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -70,14 +66,14 @@ const RolesPageHeader = memo(function RolesPageHeader({
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <AdminPanelSettingsIcon sx={styles.pageIconSize} />
+          <Icon name="AdminPanelSettings" sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.titleText}>
           Roles
         </Typography>
       </Box>
       {canCreate && (
-        <Button variant="contained" startIcon={<AddIcon />} onClick={onCreateClick}>
+        <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onCreateClick}>
           Create role
         </Button>
       )}
@@ -410,14 +406,14 @@ export const RolesPage = memo(function RolesPage() {
             {canView && (
               <Tooltip title="View">
                 <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
-                  <VisibilityIcon fontSize="small" />
+                  <Icon name="Visibility" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {canEdit && (
               <Tooltip title="Edit">
                 <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
-                  <EditIcon fontSize="small" />
+                  <Icon name="Edit" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -428,7 +424,7 @@ export const RolesPage = memo(function RolesPage() {
                   color="error"
                   onClick={() => deleteDialog.onOpen(row.original)}
                 >
-                  <DeleteIcon fontSize="small" />
+                  <Icon name="Delete" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}

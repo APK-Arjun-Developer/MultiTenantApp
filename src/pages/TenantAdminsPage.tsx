@@ -13,17 +13,6 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import BlockIcon from '@mui/icons-material/Block';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import EmailIcon from '@mui/icons-material/Email';
-import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import SendIcon from '@mui/icons-material/Send';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import Avatar from '@mui/material/Avatar';
 import { DataTable } from '@/shared/components/DataTable';
@@ -94,6 +83,7 @@ import type {
   TenantAdminInvitationDto,
   AddressDto,
 } from './TenantAdminsPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -133,7 +123,7 @@ const TenantAdminsPageHeader = memo(function TenantAdminsPageHeader({
     <Box sx={styles.headerRow}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <ManageAccountsIcon sx={styles.pageIconSize} />
+          <Icon name="ManageAccounts" sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.headerTitleText}>
           Tenant Admins
@@ -141,12 +131,12 @@ const TenantAdminsPageHeader = memo(function TenantAdminsPageHeader({
       </Box>
       <Box sx={styles.headerActions}>
         {canInvite && (
-          <Button variant="outlined" startIcon={<SendIcon />} onClick={onInviteClick}>
+          <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
             Invite Admin
           </Button>
         )}
         {canCreate && (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={onCreateClick}>
+          <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onCreateClick}>
             Create Admin
           </Button>
         )}
@@ -840,7 +830,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                     disabled={isImpersonating}
                     onClick={() => handleImpersonate(row.original)}
                   >
-                    <SupervisorAccountIcon fontSize="small" />
+                    <Icon name="SupervisorAccount" fontSize="small" />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -848,14 +838,14 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
             {canView && (
               <Tooltip title="View">
                 <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
-                  <VisibilityIcon fontSize="small" />
+                  <Icon name="Visibility" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {canEdit && (
               <Tooltip title="Edit">
                 <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
-                  <EditIcon fontSize="small" />
+                  <Icon name="Edit" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -871,7 +861,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                     {isResendingSetup ? (
                       <CircularProgress size={14} />
                     ) : (
-                      <EmailIcon fontSize="small" />
+                      <Icon name="Email" fontSize="small" />
                     )}
                   </IconButton>
                 </span>
@@ -890,9 +880,9 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                   }
                 >
                   {row.original.isActive ? (
-                    <BlockIcon fontSize="small" />
+                    <Icon name="Block" fontSize="small" />
                   ) : (
-                    <CheckCircleIcon fontSize="small" />
+                    <Icon name="CheckCircle" fontSize="small" />
                   )}
                 </IconButton>
               </Tooltip>
@@ -906,7 +896,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                     pendingActionDialog.onOpen({ type: 'delete', admin: row.original })
                   }
                 >
-                  <DeleteIcon fontSize="small" />
+                  <Icon name="Delete" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -986,7 +976,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                             {isResendingInvitation ? (
                               <CircularProgress size={14} />
                             ) : (
-                              <ForwardToInboxIcon fontSize="small" />
+                              <Icon name="ForwardToInbox" fontSize="small" />
                             )}
                           </IconButton>
                         </span>
@@ -999,7 +989,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                           color="error"
                           onClick={() => revokeDialog.onOpen(inv)}
                         >
-                          <BlockIcon fontSize="small" />
+                          <Icon name="Block" fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}

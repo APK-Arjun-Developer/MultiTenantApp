@@ -2,7 +2,6 @@ import { memo, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
-import SettingsIcon from '@mui/icons-material/Settings';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { getAddressFields, buildAddressPayload } from '@/shared/forms/addressFields';
 import { LoadingButton } from '@/shared/components/LoadingButton';
@@ -15,6 +14,7 @@ import type { ApiError } from '@/types/api';
 import { styles } from './TenantSettingsPage.styles';
 import type { SettingsValues, TenantSettingsFormProps } from './TenantSettingsPage.types';
 import { settingsSchema } from './TenantSettingsPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Sub-component ────────────────────────────────────────────────────────────
 
@@ -95,7 +95,7 @@ export const TenantSettingsPage = memo(function TenantSettingsPage() {
     <Box sx={styles.root}>
       <Box sx={styles.pageHeader}>
         <Box sx={styles.pageIconBox}>
-          <SettingsIcon sx={styles.pageIconSize} />
+          <Icon name="Settings" sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.pageTitle}>
           Tenant Settings

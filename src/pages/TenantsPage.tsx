@@ -13,15 +13,6 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import BlockIcon from '@mui/icons-material/Block';
-import BusinessIcon from '@mui/icons-material/Business';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import ForwardToInboxIcon from '@mui/icons-material/ForwardToInbox';
-import SendIcon from '@mui/icons-material/Send';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import {
   FormBuilder,
   FormWizard,
@@ -87,6 +78,7 @@ import type {
   TenantDto,
   TenantCreationInvitationDto,
 } from './TenantsPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -133,7 +125,7 @@ const TenantsPageHeader = memo(function TenantsPageHeader({
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <BusinessIcon sx={styles.pageIconSize} />
+          <Icon name="Business" sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.headerTitleText}>
           Tenants
@@ -141,10 +133,10 @@ const TenantsPageHeader = memo(function TenantsPageHeader({
       </Box>
       {canCreate && (
         <Box sx={styles.headerActions}>
-          <Button variant="outlined" startIcon={<SendIcon />} onClick={onInviteClick}>
+          <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
             Invite Tenant
           </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={onOnboardClick}>
+          <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onOnboardClick}>
             New Tenant
           </Button>
         </Box>
@@ -820,14 +812,14 @@ export const TenantsPage = memo(function TenantsPage() {
             {canView && (
               <Tooltip title="View">
                 <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
-                  <VisibilityIcon fontSize="small" />
+                  <Icon name="Visibility" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {canEdit && (
               <Tooltip title="Edit">
                 <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
-                  <EditIcon fontSize="small" />
+                  <Icon name="Edit" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -838,7 +830,7 @@ export const TenantsPage = memo(function TenantsPage() {
                   color="primary"
                   onClick={() => changePlanDialog.onOpen(row.original)}
                 >
-                  <WorkspacePremiumIcon fontSize="small" />
+                  <Icon name="WorkspacePremium" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -849,7 +841,7 @@ export const TenantsPage = memo(function TenantsPage() {
                   color="error"
                   onClick={() => deleteDialog.onOpen(row.original)}
                 >
-                  <DeleteIcon fontSize="small" />
+                  <Icon name="Delete" fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -913,7 +905,7 @@ export const TenantsPage = memo(function TenantsPage() {
                           {isResendingInvitation ? (
                             <CircularProgress size={14} />
                           ) : (
-                            <ForwardToInboxIcon fontSize="small" />
+                            <Icon name="ForwardToInbox" fontSize="small" />
                           )}
                         </IconButton>
                       </span>
@@ -924,7 +916,7 @@ export const TenantsPage = memo(function TenantsPage() {
                         color="error"
                         onClick={() => revokeDialog.onOpen(inv)}
                       >
-                        <BlockIcon fontSize="small" />
+                        <Icon name="Block" fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </Box>

@@ -3,8 +3,8 @@ import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-d
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { styles } from './ErrorPage.styles';
+import { Icon } from '@/shared/components/Icon';
 
 export const ErrorPage = React.memo(function ErrorPage() {
   const error = useRouteError();
@@ -27,7 +27,7 @@ export const ErrorPage = React.memo(function ErrorPage() {
   return (
     <Box sx={styles.container}>
       <Box sx={styles.iconBox}>
-        <ErrorOutlineIcon sx={styles.icon} />
+        <Icon name="ErrorOutline" sx={styles.icon} />
       </Box>
       <Typography variant="h5" sx={styles.title}>
         Something went wrong

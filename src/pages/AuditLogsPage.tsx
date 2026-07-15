@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import HistoryIcon from '@mui/icons-material/History';
 import { FilterForm, FIELD_TYPE } from 'mui-schema-form-builder';
 import { LoadingButton } from '@/shared/components/LoadingButton';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
@@ -24,6 +23,7 @@ import type {
   AuditLogsPageHeaderProps,
   AuditLogsFilterBarProps,
 } from './AuditLogsPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ const AuditLogsPageHeader = memo(function AuditLogsPageHeader({
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
         <Box sx={styles.pageIconBox}>
-          <HistoryIcon sx={styles.pageIconSize} />
+          <Icon name="History" sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.titleText}>
           Audit Log

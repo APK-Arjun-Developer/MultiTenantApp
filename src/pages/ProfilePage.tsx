@@ -8,11 +8,6 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import BusinessIcon from '@mui/icons-material/Business';
-import LockIcon from '@mui/icons-material/Lock';
-import LogoutIcon from '@mui/icons-material/Logout';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { AvatarUpload } from '@/shared/components/AvatarUpload';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
@@ -55,6 +50,7 @@ import type {
   ProfileCompanySectionProps,
 } from './ProfilePage.types';
 import { profileSchema, addressSchema, companySchema, passwordSchema } from './ProfilePage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Static field configs (no runtime deps, defined once) ─────────────────────
 
@@ -412,7 +408,7 @@ export const ProfilePage = memo(function ProfilePage() {
       {/* Page header */}
       <Box sx={styles.pageHeader}>
         <Box sx={styles.pageIconBox}>
-          <AccountCircleIcon sx={styles.pageIconSize} />
+          <Icon name="AccountCircle" sx={styles.pageIconSize} />
         </Box>
         <Typography variant="h5" sx={styles.pageTitle}>
           Profile
@@ -435,11 +431,23 @@ export const ProfilePage = memo(function ProfilePage() {
       {/* Tabs */}
       <Paper variant="outlined" sx={styles.tabsPaper}>
         <Tabs value={tab} onChange={handleTabChange} sx={styles.tabs}>
-          <Tab label="Profile" icon={<AccountCircleIcon fontSize="small" />} iconPosition="start" />
-          <Tab label="Address" icon={<LocationOnIcon fontSize="small" />} iconPosition="start" />
-          <Tab label="Security" icon={<LockIcon fontSize="small" />} iconPosition="start" />
+          <Tab
+            label="Profile"
+            icon={<Icon name="AccountCircle" fontSize="small" />}
+            iconPosition="start"
+          />
+          <Tab
+            label="Address"
+            icon={<Icon name="LocationOn" fontSize="small" />}
+            iconPosition="start"
+          />
+          <Tab label="Security" icon={<Icon name="Lock" fontSize="small" />} iconPosition="start" />
           {isTenantAdmin && (
-            <Tab label="Company" icon={<BusinessIcon fontSize="small" />} iconPosition="start" />
+            <Tab
+              label="Company"
+              icon={<Icon name="Business" fontSize="small" />}
+              iconPosition="start"
+            />
           )}
         </Tabs>
 
@@ -485,7 +493,7 @@ export const ProfilePage = memo(function ProfilePage() {
         <Button
           variant="outlined"
           color="error"
-          startIcon={<LogoutIcon />}
+          startIcon={<Icon name="Logout" />}
           onClick={logoutDialog.onOpen}
         >
           Sign out

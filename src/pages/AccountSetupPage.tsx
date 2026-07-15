@@ -5,9 +5,6 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
 import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
 import { LoadingButton } from '@/shared/components/LoadingButton';
@@ -22,6 +19,7 @@ import type {
   SetupInvalidProps,
   SetupSuccessProps,
 } from './AccountSetupPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -29,7 +27,7 @@ const SetupInvalid = memo(function SetupInvalid({ message }: SetupInvalidProps) 
   return (
     <Stack spacing={2} sx={styles.invalidIconRoot}>
       <Box sx={styles.invalidIconBox}>
-        <ErrorIcon sx={styles.invalidIcon} />
+        <Icon name="Error" sx={styles.invalidIcon} />
       </Box>
       <Typography variant="h6" sx={styles.invalidTitle}>
         Setup link expired or invalid
@@ -56,7 +54,7 @@ const SetupSuccess = memo(function SetupSuccess({ result }: SetupSuccessProps) {
   return (
     <Stack spacing={2} sx={styles.successIconRoot}>
       <Box sx={styles.successIconBox}>
-        <CheckCircleIcon sx={styles.successIcon} />
+        <Icon name="CheckCircle" sx={styles.successIcon} />
       </Box>
       <Typography variant="h6" sx={styles.successTitle}>
         Account is ready!
@@ -257,7 +255,7 @@ export const AccountSetupPage = memo(function AccountSetupPage() {
     <Box>
       <Box sx={styles.headerTitleRow}>
         <Box sx={styles.headerIconBox}>
-          <AccountCircleIcon sx={styles.headerIconSize} />
+          <Icon name="AccountCircle" sx={styles.headerIconSize} />
         </Box>
         <Typography variant="h6" sx={styles.headerTitle}>
           Set up your account

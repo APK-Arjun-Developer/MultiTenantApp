@@ -5,9 +5,7 @@ import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import IconButton from '@mui/material/IconButton';
-import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import {
   FormBuilder,
   FIELD_TYPE,
@@ -27,6 +25,7 @@ import type { ApiError } from '@/types/api';
 import { styles, otpInputStyle } from './LoginPage.styles';
 import { loginSchema } from './LoginPage.types';
 import type { LoginValues, Step, OtpInputProps } from './LoginPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -300,12 +299,12 @@ export const LoginPage = memo(function LoginPage() {
           >
             <Box>
               <IconButton onClick={goToLogin} size="small" sx={styles.verifyBackButton}>
-                <ArrowBackIcon fontSize="small" />
+                <Icon name="ArrowBack" fontSize="small" />
               </IconButton>
 
               <Box sx={styles.verifyTitleRow}>
                 <Box sx={styles.titleIconBox}>
-                  <MarkEmailReadIcon sx={styles.verifyTitleIconSize} />
+                  <Icon name="MarkEmailRead" sx={styles.verifyTitleIconSize} />
                 </Box>
                 <Typography variant="h6" sx={styles.verifyTitleText}>
                   Verify your email

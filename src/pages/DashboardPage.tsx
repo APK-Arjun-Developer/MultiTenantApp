@@ -6,14 +6,6 @@ import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import { useTheme, alpha, type SxProps, type Theme } from '@mui/material/styles';
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
-import BusinessIcon from '@mui/icons-material/Business';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import EmailIcon from '@mui/icons-material/Email';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import PeopleIcon from '@mui/icons-material/People';
-import SecurityIcon from '@mui/icons-material/Security';
 import {
   PieChart,
   Pie,
@@ -31,6 +23,7 @@ import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useGetDashboardStatsQuery } from '@/features/dashboard/api/dashboardApi';
 import { styles, statCardIconBoxColor } from './DashboardPage.styles';
 import type { StatCardProps, StatCardColor } from './DashboardPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 
@@ -85,19 +78,19 @@ const SystemAdminStatsGrid = memo(function SystemAdminStatsGrid({
       <StatCard
         label="Tenants"
         value={stats?.totalTenants}
-        icon={<BusinessIcon />}
+        icon={<Icon name="Business" />}
         isLoading={isLoading}
       />
       <StatCard
         label="Tenant Admins"
         value={stats?.totalTenantAdmins}
-        icon={<ManageAccountsIcon />}
+        icon={<Icon name="ManageAccounts" />}
         isLoading={isLoading}
       />
       <StatCard
         label="Tenant Users"
         value={stats?.totalTenantUsers}
-        icon={<PeopleIcon />}
+        icon={<Icon name="People" />}
         isLoading={isLoading}
       />
     </Box>
@@ -187,20 +180,20 @@ const TenantAdminStatsGrid = memo(function TenantAdminStatsGrid({
       <StatCard
         label="Users"
         value={stats?.totalTenantUsers}
-        icon={<PeopleIcon />}
+        icon={<Icon name="People" />}
         isLoading={isLoading}
       />
       <StatCard
         label="Roles"
         value={stats?.totalRoles}
-        icon={<SecurityIcon />}
+        icon={<Icon name="Security" />}
         color="secondary"
         isLoading={isLoading}
       />
       <StatCard
         label="Pending Invitations"
         value={stats?.totalPendingInvitations}
-        icon={<HourglassEmptyIcon />}
+        icon={<Icon name="HourglassEmpty" />}
         color="warning"
         isLoading={isLoading}
       />
@@ -316,7 +309,7 @@ const TenantUserDashboard = memo(function TenantUserDashboard() {
       <Divider sx={styles.tenantUserDivider} />
       <Box sx={styles.tenantUserProfileFields}>
         <Box sx={styles.tenantUserProfileRow}>
-          <AssignmentIndIcon fontSize="small" color="action" />
+          <Icon name="AssignmentInd" fontSize="small" color="action" />
           <Box>
             <Typography variant="caption" color="text.secondary">
               Full name
@@ -325,7 +318,7 @@ const TenantUserDashboard = memo(function TenantUserDashboard() {
           </Box>
         </Box>
         <Box sx={styles.tenantUserProfileRow}>
-          <EmailIcon fontSize="small" color="action" />
+          <Icon name="Email" fontSize="small" color="action" />
           <Box>
             <Typography variant="caption" color="text.secondary">
               Email
@@ -335,7 +328,7 @@ const TenantUserDashboard = memo(function TenantUserDashboard() {
         </Box>
         {user?.roles && user.roles.length > 0 && (
           <Box sx={styles.tenantUserRolesRow}>
-            <SecurityIcon fontSize="small" color="action" sx={styles.tenantUserRoleIcon} />
+            <Icon name="Security" fontSize="small" color="action" sx={styles.tenantUserRoleIcon} />
             <Box>
               <Typography variant="caption" color="text.secondary">
                 Roles
@@ -360,7 +353,7 @@ const WelcomeHeader = memo(function WelcomeHeader({ fullName }: { fullName?: str
     <>
       <Box sx={styles.welcomeHeader}>
         <Box sx={styles.welcomeIconBox}>
-          <DashboardIcon fontSize="small" />
+          <Icon name="Dashboard" fontSize="small" />
         </Box>
         <Typography variant="h5" sx={styles.welcomeTitle}>
           Dashboard

@@ -12,9 +12,9 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
-import InboxIcon from '@mui/icons-material/Inbox';
 import type { DataTableProps } from './DataTable.types';
 import { styles } from './DataTable.styles';
+import { Icon } from '@/shared/components/Icon';
 
 export const DataTable = React.memo(function DataTable<TData>({
   data,
@@ -117,7 +117,7 @@ export const DataTable = React.memo(function DataTable<TData>({
               <TableRow>
                 <TableCell colSpan={columns.length} sx={styles.centeredCell}>
                   <Box sx={styles.emptyState}>
-                    <InboxIcon sx={styles.emptyIcon} />
+                    <Icon name="Inbox" sx={styles.emptyIcon} />
                     <Typography variant="body2" color="text.disabled">
                       No records found
                     </Typography>

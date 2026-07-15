@@ -7,9 +7,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import {
   useValidateInvitationQuery,
@@ -34,6 +31,7 @@ import type {
   InvitationInvalidProps,
   InvitationSuccessProps,
 } from './InvitationPage.types';
+import { Icon } from '@/shared/components/Icon';
 
 // ─── InvitationInvalid ────────────────────────────────────────────────────────
 
@@ -41,7 +39,7 @@ const InvitationInvalid = memo(function InvitationInvalid({ message }: Invitatio
   return (
     <Stack spacing={2} sx={styles.invalidStack}>
       <Box sx={styles.invalidIconBox}>
-        <ErrorIcon sx={styles.invalidIcon} />
+        <Icon name="Error" sx={styles.invalidIcon} />
       </Box>
       <Typography variant="h6" sx={styles.invalidTitle}>
         Invitation expired or invalid
@@ -69,7 +67,7 @@ const InvitationSuccess = memo(function InvitationSuccess({ result }: Invitation
   return (
     <Stack spacing={2} sx={styles.successStack}>
       <Box sx={styles.successIconBox}>
-        <CheckCircleIcon sx={styles.successIcon} />
+        <Icon name="CheckCircle" sx={styles.successIcon} />
       </Box>
       <Typography variant="h6" sx={styles.successTitle}>
         Account created!
@@ -438,7 +436,7 @@ export const InvitationPage = memo(function InvitationPage() {
       <Box sx={styles.newTenantRoot}>
         <Box sx={styles.newTenantHeader}>
           <Box sx={styles.headerIconBox}>
-            <PersonAddIcon sx={styles.headerIconSize} />
+            <Icon name="PersonAdd" sx={styles.headerIconSize} />
           </Box>
           <Typography variant="h6" sx={styles.newTenantTitle}>
             Create your tenant account
@@ -475,7 +473,7 @@ export const InvitationPage = memo(function InvitationPage() {
     <Box sx={styles.adminUserRoot}>
       <Box sx={styles.adminUserHeader}>
         <Box sx={styles.headerIconBox}>
-          <PersonAddIcon sx={styles.headerIconSize} />
+          <Icon name="PersonAdd" sx={styles.headerIconSize} />
         </Box>
         <Typography variant="h6" sx={styles.adminUserTitle}>
           Accept invitation

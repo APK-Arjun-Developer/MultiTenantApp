@@ -12,10 +12,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
 import Tooltip from '@mui/material/Tooltip';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import CloseIcon from '@mui/icons-material/Close';
 import type { AvatarUploadProps } from './AvatarUpload.types';
 import { styles, hiddenInputStyle } from './AvatarUpload.styles';
+import { Icon } from '@/shared/components/Icon';
 
 const OUTPUT_SIZE = 512;
 const MIN_VALID_PX = 16; // discard crop values smaller than this — they're bogus initial fires
@@ -54,7 +53,8 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area | null): Promise
   const canvas = document.createElement('canvas');
   canvas.width = outSize;
   canvas.height = outSize;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('2d canvas context unavailable');
   ctx.drawImage(image, sx, sy, sSize, sSize, 0, 0, outSize, outSize);
 
   return new Promise<Blob>((resolve, reject) => {
@@ -163,7 +163,7 @@ export const AvatarUpload = React.memo(function AvatarUpload({
               {uploading ? (
                 <CircularProgress size={size * 0.35} sx={overlaySpinnerSx} />
               ) : (
-                <CameraAltIcon sx={overlayIconSx} />
+                <Icon name="CameraAlt" sx={overlayIconSx} />
               )}
             </Box>
           )}
@@ -172,7 +172,7 @@ export const AvatarUpload = React.memo(function AvatarUpload({
         {src && onRemove && !uploading && (
           <Tooltip title="Remove photo">
             <IconButton size="small" onClick={handleRemoveClick} sx={styles.removeButton}>
-              <CloseIcon sx={styles.removeIcon} />
+              <Icon name="Close" sx={styles.removeIcon} />
             </IconButton>
           </Tooltip>
         )}
