@@ -221,9 +221,9 @@ export const LoginPage = memo(function LoginPage() {
   }, [otp, verifyEmailMutation, pendingEmail, snackbar, goToLogin]);
 
   const handleVerifyFormSubmit = useCallback(
-    (e: React.FormEvent) => {
+    (e: React.SyntheticEvent) => {
       e.preventDefault();
-      onVerifySubmit();
+      void onVerifySubmit();
     },
     [onVerifySubmit],
   );
@@ -274,7 +274,7 @@ export const LoginPage = memo(function LoginPage() {
               fields={loginFields}
               onSubmit={onLoginSubmit}
               renderActions={renderLoginActions}
-              sx={styles.loginFormBuilder as never}
+              sx={styles.loginFormBuilder}
             />
 
             <Box sx={styles.forgotPasswordLink}>

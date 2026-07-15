@@ -5,7 +5,7 @@ import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import { useTheme, alpha, type Theme } from '@mui/material/styles';
+import { useTheme, alpha, type SxProps, type Theme } from '@mui/material/styles';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import BusinessIcon from '@mui/icons-material/Business';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -17,7 +17,6 @@ import SecurityIcon from '@mui/icons-material/Security';
 import {
   PieChart,
   Pie,
-  Cell,
   BarChart,
   Bar,
   XAxis,
@@ -59,7 +58,7 @@ const StatCard = memo(function StatCard({
 
   return (
     <Paper variant="outlined" sx={styles.statCardPaper}>
-      <Box sx={[styles.statCardIconBox, statCardIconBoxColor(hex)] as never}>{icon}</Box>
+      <Box sx={[styles.statCardIconBox, statCardIconBoxColor(hex)] as SxProps<Theme>}>{icon}</Box>
       <Box>
         <Typography variant="h4" sx={styles.statCardValue}>
           {isLoading ? <Skeleton width={48} /> : (value ?? 0)}
@@ -111,15 +110,15 @@ const SystemAdminDashboard = memo(function SystemAdminDashboard() {
 
   const planData = useMemo(
     () => [
-      { name: 'Free', value: stats?.freePlanTenants ?? 0 },
-      { name: 'Pro', value: stats?.proPlanTenants ?? 0 },
+      { name: 'Free', value: stats?.freePlanTenants ?? 0, fill: theme.palette.text.disabled },
+      { name: 'Pro', value: stats?.proPlanTenants ?? 0, fill: theme.palette.primary.main },
     ],
-    [stats?.freePlanTenants, stats?.proPlanTenants],
-  );
-
-  const planColors = useMemo(
-    () => [theme.palette.text.disabled, theme.palette.primary.main],
-    [theme.palette.text.disabled, theme.palette.primary.main],
+    [
+      stats?.freePlanTenants,
+      stats?.proPlanTenants,
+      theme.palette.text.disabled,
+      theme.palette.primary.main,
+    ],
   );
 
   const tooltipStyle = useMemo(
@@ -162,11 +161,7 @@ const SystemAdminDashboard = memo(function SystemAdminDashboard() {
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}`}
                   labelLine={false}
-                >
-                  {planData.map((_, index) => (
-                    <Cell key={index} fill={planColors[index]} />
-                  ))}
-                </Pie>
+                />
                 <RechartsTooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 12, color: theme.palette.text.secondary }} />
               </PieChart>
@@ -222,22 +217,22 @@ const TenantAdminDashboard = memo(function TenantAdminDashboard() {
       {
         name: 'Pending',
         value: stats?.totalPendingInvitations ?? 0,
-        color: theme.palette.warning.main,
+        fill: theme.palette.warning.main,
       },
       {
         name: 'Accepted',
         value: stats?.acceptedInvitations ?? 0,
-        color: theme.palette.success.main,
+        fill: theme.palette.success.main,
       },
       {
         name: 'Expired',
         value: stats?.expiredInvitations ?? 0,
-        color: theme.palette.text.disabled,
+        fill: theme.palette.text.disabled,
       },
       {
         name: 'Revoked',
         value: stats?.revokedInvitations ?? 0,
-        color: theme.palette.error.main,
+        fill: theme.palette.error.main,
       },
     ],
     [
@@ -298,11 +293,7 @@ const TenantAdminDashboard = memo(function TenantAdminDashboard() {
                   contentStyle={tooltipStyle}
                   cursor={{ fill: alpha(theme.palette.primary.main, 0.06) }}
                 />
-                <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]}>
-                  {invitationData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Bar>
+                <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

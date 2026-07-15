@@ -1,4 +1,4 @@
-import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   container: {
@@ -45,4 +45,4 @@ export const styles = {
   button: {
     mt: 1,
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

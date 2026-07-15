@@ -1,4 +1,4 @@
-import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   formControl: {
@@ -57,4 +57,4 @@ export const styles = {
     mx: 1,
     color: 'text.secondary',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

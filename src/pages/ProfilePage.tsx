@@ -1,5 +1,5 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { memo, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -18,6 +18,7 @@ import { AvatarUpload } from '@/shared/components/AvatarUpload';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { LabelValue } from '@/shared/components/LabelValue';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { useUrlTabs, useBooleanDialog } from '@/shared/hooks';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
 import {
   getAddressFields,
@@ -81,6 +82,8 @@ const passwordFields: FieldConfig[] = [
   },
 ];
 
+const PROFILE_TABS = ['profile', 'address', 'security', 'company'] as const;
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const ProfileAvatarSection = memo(function ProfileAvatarSection({
@@ -137,7 +140,7 @@ const ProfileInfoSection = memo(function ProfileInfoSection({
         fields={profileFields}
         onSubmit={onProfileSubmit}
         submitText="Save changes"
-        sx={styles.inlineForm as never}
+        sx={styles.inlineForm}
       />
     </Box>
   );
@@ -156,7 +159,7 @@ const ProfileAddressSection = memo(function ProfileAddressSection({
         fields={addressFields}
         onSubmit={onAddressSubmit}
         submitText="Save address"
-        sx={styles.inlineForm as never}
+        sx={styles.inlineForm}
       />
     </Box>
   );
@@ -173,7 +176,7 @@ const ProfilePasswordSection = memo(function ProfilePasswordSection({
       fields={pwFields}
       onSubmit={onPasswordSubmit}
       submitText="Change password"
-      sx={styles.inlineForm as never}
+      sx={styles.inlineForm}
     />
   );
 });
@@ -215,25 +218,19 @@ const ProfileCompanySection = memo(function ProfileCompanySection({
         fields={companyFields}
         onSubmit={onCompanySubmit}
         submitText="Save company settings"
-        sx={styles.inlineForm as never}
+        sx={styles.inlineForm}
       />
     </Box>
   );
 });
-
-const PROFILE_TABS = ['profile', 'address'] as const;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const ProfilePage = memo(function ProfilePage() {
   const snackbar = useSnackbar();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tab = useMemo(() => {
-    const idx = (PROFILE_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
-    return idx >= 0 ? idx : 0;
-  }, [searchParams]);
-  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const { tab, handleTabChange } = useUrlTabs(PROFILE_TABS);
+  const logoutDialog = useBooleanDialog();
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const { data: profile, isLoading } = useGetCurrentUserQuery();
@@ -295,13 +292,6 @@ export const ProfilePage = memo(function ProfilePage() {
   const tenantLogoSrc = useMemo(
     () => (tenantSettings?.profileFileId ? getTenantLogoUrl(tenantSettings.profileFileId) : null),
     [tenantSettings?.profileFileId],
-  );
-
-  const handleTabChange = useCallback(
-    (_e: React.SyntheticEvent, v: unknown) => {
-      setSearchParams({ tab: PROFILE_TABS[v as number] }, { replace: true });
-    },
-    [setSearchParams],
   );
 
   const onProfileSubmit = useCallback(
@@ -406,11 +396,8 @@ export const ProfilePage = memo(function ProfilePage() {
 
   const handleLogout = useCallback(async () => {
     await logoutMutation();
-    navigate('/login', { replace: true });
+    void navigate('/login', { replace: true });
   }, [logoutMutation, navigate]);
-
-  const openLogoutConfirm = useCallback(() => setLogoutConfirmOpen(true), []);
-  const closeLogoutConfirm = useCallback(() => setLogoutConfirmOpen(false), []);
 
   if (isLoading) {
     return (
@@ -457,7 +444,6 @@ export const ProfilePage = memo(function ProfilePage() {
         </Tabs>
 
         <Box sx={styles.tabPanel}>
-          {/* ── Tab 0: Profile ── */}
           {tab === 0 && (
             <ProfileInfoSection
               profileId={profile?.id}
@@ -466,8 +452,6 @@ export const ProfilePage = memo(function ProfilePage() {
               onProfileSubmit={onProfileSubmit}
             />
           )}
-
-          {/* ── Tab 1: Address ── */}
           {tab === 1 && (
             <ProfileAddressSection
               profileId={profile?.id}
@@ -475,16 +459,12 @@ export const ProfilePage = memo(function ProfilePage() {
               onAddressSubmit={onAddressSubmit}
             />
           )}
-
-          {/* ── Tab 2: Security ── */}
           {tab === 2 && (
             <ProfilePasswordSection
               passwordFields={passwordFields}
               onPasswordSubmit={onPasswordSubmit}
             />
           )}
-
-          {/* ── Tab 3: Company (TenantAdmin only) ── */}
           {tab === 3 && isTenantAdmin && (
             <ProfileCompanySection
               tenantSettings={tenantSettings}
@@ -506,20 +486,20 @@ export const ProfilePage = memo(function ProfilePage() {
           variant="outlined"
           color="error"
           startIcon={<LogoutIcon />}
-          onClick={openLogoutConfirm}
+          onClick={logoutDialog.onOpen}
         >
           Sign out
         </Button>
       </Box>
 
       <ConfirmDialog
-        open={logoutConfirmOpen}
+        open={logoutDialog.open}
         title="Sign out?"
         description="You will be returned to the login page."
         confirmLabel="Sign out"
         loading={isLoggingOut}
         onConfirm={handleLogout}
-        onCancel={closeLogoutConfirm}
+        onCancel={logoutDialog.onClose}
       />
     </Box>
   );

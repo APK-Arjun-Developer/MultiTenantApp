@@ -10,7 +10,7 @@ import { LoadingButton } from '@/shared/components/LoadingButton';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { DataTable } from '@/shared/components/DataTable';
 import { exportToCsv } from '@/shared/utils/exportCsv';
-import { useDebounce } from '@/shared/hooks';
+import { useDebounce, useTableState } from '@/shared/hooks';
 import { useAppDispatch } from '@/app/hooks';
 import {
   activityLogsApi,
@@ -46,6 +46,8 @@ const MODULE_COLORS: Record<string, ModuleColor> = {
   Onboarding: 'success',
   Subscriptions: 'error',
 };
+
+const AUDIT_FILTER_DEFAULT: AuditFilter = { module: '', dateFrom: '', dateTo: '' };
 
 // ─── Header sub-component ─────────────────────────────────────────────────────
 
@@ -91,7 +93,7 @@ const AuditLogsFilterBar = memo(function AuditLogsFilterBar({
     <Box sx={styles.filterBar}>
       <FilterForm
         fields={fields}
-        defaultValues={{ module: '', dateFrom: '', dateTo: '' }}
+        defaultValues={AUDIT_FILTER_DEFAULT}
         onChange={(values) => onFilterChange(values as AuditFilter)}
         showReset
         spacing={2}
@@ -104,17 +106,11 @@ const AuditLogsFilterBar = memo(function AuditLogsFilterBar({
 
 export const AuditLogsPage = memo(function AuditLogsPage() {
   const dispatch = useAppDispatch();
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [auditFilter, setAuditFilter] = useState<AuditFilter>({
-    module: '',
-    dateFrom: '',
-    dateTo: '',
-  });
+  const table = useTableState();
+  const [auditFilter, setAuditFilter] = useState<AuditFilter>(AUDIT_FILTER_DEFAULT);
   const [exportLoading, setExportLoading] = useState(false);
 
+  // Date fields debounced at 500ms — intentionally not SEARCH_DEBOUNCE_MS
   const debouncedDateFrom = useDebounce(auditFilter.dateFrom, 500);
   const debouncedDateTo = useDebounce(auditFilter.dateTo, 500);
 
@@ -147,33 +143,22 @@ export const AuditLogsPage = memo(function AuditLogsPage() {
   );
 
   const { data, isLoading } = useGetActivityLogsQuery({
-    page: page + 1,
-    pageSize,
+    page: table.page + 1,
+    pageSize: table.pageSize,
     module: auditFilter.module || undefined,
     dateFrom: debouncedDateFrom || undefined,
     dateTo: debouncedDateTo ? `${debouncedDateTo}T23:59:59Z` : undefined,
-    sortBy,
-    sortOrder: sortBy ? sortOrder : undefined,
+    sortBy: table.sortBy,
+    sortOrder: table.sortBy ? table.sortOrder : undefined,
   });
 
-  const handleSortChange = useCallback(
-    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
-      setSortBy(newSortBy);
-      setSortOrder(newSortOrder ?? 'asc');
-      setPage(0);
+  const handleFilterChange = useCallback(
+    (values: AuditFilter) => {
+      setAuditFilter(values);
+      table.setPage(0);
     },
-    [],
+    [table],
   );
-
-  const handleFilterChange = useCallback((values: AuditFilter) => {
-    setAuditFilter(values);
-    setPage(0);
-  }, []);
-
-  const handlePageSizeChange = useCallback((size: number) => {
-    setPageSize(size);
-    setPage(0);
-  }, []);
 
   const handleExport = useCallback(async () => {
     setExportLoading(true);
@@ -289,14 +274,14 @@ export const AuditLogsPage = memo(function AuditLogsPage() {
           columns={columns}
           isLoading={isLoading}
           totalCount={data?.totalCount ?? 0}
-          page={page}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={handlePageSizeChange}
-          sortBy={sortBy}
-          sortOrder={sortOrder}
+          page={table.page}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+          onPageSizeChange={table.handlePageSizeChange}
+          sortBy={table.sortBy}
+          sortOrder={table.sortOrder}
           sortableColumns={['createdAt']}
-          onSortChange={handleSortChange}
+          onSortChange={table.handleSortChange}
         />
       </Box>
     </TenantContextGuard>

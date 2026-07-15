@@ -15,7 +15,7 @@ type AppState = ReturnType<typeof combinedReducer>;
 function rootReducer(state: AppState | undefined, action: UnknownAction): AppState {
   if (action.type === logout.type && state) {
     // auth handles its own logout; reset ui (clears selectedTenantId) and api (clears all RTK Query cache)
-    return combinedReducer({ auth: state.auth } as AppState, action);
+    return combinedReducer({ auth: state.auth }, action);
   }
   return combinedReducer(state, action);
 }

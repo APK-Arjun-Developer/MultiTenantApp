@@ -1,4 +1,4 @@
-import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   dialogTitle: {
@@ -21,4 +21,4 @@ export const styles = {
     textAlign: 'center',
     mb: 2,
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

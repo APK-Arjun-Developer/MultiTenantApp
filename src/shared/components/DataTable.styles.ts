@@ -1,4 +1,4 @@
-import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   paper: {
@@ -35,4 +35,4 @@ export const styles = {
     borderTop: 1,
     borderColor: 'divider',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

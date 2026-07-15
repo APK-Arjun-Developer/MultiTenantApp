@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { addressZodShape, tenantAddressZodShape } from '@/shared/forms/addressFields';
+import type { AddressDto } from '@/types/api';
+import type { FieldConfig } from 'mui-schema-form-builder';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -56,18 +58,18 @@ export interface ProfileAvatarSectionProps {
 export interface ProfileInfoSectionProps {
   profileId: string | undefined;
   email: string | undefined;
-  profileFields: import('mui-schema-form-builder').FieldConfig[];
+  profileFields: FieldConfig[];
   onProfileSubmit: (values: ProfileValues) => Promise<void>;
 }
 
 export interface ProfileAddressSectionProps {
   profileId: string | undefined;
-  addressFields: import('mui-schema-form-builder').FieldConfig[];
+  addressFields: FieldConfig[];
   onAddressSubmit: (values: AddressValues) => Promise<void>;
 }
 
 export interface ProfilePasswordSectionProps {
-  passwordFields: import('mui-schema-form-builder').FieldConfig[];
+  passwordFields: FieldConfig[];
   onPasswordSubmit: (values: PasswordValues) => Promise<void>;
 }
 
@@ -77,13 +79,13 @@ export interface ProfileCompanySectionProps {
         id: string;
         name?: string;
         profileFileId?: string | null;
-        address?: unknown;
+        address?: AddressDto | null;
       }
     | undefined;
   tenantLogoSrc: string | null;
   logoUploading: boolean;
   logoRemoving: boolean;
-  companyFields: import('mui-schema-form-builder').FieldConfig[];
+  companyFields: FieldConfig[];
   onTenantLogoUpload: (file: File) => Promise<void>;
   onTenantLogoRemove: () => Promise<void>;
   onCompanySubmit: (values: CompanyValues) => Promise<void>;

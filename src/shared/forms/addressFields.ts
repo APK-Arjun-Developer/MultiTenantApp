@@ -3,6 +3,13 @@ import { FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import type { AddressDto, AddressRequest } from '@/types/api';
 
 const optStr = (max: number) => z.string().max(max).optional().or(z.literal(''));
+
+/** Trims a string and returns null if the result is empty or undefined. */
+const nonEmpty = (value: string | undefined): string | null => {
+  const t = value?.trim();
+  if (!t) return null;
+  return t;
+};
 const reqStr = (max: number) => z.string().min(1, 'Required').max(max);
 
 export const addressZodShape = {
@@ -88,7 +95,7 @@ export function getSameAsCompanyField(section?: string): FieldConfig {
   };
 }
 
-interface AddressValues {
+export interface AddressValues {
   addressLine1?: string;
   addressLine2?: string;
   addressCity?: string;
@@ -102,12 +109,12 @@ export function buildAddressPayload(values: AddressValues): {
   address?: AddressRequest;
   clearAddress?: boolean;
 } {
-  const line1 = values.addressLine1?.trim() || null;
-  const line2 = values.addressLine2?.trim() || null;
-  const city = values.addressCity?.trim() || null;
-  const state = values.addressState?.trim() || null;
-  const postalCode = values.addressPostalCode?.trim() || null;
-  const country = values.addressCountry?.trim() || null;
+  const line1 = nonEmpty(values.addressLine1);
+  const line2 = nonEmpty(values.addressLine2);
+  const city = nonEmpty(values.addressCity);
+  const state = nonEmpty(values.addressState);
+  const postalCode = nonEmpty(values.addressPostalCode);
+  const country = nonEmpty(values.addressCountry);
 
   const hasAny = [line1, line2, city, state, postalCode, country].some(Boolean);
   return hasAny
@@ -190,7 +197,7 @@ export const requiredTenantAddressZodShape = {
   tenantAddressCountry: reqStr(100),
 };
 
-interface TenantAddressValues {
+export interface TenantAddressValues {
   tenantAddressLine1?: string;
   tenantAddressLine2?: string;
   tenantAddressCity?: string;
@@ -203,12 +210,12 @@ export function buildTenantAddressPayload(values: TenantAddressValues): {
   address?: AddressRequest;
   clearAddress?: boolean;
 } {
-  const line1 = values.tenantAddressLine1?.trim() || null;
-  const line2 = values.tenantAddressLine2?.trim() || null;
-  const city = values.tenantAddressCity?.trim() || null;
-  const state = values.tenantAddressState?.trim() || null;
-  const postalCode = values.tenantAddressPostalCode?.trim() || null;
-  const country = values.tenantAddressCountry?.trim() || null;
+  const line1 = nonEmpty(values.tenantAddressLine1);
+  const line2 = nonEmpty(values.tenantAddressLine2);
+  const city = nonEmpty(values.tenantAddressCity);
+  const state = nonEmpty(values.tenantAddressState);
+  const postalCode = nonEmpty(values.tenantAddressPostalCode);
+  const country = nonEmpty(values.tenantAddressCountry);
 
   const hasAny = [line1, line2, city, state, postalCode, country].some(Boolean);
   return hasAny

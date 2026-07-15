@@ -1,5 +1,5 @@
-﻿import { alpha } from '@mui/material/styles';
-import type { Sx } from '@/types/styles';
+import { alpha } from '@mui/material/styles';
+import type { Sx, StyleSheet } from '@/types';
 
 export const styles = {
   // ── Page root ──────────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ export const styles = {
   skeletonRounded: {
     borderRadius: 1,
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;
 
 export function statCardIconBoxColor(hex: string): Sx {
   return {

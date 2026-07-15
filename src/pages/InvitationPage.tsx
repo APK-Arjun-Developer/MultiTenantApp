@@ -463,7 +463,7 @@ export const InvitationPage = memo(function InvitationPage() {
           steps={newTenantSteps}
           onSubmit={onSubmitNewTenant}
           renderActions={renderNewTenantActions}
-          sx={styles.formWizardContainer as never}
+          sx={styles.formWizardContainer}
         />
       </Box>
     );
@@ -511,7 +511,7 @@ export const InvitationPage = memo(function InvitationPage() {
         steps={adminUserSteps}
         onSubmit={onSubmit}
         renderActions={renderAdminUserActions}
-        sx={styles.formWizardContainer as never}
+        sx={styles.formWizardContainer}
       />
     </Box>
   );

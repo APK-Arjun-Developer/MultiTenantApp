@@ -193,7 +193,7 @@ export const ResetPasswordPage = memo(function ResetPasswordPage() {
         fields={resetFields}
         onSubmit={onSubmit}
         renderActions={renderActions}
-        sx={styles.formBuilder as never}
+        sx={styles.formBuilder}
       />
 
       <Box sx={styles.backLinkBox}>

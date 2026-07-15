@@ -1,20 +1,23 @@
-import type { UserDto, UserInvitationDto } from '@/types/api';
+import type { UserDto, UserInvitationDto, FilterValues } from '@/types/api';
+import type { FieldConfig } from 'mui-schema-form-builder';
 import { z } from 'zod';
 import { requiredAddressZodShape, addressZodShape } from '@/shared/forms/addressFields';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
+const roleOptionSchema = z.union([z.string(), z.object({ value: z.string(), label: z.string() })]);
+
 export const createSchema = z.object({
   fullName: z.string().min(1, 'Full name is required').max(200),
-  email: z.string().email('Invalid email address'),
-  roleIds: z.array(z.any()).min(1, 'At least one role is required'),
+  email: z.email('Invalid email address'),
+  roleIds: z.array(roleOptionSchema).min(1, 'At least one role is required'),
   ...requiredAddressZodShape,
 });
 export type CreateValues = z.infer<typeof createSchema>;
 
 export const inviteSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  roleIds: z.array(z.any()).min(1, 'At least one role is required'),
+  email: z.email('Invalid email address'),
+  roleIds: z.array(roleOptionSchema).min(1, 'At least one role is required'),
 });
 export type InviteValues = z.infer<typeof inviteSchema>;
 
@@ -79,9 +82,9 @@ export interface UsersPageHeaderProps {
 }
 
 export interface UsersPageFilterBarProps {
-  userFilterFields: import('mui-schema-form-builder').FieldConfig[];
+  userFilterFields: FieldConfig[];
   defaultValues: { search: string; status: string; createdVia: string };
-  onChange: (values: Record<string, unknown>) => void;
+  onChange: (values: FilterValues) => void;
 }
 
 export interface UsersPageActionsProps {
@@ -91,9 +94,9 @@ export interface UsersPageActionsProps {
 }
 
 export interface UsersInvitationsFilterBarProps {
-  invFilterFields: import('mui-schema-form-builder').FieldConfig[];
+  invFilterFields: FieldConfig[];
   defaultValues: { status: string };
-  onChange: (values: Record<string, unknown>) => void;
+  onChange: (values: FilterValues) => void;
 }
 
 // ─── Re-export consumed types so importers don't need @/types/api ──────────────

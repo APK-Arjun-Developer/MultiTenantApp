@@ -1,4 +1,4 @@
-﻿import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   // ─── Page root ──────────────────────────────────────────────────────────────
@@ -151,4 +151,4 @@ export const styles = {
   pageIconSize: {
     fontSize: '1.125rem',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

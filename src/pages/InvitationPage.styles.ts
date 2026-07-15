@@ -1,4 +1,4 @@
-﻿import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   // InvitationInvalid
@@ -75,4 +75,4 @@ export const styles = {
   headerIconSize: {
     fontSize: '0.875rem',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

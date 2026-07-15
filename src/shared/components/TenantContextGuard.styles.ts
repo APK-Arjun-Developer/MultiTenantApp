@@ -1,4 +1,4 @@
-import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   emptyState: {
@@ -38,4 +38,4 @@ export const styles = {
     maxWidth: 300,
     color: 'text.secondary',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

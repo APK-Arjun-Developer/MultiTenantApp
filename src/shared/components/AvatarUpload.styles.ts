@@ -1,4 +1,4 @@
-﻿import type { Sx } from '@/types/styles';
+﻿import type { Sx } from '@/types';
 
 export const styles = {
   outerBox: {

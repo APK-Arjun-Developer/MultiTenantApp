@@ -373,7 +373,7 @@ export const DashboardLayout = memo(function DashboardLayout() {
     try {
       await stopImpersonation().unwrap();
       dispatch(apiSlice.util.resetApiState());
-      dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
+      void dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
       snackbar.success('Impersonation ended. Back to admin session.');
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to stop impersonation.');

@@ -1,4 +1,4 @@
-﻿import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   root: {
@@ -84,4 +84,4 @@ export const styles = {
   titleIconSize: {
     fontSize: '0.875rem',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

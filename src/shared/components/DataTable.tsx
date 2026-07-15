@@ -142,7 +142,7 @@ export const DataTable = React.memo(function DataTable<TData>({
         <Box sx={styles.paginationContainer}>
           <TablePagination
             component="div"
-            count={totalCount!}
+            count={totalCount ?? 0}
             page={page}
             rowsPerPage={pageSize}
             rowsPerPageOptions={[5, 10, 25, 50]}

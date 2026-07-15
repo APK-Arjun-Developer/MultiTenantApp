@@ -1,4 +1,4 @@
-import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const DRAWER_WIDTH = 240;
 export const DRAWER_COLLAPSED_WIDTH = 64;
@@ -283,4 +283,4 @@ export const styles = {
     flex: 1,
     py: 8,
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

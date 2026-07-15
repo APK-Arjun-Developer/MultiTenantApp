@@ -1,5 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { memo, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -39,9 +38,15 @@ import { LoadingButton } from '@/shared/components/LoadingButton';
 import { LabelValue } from '@/shared/components/LabelValue';
 import { ViewDialog } from '@/shared/components/ViewDialog';
 import { formatAddress } from '@/shared/utils/format';
-import { useDebounce } from '@/shared/hooks';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import { usePermission } from '@/shared/hooks/usePermission';
+import {
+  useTableState,
+  useFilterState,
+  useBooleanDialog,
+  useItemDialog,
+  useUrlTabs,
+  useSnackbar,
+  usePermission,
+} from '@/shared/hooks';
 import {
   addressZodShape,
   requiredAddressZodShape,
@@ -88,14 +93,14 @@ import type {
 const onboardSchema = z.object({
   tenantName: z.string().min(1, 'Tenant name is required').max(200),
   adminFullName: z.string().min(1, 'Admin full name is required').max(200),
-  adminEmail: z.string().email('Invalid email address'),
+  adminEmail: z.email('Invalid email address'),
   ...requiredTenantAddressZodShape,
   ...requiredAddressZodShape,
 });
 type OnboardValues = z.infer<typeof onboardSchema>;
 
 const inviteSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.email('Invalid email address'),
 });
 type InviteValues = z.infer<typeof inviteSchema>;
 
@@ -110,6 +115,12 @@ const planSchema = z.object({
   planType: z.string().min(1, 'Plan is required'),
 });
 type PlanValues = z.infer<typeof planSchema>;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TENANTS_TABS = ['tenants', 'invitations'] as const;
+const TENANT_FILTER_DEFAULT = { search: '', status: '', createdVia: '' };
+const INV_FILTER_DEFAULT = { status: '' };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -184,7 +195,7 @@ const TenantsPageFilterBar = memo(function TenantsPageFilterBar({
     <Box sx={styles.filterBar}>
       <FilterForm
         fields={fields}
-        defaultValues={{ search: '', status: '', createdVia: '' }}
+        defaultValues={TENANT_FILTER_DEFAULT}
         onChange={onChange}
         showReset
         spacing={2}
@@ -219,7 +230,7 @@ const TenantsInvitationsFilterBar = memo(function TenantsInvitationsFilterBar({
     <Box sx={styles.filterBar}>
       <FilterForm
         fields={fields}
-        defaultValues={{ status: '' }}
+        defaultValues={INV_FILTER_DEFAULT}
         onChange={onChange}
         showReset
         spacing={2}
@@ -357,7 +368,7 @@ const OnboardTenantDialog = memo(function OnboardTenantDialog({
           ]}
           onSubmit={onSubmit}
           renderActions={renderActions}
-          sx={styles.formInDialog as never}
+          sx={styles.formInDialog}
         />
       </DialogContent>
     </Dialog>
@@ -412,7 +423,7 @@ const InviteTenantDialog = memo(function InviteTenantDialog({ open, onClose }: I
           onCancel={onClose}
           submitText="Send invitation"
           cancelText="Cancel"
-          sx={styles.formInDialog as never}
+          sx={styles.formInDialog}
         />
       </DialogContent>
     </Dialog>
@@ -478,7 +489,7 @@ const EditTenantDialog = memo(function EditTenantDialog({ tenant, onClose }: Edi
           onCancel={onClose}
           submitText="Save changes"
           cancelText="Cancel"
-          sx={styles.formInDialog as never}
+          sx={styles.formInDialog}
         />
       </DialogContent>
     </Dialog>
@@ -587,7 +598,7 @@ const ChangePlanDialog = memo(function ChangePlanDialog({
           onCancel={onClose}
           submitText="Update plan"
           cancelText="Cancel"
-          sx={styles.formInDialogWithTopMargin as never}
+          sx={styles.formInDialogWithTopMargin}
         />
       </DialogContent>
     </Dialog>
@@ -609,8 +620,6 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
   return <Chip label={status} color={color} size="small" variant="filled" />;
 });
 
-const TENANTS_TABS = ['tenants', 'invitations'] as const;
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const TenantsPage = memo(function TenantsPage() {
@@ -623,38 +632,37 @@ export const TenantsPage = memo(function TenantsPage() {
   const canDelete = usePermission('Tenants.Delete');
   const canEditSubscription = usePermission('Subscriptions.Edit');
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tab = useMemo(() => {
-    const idx = (TENANTS_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
-    return idx >= 0 ? idx : 0;
-  }, [searchParams]);
+  const { tab, handleTabChange } = useUrlTabs(TENANTS_TABS);
 
   // Tenants tab
-  const [tenantFilter, setTenantFilter] = useState({ search: '', status: '', createdVia: '' });
-  const debouncedSearch = useDebounce(tenantFilter.search, 300);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  const [onboardOpen, setOnboardOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [viewTenant, setViewTenant] = useState<TenantDto | null>(null);
-  const [editTenant, setEditTenant] = useState<TenantDto | null>(null);
-  const [deleteTenant, setDeleteTenant] = useState<TenantDto | null>(null);
-  const [changePlanTenant, setChangePlanTenant] = useState<TenantDto | null>(null);
-  const [logoTenant, setLogoTenant] = useState<TenantDto | null>(null);
+  const tenantsTable = useTableState({ initialPageSize: 10 });
+  const {
+    filter: tenantFilter,
+    debouncedSearch,
+    handleFilterChange: handleTenantFilterChange,
+  } = useFilterState(TENANT_FILTER_DEFAULT, tenantsTable.setPage);
 
   // Invitations tab
-  const [invPage, setInvPage] = useState(0);
-  const [invPageSize, setInvPageSize] = useState(20);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [pendingRevoke, setPendingRevoke] = useState<TenantCreationInvitationDto | null>(null);
+  const invTable = useTableState();
+  const { filter: invFilter, handleFilterChange: handleInvFilterChange } = useFilterState(
+    INV_FILTER_DEFAULT,
+    invTable.setPage,
+  );
+
+  // Dialogs
+  const onboardDialog = useBooleanDialog();
+  const inviteDialog = useBooleanDialog();
+  const viewDialog = useItemDialog<TenantDto>();
+  const editDialog = useItemDialog<TenantDto>();
+  const deleteDialog = useItemDialog<TenantDto>();
+  const changePlanDialog = useItemDialog<TenantDto>();
+  const logoDialog = useItemDialog<TenantDto>();
+  const revokeDialog = useItemDialog<TenantCreationInvitationDto>();
 
   // Data
   const { data, isLoading } = useGetTenantsQuery({
-    page: page + 1,
-    pageSize,
+    page: tenantsTable.page + 1,
+    pageSize: tenantsTable.pageSize,
     search: debouncedSearch || undefined,
     isActive:
       tenantFilter.status === 'active'
@@ -663,15 +671,15 @@ export const TenantsPage = memo(function TenantsPage() {
           ? false
           : undefined,
     createdVia: (tenantFilter.createdVia as 'Direct' | 'Invitation') || undefined,
-    sortBy,
-    sortOrder: sortBy ? sortOrder : undefined,
+    sortBy: tenantsTable.sortBy,
+    sortOrder: tenantsTable.sortBy ? tenantsTable.sortOrder : undefined,
   });
 
   const { data: invitationsData, isLoading: isLoadingInvitations } =
     useGetTenantCreationInvitationsQuery({
-      page: invPage + 1,
-      pageSize: invPageSize,
-      status: statusFilter || undefined,
+      page: invTable.page + 1,
+      pageSize: invTable.pageSize,
+      status: invFilter.status || undefined,
     });
 
   const [deleteTenantMutation, { isLoading: isDeleting }] = useDeleteTenantMutation();
@@ -681,81 +689,30 @@ export const TenantsPage = memo(function TenantsPage() {
   const [uploadTenantLogo, { isLoading: isUploadingLogo }] = useUploadTenantLogoByAdminMutation();
   const [removeTenantLogo, { isLoading: isRemovingLogo }] = useRemoveTenantLogoByAdminMutation();
 
-  const tenants = useMemo(() => data?.items ?? [], [data]);
-  const totalCount = useMemo(() => data?.totalCount ?? 0, [data]);
-
   // ─── Callbacks ────────────────────────────────────────────────────────────
 
-  const handleTabChange = useCallback(
-    (_: React.SyntheticEvent, v: number) => {
-      setSearchParams({ tab: TENANTS_TABS[v] }, { replace: true });
-    },
-    [setSearchParams],
-  );
-
-  const handleSortChange = useCallback(
-    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
-      setSortBy(newSortBy);
-      setSortOrder(newSortOrder ?? 'asc');
-      setPage(0);
-    },
-    [],
-  );
-
-  const handleOnboardOpen = useCallback(() => setOnboardOpen(true), []);
-  const handleOnboardClose = useCallback(() => setOnboardOpen(false), []);
-  const handleInviteOpen = useCallback(() => setInviteOpen(true), []);
-  const handleInviteClose = useCallback(() => setInviteOpen(false), []);
-
-  const handleViewClose = useCallback(() => setViewTenant(null), []);
-  const handleEditClose = useCallback(() => setEditTenant(null), []);
-  const handleChangePlanClose = useCallback(() => setChangePlanTenant(null), []);
-  const handleLogoClose = useCallback(() => setLogoTenant(null), []);
-  const handleDeleteCancel = useCallback(() => setDeleteTenant(null), []);
-  const handleRevokeCancel = useCallback(() => setPendingRevoke(null), []);
-
-  const handleTenantFilterChange = useCallback((values: Record<string, unknown>) => {
-    setTenantFilter(values as typeof tenantFilter);
-    setPage(0);
-  }, []);
-
-  const handleInvFilterChange = useCallback((values: Record<string, unknown>) => {
-    setStatusFilter((values.status as string) ?? '');
-    setInvPage(0);
-  }, []);
-
-  const handlePageSizeChange = useCallback((size: number) => {
-    setPageSize(size);
-    setPage(0);
-  }, []);
-
-  const handleInvPageSizeChange = useCallback((size: number) => {
-    setInvPageSize(size);
-    setInvPage(0);
-  }, []);
-
   const handleDelete = useCallback(async () => {
-    if (!deleteTenant) return;
+    if (!deleteDialog.item) return;
     try {
-      await deleteTenantMutation({ id: deleteTenant.id }).unwrap();
-      snackbar.success(`Tenant "${deleteTenant.name}" deleted.`);
-      setDeleteTenant(null);
+      await deleteTenantMutation({ id: deleteDialog.item.id }).unwrap();
+      snackbar.success(`Tenant "${deleteDialog.item.name}" deleted.`);
+      deleteDialog.onClose();
     } catch (err) {
       const error = err as ApiError;
       snackbar.error(error.message || 'Failed to delete tenant.');
     }
-  }, [deleteTenant, deleteTenantMutation, snackbar]);
+  }, [deleteDialog, deleteTenantMutation, snackbar]);
 
   const handleRevokeInvitation = useCallback(async () => {
-    if (!pendingRevoke) return;
+    if (!revokeDialog.item) return;
     try {
-      await revokeTenantInvitation(pendingRevoke.id).unwrap();
+      await revokeTenantInvitation(revokeDialog.item.id).unwrap();
       snackbar.success('Invitation revoked.');
-      setPendingRevoke(null);
+      revokeDialog.onClose();
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to revoke invitation.');
     }
-  }, [pendingRevoke, revokeTenantInvitation, snackbar]);
+  }, [revokeDialog, revokeTenantInvitation, snackbar]);
 
   const handleResendInvitation = useCallback(
     async (inv: TenantCreationInvitationDto) => {
@@ -771,28 +728,28 @@ export const TenantsPage = memo(function TenantsPage() {
 
   const handleUploadLogo = useCallback(
     async (file: File) => {
-      if (!logoTenant) return;
+      if (!logoDialog.item) return;
       try {
-        const updated = await uploadTenantLogo({ tenantId: logoTenant.id, file }).unwrap();
-        setLogoTenant(updated);
+        const updated = await uploadTenantLogo({ tenantId: logoDialog.item.id, file }).unwrap();
+        logoDialog.setItem(updated);
         snackbar.success('Company logo updated.');
       } catch (err) {
         snackbar.error((err as ApiError).message || 'Failed to upload logo.');
       }
     },
-    [logoTenant, uploadTenantLogo, snackbar],
+    [logoDialog, uploadTenantLogo, snackbar],
   );
 
   const handleRemoveLogo = useCallback(async () => {
-    if (!logoTenant) return;
+    if (!logoDialog.item) return;
     try {
-      const updated = await removeTenantLogo(logoTenant.id).unwrap();
-      setLogoTenant(updated);
+      const updated = await removeTenantLogo(logoDialog.item.id).unwrap();
+      logoDialog.setItem(updated);
       snackbar.success('Company logo removed.');
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to remove logo.');
     }
-  }, [logoTenant, removeTenantLogo, snackbar]);
+  }, [logoDialog, removeTenantLogo, snackbar]);
 
   // ─── Column defs ──────────────────────────────────────────────────────────
 
@@ -810,7 +767,7 @@ export const TenantsPage = memo(function TenantsPage() {
             <Avatar
               src={logoSrc}
               sx={styles.avatarLogo}
-              onClick={() => setLogoTenant(row.original)}
+              onClick={() => logoDialog.onOpen(row.original)}
             >
               {row.original.name.charAt(0).toUpperCase()}
             </Avatar>
@@ -862,14 +819,14 @@ export const TenantsPage = memo(function TenantsPage() {
           <Box sx={styles.actionsCell}>
             {canView && (
               <Tooltip title="View">
-                <IconButton size="small" onClick={() => setViewTenant(row.original)}>
+                <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
                   <VisibilityIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {canEdit && (
               <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => setEditTenant(row.original)}>
+                <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
                   <EditIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -879,7 +836,7 @@ export const TenantsPage = memo(function TenantsPage() {
                 <IconButton
                   size="small"
                   color="primary"
-                  onClick={() => setChangePlanTenant(row.original)}
+                  onClick={() => changePlanDialog.onOpen(row.original)}
                 >
                   <WorkspacePremiumIcon fontSize="small" />
                 </IconButton>
@@ -890,7 +847,7 @@ export const TenantsPage = memo(function TenantsPage() {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => setDeleteTenant(row.original)}
+                  onClick={() => deleteDialog.onOpen(row.original)}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -900,7 +857,17 @@ export const TenantsPage = memo(function TenantsPage() {
         ),
       },
     ],
-    [canView, canEdit, canEditSubscription, canDelete],
+    [
+      logoDialog,
+      canView,
+      canEdit,
+      canEditSubscription,
+      canDelete,
+      viewDialog,
+      editDialog,
+      changePlanDialog,
+      deleteDialog,
+    ],
   );
 
   const invitationColumns = useMemo<ColumnDef<TenantCreationInvitationDto>[]>(
@@ -952,7 +919,11 @@ export const TenantsPage = memo(function TenantsPage() {
                       </span>
                     </Tooltip>
                     <Tooltip title="Revoke invitation">
-                      <IconButton size="small" color="error" onClick={() => setPendingRevoke(inv)}>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => revokeDialog.onOpen(inv)}
+                      >
                         <BlockIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -963,7 +934,7 @@ export const TenantsPage = memo(function TenantsPage() {
           ] as ColumnDef<TenantCreationInvitationDto>[])
         : []),
     ],
-    [canCreate, isResendingInvitation, handleResendInvitation],
+    [canCreate, isResendingInvitation, handleResendInvitation, revokeDialog],
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -972,8 +943,8 @@ export const TenantsPage = memo(function TenantsPage() {
     <Box sx={styles.root}>
       <TenantsPageHeader
         canCreate={canCreate}
-        onInviteClick={handleInviteOpen}
-        onOnboardClick={handleOnboardOpen}
+        onInviteClick={inviteDialog.onOpen}
+        onOnboardClick={onboardDialog.onOpen}
       />
 
       <Tabs value={tab} onChange={handleTabChange} sx={styles.tabsRow}>
@@ -991,18 +962,18 @@ export const TenantsPage = memo(function TenantsPage() {
         <Box>
           <TenantsPageFilterBar onChange={handleTenantFilterChange} />
           <DataTable
-            data={tenants}
+            data={data?.items ?? []}
             columns={tenantColumns}
             isLoading={isLoading}
-            totalCount={totalCount}
-            page={page}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={handlePageSizeChange}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
+            totalCount={data?.totalCount ?? 0}
+            page={tenantsTable.page}
+            pageSize={tenantsTable.pageSize}
+            onPageChange={tenantsTable.setPage}
+            onPageSizeChange={tenantsTable.handlePageSizeChange}
+            sortBy={tenantsTable.sortBy}
+            sortOrder={tenantsTable.sortOrder}
             sortableColumns={['name']}
-            onSortChange={handleSortChange}
+            onSortChange={tenantsTable.handleSortChange}
           />
         </Box>
       )}
@@ -1023,52 +994,54 @@ export const TenantsPage = memo(function TenantsPage() {
             columns={invitationColumns}
             isLoading={isLoadingInvitations}
             totalCount={invitationsData?.totalCount ?? 0}
-            page={invPage}
-            pageSize={invPageSize}
-            onPageChange={setInvPage}
-            onPageSizeChange={handleInvPageSizeChange}
+            page={invTable.page}
+            pageSize={invTable.pageSize}
+            onPageChange={invTable.setPage}
+            onPageSizeChange={invTable.handlePageSizeChange}
           />
         </Box>
       )}
 
       {/* Dialogs */}
-      <OnboardTenantDialog open={onboardOpen} onClose={handleOnboardClose} />
-      <InviteTenantDialog open={inviteOpen} onClose={handleInviteClose} />
-      <ViewTenantDialog tenant={viewTenant} onClose={handleViewClose} />
-      <EditTenantDialog tenant={editTenant} onClose={handleEditClose} />
-      <ChangePlanDialog tenant={changePlanTenant} onClose={handleChangePlanClose} />
+      <OnboardTenantDialog open={onboardDialog.open} onClose={onboardDialog.onClose} />
+      <InviteTenantDialog open={inviteDialog.open} onClose={inviteDialog.onClose} />
+      <ViewTenantDialog tenant={viewDialog.item} onClose={viewDialog.onClose} />
+      <EditTenantDialog tenant={editDialog.item} onClose={editDialog.onClose} />
+      <ChangePlanDialog tenant={changePlanDialog.item} onClose={changePlanDialog.onClose} />
 
       <AvatarManageModal
-        open={!!logoTenant}
-        onClose={handleLogoClose}
-        src={logoTenant?.profileFileId ? getTenantLogoUrl(logoTenant.profileFileId) : null}
-        initials={logoTenant?.name?.charAt(0)?.toUpperCase() ?? '?'}
+        open={logoDialog.open}
+        onClose={logoDialog.onClose}
+        src={
+          logoDialog.item?.profileFileId ? getTenantLogoUrl(logoDialog.item.profileFileId) : null
+        }
+        initials={logoDialog.item?.name?.charAt(0)?.toUpperCase() ?? '?'}
         title="Company logo"
         uploading={isUploadingLogo || isRemovingLogo}
         onUpload={handleUploadLogo}
-        onRemove={logoTenant?.profileFileId ? handleRemoveLogo : undefined}
+        onRemove={logoDialog.item?.profileFileId ? handleRemoveLogo : undefined}
       />
 
       <ConfirmDialog
-        open={!!deleteTenant}
-        title={`Delete "${deleteTenant?.name}"?`}
+        open={deleteDialog.open}
+        title={`Delete "${deleteDialog.item?.name}"?`}
         description="This will permanently remove the tenant. This action cannot be undone."
         confirmLabel="Delete"
         danger
         loading={isDeleting}
         onConfirm={handleDelete}
-        onCancel={handleDeleteCancel}
+        onCancel={deleteDialog.onClose}
       />
 
       <ConfirmDialog
-        open={!!pendingRevoke}
-        title={`Revoke invitation for "${pendingRevoke?.email}"?`}
+        open={revokeDialog.open}
+        title={`Revoke invitation for "${revokeDialog.item?.email}"?`}
         description="The invitation link will be invalidated immediately."
         confirmLabel="Revoke"
         danger
         loading={isRevoking}
         onConfirm={handleRevokeInvitation}
-        onCancel={handleRevokeCancel}
+        onCancel={revokeDialog.onClose}
       />
     </Box>
   );

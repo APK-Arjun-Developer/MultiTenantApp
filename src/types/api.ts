@@ -1,5 +1,8 @@
 export type UUID = string;
 
+/** Shape of values emitted by FilterForm's `onChange` and used as `defaultValues`. */
+export type FilterValues = Record<string, unknown>;
+
 /** Every API response is wrapped in this envelope (confirmed against the live API). */
 export interface ApiResponse<T> {
   data: T;

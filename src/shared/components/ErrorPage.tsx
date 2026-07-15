@@ -21,7 +21,7 @@ export const ErrorPage = React.memo(function ErrorPage() {
   }, [error]);
 
   const handleBack = useCallback(() => {
-    navigate('/dashboard', { replace: true });
+    void navigate('/dashboard', { replace: true });
   }, [navigate]);
 
   return (

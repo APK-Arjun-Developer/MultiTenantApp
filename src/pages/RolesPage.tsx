@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -20,9 +20,14 @@ import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { LabelValue } from '@/shared/components/LabelValue';
 import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { ViewDialog } from '@/shared/components/ViewDialog';
-import { useDebounce } from '@/shared/hooks';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import { usePermission } from '@/shared/hooks/usePermission';
+import {
+  useTableState,
+  useFilterState,
+  useBooleanDialog,
+  useItemDialog,
+  useSnackbar,
+  usePermission,
+} from '@/shared/hooks';
 import {
   useGetRolesQuery,
   useCreateRoleMutation,
@@ -50,6 +55,10 @@ import { createSchema, editSchema } from './RolesPage.types';
 function extractPermissionIds(raw: unknown[]): string[] {
   return raw.map((r) => (typeof r === 'string' ? r : (r as { value: string }).value));
 }
+
+// ─── Module-level filter default (stable reference) ───────────────────────────
+
+const ROLES_FILTER_DEFAULT: RolesFilter = { search: '', permissions: [] };
 
 // ─── Header sub-component ─────────────────────────────────────────────────────
 
@@ -86,8 +95,8 @@ const RolesFilterBar = memo(function RolesFilterBar({
     <Box sx={styles.filterBar}>
       <FilterForm
         fields={fields}
-        defaultValues={{ search: '', permissions: [] }}
-        onChange={(values) => onFilterChange(values as RolesFilter)}
+        defaultValues={ROLES_FILTER_DEFAULT}
+        onChange={onFilterChange}
         showReset
         spacing={2}
       />
@@ -160,7 +169,7 @@ const CreateRoleDialog = memo(function CreateRoleDialog({
           onCancel={onClose}
           submitText="Create role"
           cancelText="Cancel"
-          sx={styles.formBuilder as never}
+          sx={styles.formBuilder}
         />
       </DialogContent>
     </Dialog>
@@ -243,7 +252,7 @@ const EditRoleDialog = memo(function EditRoleDialog({
           onCancel={onClose}
           submitText="Save changes"
           cancelText="Cancel"
-          sx={styles.formBuilder as never}
+          sx={styles.formBuilder}
         />
       </DialogContent>
     </Dialog>
@@ -290,19 +299,17 @@ export const RolesPage = memo(function RolesPage() {
   const canEdit = usePermission('Roles.Edit');
   const canDelete = usePermission('Roles.Delete');
 
-  const [rolesFilter, setRolesFilter] = useState<RolesFilter>({
-    search: '',
-    permissions: [],
-  });
-  const debouncedSearch = useDebounce(rolesFilter.search, 400);
-  const [page, setPage] = useState(0);
-  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const table = useTableState();
+  const {
+    filter: rolesFilter,
+    debouncedSearch,
+    handleFilterChange,
+  } = useFilterState<RolesFilter>(ROLES_FILTER_DEFAULT, table.setPage);
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editRole, setEditRole] = useState<RoleDto | null>(null);
-  const [viewRole, setViewRole] = useState<RoleDto | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<RoleDto | null>(null);
+  const createDialog = useBooleanDialog();
+  const editDialog = useItemDialog<RoleDto>();
+  const viewDialog = useItemDialog<RoleDto>();
+  const deleteDialog = useItemDialog<RoleDto>();
 
   const { data: permissionsData } = useGetPermissionsQuery();
 
@@ -333,47 +340,27 @@ export const RolesPage = memo(function RolesPage() {
   );
 
   const { data: rolesData, isLoading } = useGetRolesQuery({
-    page: page + 1,
-    pageSize: 20,
+    page: table.page + 1,
+    pageSize: table.pageSize,
     search: debouncedSearch || undefined,
     permissionIds: rolesFilter.permissions.length > 0 ? rolesFilter.permissions : undefined,
-    sortBy,
-    sortOrder: sortBy ? sortOrder : undefined,
+    sortBy: table.sortBy,
+    sortOrder: table.sortBy ? table.sortOrder : undefined,
   });
 
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
-  const handleSortChange = useCallback(
-    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
-      setSortBy(newSortBy);
-      setSortOrder(newSortOrder ?? 'asc');
-      setPage(0);
-    },
-    [],
-  );
-
-  const handleOpenCreate = useCallback(() => setCreateOpen(true), []);
-  const handleCloseCreate = useCallback(() => setCreateOpen(false), []);
-  const handleCloseEdit = useCallback(() => setEditRole(null), []);
-  const handleCloseView = useCallback(() => setViewRole(null), []);
-  const handleCloseDelete = useCallback(() => setDeleteTarget(null), []);
-
-  const handleFilterChange = useCallback((values: RolesFilter) => {
-    setRolesFilter(values);
-    setPage(0);
-  }, []);
-
   const handleDelete = useCallback(async () => {
-    if (!deleteTarget) return;
+    if (!deleteDialog.item) return;
     try {
-      await deleteRole(deleteTarget.name).unwrap();
-      snackbar.success(`Role "${deleteTarget.name}" deleted.`);
+      await deleteRole(deleteDialog.item.name).unwrap();
+      snackbar.success(`Role "${deleteDialog.item.name}" deleted.`);
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to delete role.');
     } finally {
-      setDeleteTarget(null);
+      deleteDialog.onClose();
     }
-  }, [deleteRole, deleteTarget, snackbar]);
+  }, [deleteDialog, deleteRole, snackbar]);
 
   const columns = useMemo<ColumnDef<RoleDto>[]>(
     () => [
@@ -422,14 +409,14 @@ export const RolesPage = memo(function RolesPage() {
           <Box sx={styles.actionButtons}>
             {canView && (
               <Tooltip title="View">
-                <IconButton size="small" onClick={() => setViewRole(row.original)}>
+                <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
                   <VisibilityIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {canEdit && (
               <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => setEditRole(row.original)}>
+                <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
                   <EditIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -439,7 +426,7 @@ export const RolesPage = memo(function RolesPage() {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => setDeleteTarget(row.original)}
+                  onClick={() => deleteDialog.onOpen(row.original)}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -449,13 +436,13 @@ export const RolesPage = memo(function RolesPage() {
         ),
       },
     ],
-    [canView, canEdit, canDelete],
+    [canView, canEdit, canDelete, viewDialog, editDialog, deleteDialog],
   );
 
   return (
     <TenantContextGuard>
       <Box sx={styles.root}>
-        <RolesPageHeader canCreate={canCreate} onCreateClick={handleOpenCreate} />
+        <RolesPageHeader canCreate={canCreate} onCreateClick={createDialog.onOpen} />
 
         <RolesFilterBar fields={rolesFilterFields} onFilterChange={handleFilterChange} />
 
@@ -468,38 +455,38 @@ export const RolesPage = memo(function RolesPage() {
             columns={columns}
             data={rolesData?.items ?? []}
             isLoading={isLoading}
-            page={page}
-            pageSize={20}
+            page={table.page}
+            pageSize={table.pageSize}
             totalCount={rolesData?.totalCount ?? 0}
-            onPageChange={setPage}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
+            onPageChange={table.setPage}
+            sortBy={table.sortBy}
+            sortOrder={table.sortOrder}
             sortableColumns={['name']}
-            onSortChange={handleSortChange}
+            onSortChange={table.handleSortChange}
           />
         )}
 
-        <ViewRoleDialog role={viewRole} onClose={handleCloseView} />
+        <ViewRoleDialog role={viewDialog.item} onClose={viewDialog.onClose} />
         <CreateRoleDialog
-          open={createOpen}
-          onClose={handleCloseCreate}
+          open={createDialog.open}
+          onClose={createDialog.onClose}
           permissionOptions={permissionOptions}
         />
         <EditRoleDialog
-          open={!!editRole}
-          onClose={handleCloseEdit}
-          role={editRole}
+          open={editDialog.open}
+          onClose={editDialog.onClose}
+          role={editDialog.item}
           permissionOptions={permissionOptions}
         />
         <ConfirmDialog
-          open={!!deleteTarget}
-          title={`Delete "${deleteTarget?.name}"?`}
+          open={deleteDialog.open}
+          title={`Delete "${deleteDialog.item?.name}"?`}
           description="This role will be permanently removed. Roles assigned to users cannot be deleted."
           confirmLabel="Delete"
           danger
           loading={isDeleting}
           onConfirm={handleDelete}
-          onCancel={handleCloseDelete}
+          onCancel={deleteDialog.onClose}
         />
       </Box>
     </TenantContextGuard>

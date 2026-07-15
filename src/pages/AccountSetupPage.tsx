@@ -285,7 +285,7 @@ export const AccountSetupPage = memo(function AccountSetupPage() {
           fields={passwordFields}
           onSubmit={onSubmitDirect}
           renderActions={renderDirectActions}
-          sx={styles.formBuilder as never}
+          sx={styles.formBuilder}
         />
       </Box>
     );
@@ -312,7 +312,7 @@ export const AccountSetupPage = memo(function AccountSetupPage() {
         ]}
         onSubmit={onSubmitFull}
         renderActions={renderWizardActions}
-        sx={styles.formBuilder as never}
+        sx={styles.formBuilder}
       />
     </Box>
   );

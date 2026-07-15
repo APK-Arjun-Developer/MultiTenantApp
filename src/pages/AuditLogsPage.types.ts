@@ -1,4 +1,5 @@
 import type { FieldConfig } from 'mui-schema-form-builder';
+import type { FilterValues } from '@/types/api';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -13,7 +14,7 @@ export type ModuleColor =
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
-export interface AuditFilter {
+export interface AuditFilter extends FilterValues {
   module: string;
   dateFrom: string;
   dateTo: string;

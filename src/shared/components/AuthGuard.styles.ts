@@ -1,4 +1,4 @@
-import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const styles = {
   loadingContainer: {
@@ -7,4 +7,4 @@ export const styles = {
     alignItems: 'center',
     height: '100vh',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

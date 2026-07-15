@@ -1,25 +1,24 @@
-import type { TenantAdminDto, TenantAdminInvitationDto, AddressDto } from '@/types/api';
+import type {
+  TenantAdminDto,
+  TenantAdminInvitationDto,
+  AddressDto,
+  FilterValues,
+} from '@/types/api';
+import type { FieldConfig } from 'mui-schema-form-builder';
+import type { AddressValues, TenantAddressValues } from '@/shared/forms/addressFields';
 
 // ─── Zod-inferred value shapes ────────────────────────────────────────────────
 // These mirror the schemas defined in TenantAdminsPage.tsx so sub-components
 // can reference them without importing z.infer at every call site.
 
-export type CreateValues = {
-  tenantId: string;
-  fullName: string;
-  email: string;
-  [key: string]: unknown; // address fields spread from requiredAddressZodShape
-};
+export type CreateValues = { tenantId: string; fullName: string; email: string } & AddressValues;
 
 export type InviteValues = {
   tenantId: string;
   email: string;
 };
 
-export type EditValues = {
-  fullName: string;
-  [key: string]: unknown; // address + tenantAddress fields
-};
+export type EditValues = { fullName: string } & AddressValues & TenantAddressValues;
 
 // ─── Action type ──────────────────────────────────────────────────────────────
 
@@ -65,15 +64,15 @@ export interface TenantAdminsPageHeaderProps {
 }
 
 export interface TenantAdminsFilterBarProps {
-  adminsFilterFields: import('mui-schema-form-builder').FieldConfig[];
+  adminsFilterFields: FieldConfig[];
   defaultValues: { search: string; tenant: string; status: string; createdVia: string };
-  onChange: (values: Record<string, unknown>) => void;
+  onChange: (values: FilterValues) => void;
 }
 
 export interface TenantAdminsInvitationsFilterBarProps {
-  adminsInvFilterFields: import('mui-schema-form-builder').FieldConfig[];
+  adminsInvFilterFields: FieldConfig[];
   defaultValues: { status: string };
-  onChange: (values: Record<string, unknown>) => void;
+  onChange: (values: FilterValues) => void;
 }
 
 // ─── Re-export api types used across this page ────────────────────────────────

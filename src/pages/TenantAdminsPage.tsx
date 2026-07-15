@@ -1,5 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { memo, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
@@ -34,9 +33,15 @@ import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
 import { LabelValue } from '@/shared/components/LabelValue';
 import { ViewDialog } from '@/shared/components/ViewDialog';
 import { formatAddress } from '@/shared/utils/format';
-import { useDebounce } from '@/shared/hooks';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import { usePermission } from '@/shared/hooks/usePermission';
+import {
+  useTableState,
+  useFilterState,
+  useBooleanDialog,
+  useItemDialog,
+  useUrlTabs,
+  useSnackbar,
+  usePermission,
+} from '@/shared/hooks';
 import {
   addressZodShape,
   requiredAddressZodShape,
@@ -95,13 +100,13 @@ import type {
 const createSchema = z.object({
   tenantId: z.string().min(1, 'Tenant is required'),
   fullName: z.string().min(1, 'Full name is required').max(200),
-  email: z.string().email('Invalid email address'),
+  email: z.email('Invalid email address'),
   ...requiredAddressZodShape,
 });
 
 const inviteSchema = z.object({
   tenantId: z.string().min(1, 'Tenant is required'),
-  email: z.string().email('Invalid email address'),
+  email: z.email('Invalid email address'),
 });
 
 const editSchema = z.object({
@@ -109,6 +114,12 @@ const editSchema = z.object({
   ...addressZodShape,
   ...tenantAddressZodShape,
 });
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const ADMINS_TABS = ['admins', 'invitations'] as const;
+const ADMINS_FILTER_DEFAULT = { search: '', tenant: '', status: '', createdVia: '' };
+const INV_FILTER_DEFAULT = { status: '' };
 
 // ─── Section sub-components ───────────────────────────────────────────────────
 
@@ -250,7 +261,7 @@ const CreateAdminDialog = memo(function CreateAdminDialog({
           onCancel={onClose}
           submitText="Create admin"
           cancelText="Cancel"
-          sx={styles.formBuilderInDialog as never}
+          sx={styles.formBuilderInDialog}
         />
       </DialogContent>
     </Dialog>
@@ -312,7 +323,7 @@ const InviteAdminDialog = memo(function InviteAdminDialog({
           onCancel={onClose}
           submitText="Send invitation"
           cancelText="Cancel"
-          sx={styles.formBuilderInDialog as never}
+          sx={styles.formBuilderInDialog}
         />
       </DialogContent>
     </Dialog>
@@ -354,12 +365,12 @@ const EditAdminDialog = memo(function EditAdminDialog({
         await updateTenantAdmin({
           userId: admin.id,
           fullName: values.fullName,
-          ...buildAddressPayload(values as never),
+          ...buildAddressPayload(values),
         }).unwrap();
         if (admin.tenant?.id) {
           await updateTenant({
             id: admin.tenant.id,
-            ...buildTenantAddressPayload(values as never),
+            ...buildTenantAddressPayload(values),
           });
         }
         snackbar.success('Tenant admin updated.');
@@ -384,7 +395,7 @@ const EditAdminDialog = memo(function EditAdminDialog({
           onCancel={onClose}
           submitText="Save changes"
           cancelText="Cancel"
-          sx={styles.formBuilderInDialog as never}
+          sx={styles.formBuilderInDialog}
         />
       </DialogContent>
     </Dialog>
@@ -436,8 +447,6 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
   return <Chip label={status} color={color} size="small" variant="outlined" />;
 });
 
-const ADMINS_TABS = ['admins', 'invitations'] as const;
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const TenantAdminsPage = memo(function TenantAdminsPage() {
@@ -456,40 +465,31 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
   const canResend = usePermission('Onboarding.Resend');
   const canRevoke = usePermission('Onboarding.Revoke');
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tab = useMemo(() => {
-    const idx = (ADMINS_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
-    return idx >= 0 ? idx : 0;
-  }, [searchParams]);
+  const { tab, handleTabChange } = useUrlTabs(ADMINS_TABS);
 
   // Admins tab
-  const [adminsFilter, setAdminsFilter] = useState({
-    search: '',
-    tenant: '',
-    status: '',
-    createdVia: '',
-  });
-  const debouncedSearch = useDebounce(adminsFilter.search, 300);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  const [createOpen, setCreateOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [viewAdmin, setViewAdmin] = useState<TenantAdminDto | null>(null);
-  const [editAdmin, setEditAdmin] = useState<TenantAdminDto | null>(null);
-  const [avatarAdmin, setAvatarAdmin] = useState<TenantAdminDto | null>(null);
-  const [pendingAction, setPendingAction] = useState<{
-    type: ActionType;
-    admin: TenantAdminDto;
-  } | null>(null);
+  const adminsTable = useTableState();
+  const {
+    filter: adminsFilter,
+    debouncedSearch,
+    handleFilterChange: handleAdminsFilterChange,
+  } = useFilterState(ADMINS_FILTER_DEFAULT, adminsTable.setPage);
 
   // Invitations tab
-  const [invPage, setInvPage] = useState(0);
-  const [invPageSize, setInvPageSize] = useState(20);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [pendingRevoke, setPendingRevoke] = useState<TenantAdminInvitationDto | null>(null);
+  const invTable = useTableState();
+  const { filter: invFilter, handleFilterChange: handleInvitationsFilterChange } = useFilterState(
+    INV_FILTER_DEFAULT,
+    invTable.setPage,
+  );
+
+  // Dialogs
+  const createDialog = useBooleanDialog();
+  const inviteDialog = useBooleanDialog();
+  const viewDialog = useItemDialog<TenantAdminDto>();
+  const editDialog = useItemDialog<TenantAdminDto>();
+  const avatarDialog = useItemDialog<TenantAdminDto>();
+  const pendingActionDialog = useItemDialog<{ type: ActionType; admin: TenantAdminDto }>();
+  const revokeDialog = useItemDialog<TenantAdminInvitationDto>();
 
   // Data
   const { data: tenantsData } = useGetTenantsQuery();
@@ -540,8 +540,8 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
   );
 
   const { data: adminsData, isLoading: isLoadingAdmins } = useGetTenantAdminsQuery({
-    page: page + 1,
-    pageSize,
+    page: adminsTable.page + 1,
+    pageSize: adminsTable.pageSize,
     search: debouncedSearch || undefined,
     tenantId: adminsFilter.tenant || undefined,
     isActive:
@@ -551,8 +551,8 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
           ? false
           : undefined,
     createdVia: (adminsFilter.createdVia as 'Direct' | 'Invitation') || undefined,
-    sortBy,
-    sortOrder: sortBy ? sortOrder : undefined,
+    sortBy: adminsTable.sortBy,
+    sortOrder: adminsTable.sortBy ? adminsTable.sortOrder : undefined,
   });
 
   const adminsInvFilterFields = useMemo<FieldConfig[]>(
@@ -576,9 +576,9 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
 
   const { data: invitationsData, isLoading: isLoadingInvitations } =
     useGetTenantAdminInvitationsQuery({
-      page: invPage + 1,
-      pageSize: invPageSize,
-      status: statusFilter || undefined,
+      page: invTable.page + 1,
+      pageSize: invTable.pageSize,
+      status: invFilter.status || undefined,
     });
 
   // Mutations
@@ -595,7 +595,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
 
   const isActioning = isDeleting || isActivating || isDeactivating;
 
-  // ─── Computed values ────────────────────────────────────────────────────────
+  // ─── Computed values ──────────────────────────────────────────────────────
 
   const tenantIdOptions = useMemo<TenantOption[]>(
     () => tenantsData?.items.map((t) => ({ value: t.id, label: t.name })) ?? [],
@@ -603,143 +603,87 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
   );
 
   const editTenantAddress = useMemo<AddressDto | null>(() => {
-    if (!editAdmin || !tenantsData) return null;
-    return tenantsData.items.find((t) => t.id === editAdmin.tenantId)?.address ?? null;
-  }, [editAdmin, tenantsData]);
-
-  const adminsFilterDefaultValues = useMemo(
-    () => ({ search: '', tenant: '', status: '', createdVia: '' }),
-    [],
-  );
-
-  const invitationsFilterDefaultValues = useMemo(() => ({ status: '' }), []);
+    const item = editDialog.item;
+    if (!item || !tenantsData) return null;
+    return tenantsData.items.find((t) => t.id === item.tenantId)?.address ?? null;
+  }, [editDialog.item, tenantsData]);
 
   const avatarInitials = useMemo(
     () =>
-      avatarAdmin
-        ? avatarAdmin.fullName
+      avatarDialog.item
+        ? avatarDialog.item.fullName
             .split(' ')
             .map((n: string) => n[0])
             .join('')
             .slice(0, 2)
             .toUpperCase()
         : '',
-    [avatarAdmin],
+    [avatarDialog.item],
   );
 
   const confirmTitle = useMemo(
     () =>
-      pendingAction?.type === 'delete'
-        ? `Delete "${pendingAction.admin.fullName}"?`
-        : pendingAction?.type === 'deactivate'
-          ? `Deactivate "${pendingAction.admin.fullName}"?`
-          : `Activate "${pendingAction?.admin.fullName}"?`,
-    [pendingAction],
+      pendingActionDialog.item?.type === 'delete'
+        ? `Delete "${pendingActionDialog.item.admin.fullName}"?`
+        : pendingActionDialog.item?.type === 'deactivate'
+          ? `Deactivate "${pendingActionDialog.item.admin.fullName}"?`
+          : `Activate "${pendingActionDialog.item?.admin.fullName}"?`,
+    [pendingActionDialog.item],
   );
 
   const confirmDescription = useMemo(
     () =>
-      pendingAction?.type === 'delete'
+      pendingActionDialog.item?.type === 'delete'
         ? 'This will permanently remove the tenant admin account. This action cannot be undone.'
-        : pendingAction?.type === 'deactivate'
+        : pendingActionDialog.item?.type === 'deactivate'
           ? 'The admin will no longer be able to sign in.'
           : 'The admin account will be re-enabled and they can sign in again.',
-    [pendingAction],
+    [pendingActionDialog.item],
   );
 
   const confirmLabel = useMemo(
     () =>
-      pendingAction?.type === 'delete'
+      pendingActionDialog.item?.type === 'delete'
         ? 'Delete'
-        : pendingAction?.type === 'deactivate'
+        : pendingActionDialog.item?.type === 'deactivate'
           ? 'Deactivate'
           : 'Activate',
-    [pendingAction],
+    [pendingActionDialog.item],
   );
 
-  // ─── Callbacks ──────────────────────────────────────────────────────────────
-
-  const handleSortChange = useCallback(
-    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
-      setSortBy(newSortBy);
-      setSortOrder(newSortOrder ?? 'asc');
-      setPage(0);
-    },
-    [],
-  );
-
-  const handleTabChange = useCallback(
-    (_: React.SyntheticEvent, v: number) => {
-      setSearchParams({ tab: ADMINS_TABS[v] }, { replace: true });
-    },
-    [setSearchParams],
-  );
-
-  const handleOpenCreate = useCallback(() => setCreateOpen(true), []);
-  const handleCloseCreate = useCallback(() => setCreateOpen(false), []);
-  const handleOpenInvite = useCallback(() => setInviteOpen(true), []);
-  const handleCloseInvite = useCallback(() => setInviteOpen(false), []);
-  const handleCloseViewAdmin = useCallback(() => setViewAdmin(null), []);
-  const handleCloseEditAdmin = useCallback(() => setEditAdmin(null), []);
-  const handleCloseAvatarAdmin = useCallback(() => setAvatarAdmin(null), []);
-  const handleCancelPendingAction = useCallback(() => setPendingAction(null), []);
-  const handleCancelPendingRevoke = useCallback(() => setPendingRevoke(null), []);
-
-  const handleAdminsFilterChange = useCallback((values: Record<string, unknown>) => {
-    setAdminsFilter(
-      values as { search: string; tenant: string; status: string; createdVia: string },
-    );
-    setPage(0);
-  }, []);
-
-  const handleInvitationsFilterChange = useCallback((values: Record<string, unknown>) => {
-    setStatusFilter((values.status as string) ?? '');
-    setInvPage(0);
-  }, []);
-
-  const handlePageChange = useCallback((p: number) => setPage(p), []);
-  const handlePageSizeChange = useCallback((size: number) => {
-    setPageSize(size);
-    setPage(0);
-  }, []);
-
-  const handleInvPageChange = useCallback((p: number) => setInvPage(p), []);
-  const handleInvPageSizeChange = useCallback((size: number) => {
-    setInvPageSize(size);
-    setInvPage(0);
-  }, []);
+  // ─── Callbacks ────────────────────────────────────────────────────────────
 
   const handleUploadAvatar = useCallback(
     async (file: File) => {
-      if (!avatarAdmin) return;
+      if (!avatarDialog.item) return;
       try {
-        const updated = await uploadUserAvatar({ userId: avatarAdmin.id, file }).unwrap();
-        setAvatarAdmin({ ...avatarAdmin, profileFileId: updated.profileFileId });
+        const updated = await uploadUserAvatar({ userId: avatarDialog.item.id, file }).unwrap();
+        avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
         snackbar.success('Profile picture updated.');
       } catch (err) {
         snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
       }
     },
-    [avatarAdmin, uploadUserAvatar, snackbar],
+    [avatarDialog, uploadUserAvatar, snackbar],
   );
 
   const handleRemoveAvatar = useCallback(async () => {
-    if (!avatarAdmin) return;
+    if (!avatarDialog.item) return;
     try {
-      const updated = await removeUserAvatar(avatarAdmin.id).unwrap();
-      setAvatarAdmin({ ...avatarAdmin, profileFileId: updated.profileFileId });
+      const updated = await removeUserAvatar(avatarDialog.item.id).unwrap();
+      avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
       snackbar.success('Profile picture removed.');
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
     }
-  }, [avatarAdmin, removeUserAvatar, snackbar]);
+  }, [avatarDialog, removeUserAvatar, snackbar]);
 
   const handleImpersonate = useCallback(
     async (admin: TenantAdminDto) => {
       try {
         await startImpersonation({ targetUserId: admin.id, tenantId: admin.tenantId }).unwrap();
         dispatch(apiSlice.util.resetApiState());
-        dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
+        void dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
         snackbar.success(`Now impersonating ${admin.fullName}.`);
       } catch (err) {
         snackbar.error((err as ApiError).message || 'Failed to start impersonation.');
@@ -761,8 +705,8 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
   );
 
   const handleConfirmAction = useCallback(async () => {
-    if (!pendingAction) return;
-    const { type, admin } = pendingAction;
+    if (!pendingActionDialog.item) return;
+    const { type, admin } = pendingActionDialog.item;
     try {
       if (type === 'delete') {
         await deleteTenantAdmin(admin.id).unwrap();
@@ -774,22 +718,28 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
         await deactivateTenantAdmin(admin.id).unwrap();
         snackbar.success(`${admin.fullName} deactivated.`);
       }
-      setPendingAction(null);
+      pendingActionDialog.onClose();
     } catch (err) {
       snackbar.error((err as ApiError).message || `Failed to ${type} admin.`);
     }
-  }, [pendingAction, deleteTenantAdmin, activateTenantAdmin, deactivateTenantAdmin, snackbar]);
+  }, [
+    pendingActionDialog,
+    deleteTenantAdmin,
+    snackbar,
+    activateTenantAdmin,
+    deactivateTenantAdmin,
+  ]);
 
   const handleRevokeInvitation = useCallback(async () => {
-    if (!pendingRevoke) return;
+    if (!revokeDialog.item) return;
     try {
-      await revokeInvitation(pendingRevoke.id).unwrap();
+      await revokeInvitation(revokeDialog.item.id).unwrap();
       snackbar.success('Invitation revoked.');
-      setPendingRevoke(null);
+      revokeDialog.onClose();
     } catch (err) {
       snackbar.error((err as ApiError).message || 'Failed to revoke invitation.');
     }
-  }, [pendingRevoke, revokeInvitation, snackbar]);
+  }, [revokeDialog, revokeInvitation, snackbar]);
 
   const handleResendInvitation = useCallback(
     async (inv: TenantAdminInvitationDto) => {
@@ -823,7 +773,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
               <Avatar
                 src={admin.profileFileId ? getUserAvatarUrl(admin.id) : undefined}
                 sx={styles.adminAvatar}
-                onClick={() => setAvatarAdmin(admin)}
+                onClick={() => avatarDialog.onOpen(admin)}
               >
                 {initials}
               </Avatar>
@@ -897,14 +847,14 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
             )}
             {canView && (
               <Tooltip title="View">
-                <IconButton size="small" onClick={() => setViewAdmin(row.original)}>
+                <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
                   <VisibilityIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
             {canEdit && (
               <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => setEditAdmin(row.original)}>
+                <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
                   <EditIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -933,7 +883,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                   size="small"
                   color={row.original.isActive ? 'warning' : 'success'}
                   onClick={() =>
-                    setPendingAction({
+                    pendingActionDialog.onOpen({
                       type: row.original.isActive ? 'deactivate' : 'activate',
                       admin: row.original,
                     })
@@ -952,7 +902,9 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => setPendingAction({ type: 'delete', admin: row.original })}
+                  onClick={() =>
+                    pendingActionDialog.onOpen({ type: 'delete', admin: row.original })
+                  }
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -963,17 +915,21 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
       },
     ],
     [
+      avatarDialog,
       currentUser?.systemRole,
       isImpersonating,
       canView,
       canEdit,
       canResend,
+      isResendingSetup,
       canActivate,
       canDeactivate,
       canDelete,
-      isResendingSetup,
       handleImpersonate,
+      viewDialog,
+      editDialog,
       handleResend,
+      pendingActionDialog,
     ],
   );
 
@@ -1041,7 +997,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
                         <IconButton
                           size="small"
                           color="error"
-                          onClick={() => setPendingRevoke(inv)}
+                          onClick={() => revokeDialog.onOpen(inv)}
                         >
                           <BlockIcon fontSize="small" />
                         </IconButton>
@@ -1054,7 +1010,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
           ] as ColumnDef<TenantAdminInvitationDto>[])
         : []),
     ],
-    [canRevoke, canResend, isResendingInvitation, handleResendInvitation],
+    [canRevoke, canResend, isResendingInvitation, handleResendInvitation, revokeDialog],
   );
 
   // ─── Render ──────────────────────────────────────────────────────────────────
@@ -1064,8 +1020,8 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
       <TenantAdminsPageHeader
         canCreate={canCreate}
         canInvite={canInvite}
-        onCreateClick={handleOpenCreate}
-        onInviteClick={handleOpenInvite}
+        onCreateClick={createDialog.onOpen}
+        onInviteClick={inviteDialog.onOpen}
       />
 
       <Tabs value={tab} onChange={handleTabChange} sx={styles.tabs}>
@@ -1085,7 +1041,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
         <Box>
           <TenantAdminsFilterBar
             adminsFilterFields={adminsFilterFields}
-            defaultValues={adminsFilterDefaultValues}
+            defaultValues={ADMINS_FILTER_DEFAULT}
             onChange={handleAdminsFilterChange}
           />
           <DataTable
@@ -1093,14 +1049,14 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
             columns={adminColumns}
             isLoading={isLoadingAdmins}
             totalCount={adminsData?.totalCount ?? 0}
-            page={page}
-            pageSize={pageSize}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
+            page={adminsTable.page}
+            pageSize={adminsTable.pageSize}
+            onPageChange={adminsTable.setPage}
+            onPageSizeChange={adminsTable.handlePageSizeChange}
+            sortBy={adminsTable.sortBy}
+            sortOrder={adminsTable.sortOrder}
             sortableColumns={['fullName']}
-            onSortChange={handleSortChange}
+            onSortChange={adminsTable.handleSortChange}
           />
         </Box>
       )}
@@ -1117,7 +1073,7 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
         <Box>
           <TenantAdminsInvitationsFilterBar
             adminsInvFilterFields={adminsInvFilterFields}
-            defaultValues={invitationsFilterDefaultValues}
+            defaultValues={INV_FILTER_DEFAULT}
             onChange={handleInvitationsFilterChange}
           />
           <DataTable
@@ -1125,63 +1081,66 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
             columns={invitationColumns}
             isLoading={isLoadingInvitations}
             totalCount={invitationsData?.totalCount ?? 0}
-            page={invPage}
-            pageSize={invPageSize}
-            onPageChange={handleInvPageChange}
-            onPageSizeChange={handleInvPageSizeChange}
+            page={invTable.page}
+            pageSize={invTable.pageSize}
+            onPageChange={invTable.setPage}
+            onPageSizeChange={invTable.handlePageSizeChange}
           />
         </Box>
       )}
 
       {/* Dialogs */}
       <CreateAdminDialog
-        open={createOpen}
-        onClose={handleCloseCreate}
+        open={createDialog.open}
+        onClose={createDialog.onClose}
         tenantOptions={tenantIdOptions}
       />
       <InviteAdminDialog
-        open={inviteOpen}
-        onClose={handleCloseInvite}
+        open={inviteDialog.open}
+        onClose={inviteDialog.onClose}
         tenantOptions={tenantIdOptions}
       />
-      <ViewAdminDialog admin={viewAdmin} onClose={handleCloseViewAdmin} />
+      <ViewAdminDialog admin={viewDialog.item} onClose={viewDialog.onClose} />
       <EditAdminDialog
-        admin={editAdmin}
+        admin={editDialog.item}
         tenantAddress={editTenantAddress}
-        onClose={handleCloseEditAdmin}
+        onClose={editDialog.onClose}
       />
 
       <AvatarManageModal
-        open={!!avatarAdmin}
-        onClose={handleCloseAvatarAdmin}
-        src={avatarAdmin?.profileFileId ? getUserAvatarUrl(avatarAdmin.id) : null}
+        open={avatarDialog.open}
+        onClose={avatarDialog.onClose}
+        src={avatarDialog.item?.profileFileId ? getUserAvatarUrl(avatarDialog.item.id) : null}
         initials={avatarInitials}
-        title={`Profile photo — ${avatarAdmin?.fullName ?? ''}`}
+        title={`Profile photo — ${avatarDialog.item?.fullName ?? ''}`}
         uploading={isUploadingAvatar || isRemovingAvatar}
         onUpload={handleUploadAvatar}
-        onRemove={avatarAdmin?.profileFileId ? handleRemoveAvatar : undefined}
+        onRemove={avatarDialog.item?.profileFileId ? handleRemoveAvatar : undefined}
       />
 
       <ConfirmDialog
-        open={!!pendingAction}
+        open={pendingActionDialog.open}
         title={confirmTitle}
         description={confirmDescription}
         confirmLabel={confirmLabel}
-        danger={pendingAction?.type === 'delete' || pendingAction?.type === 'deactivate'}
+        danger={
+          pendingActionDialog.item?.type === 'delete' ||
+          pendingActionDialog.item?.type === 'deactivate'
+        }
         loading={isActioning}
         onConfirm={handleConfirmAction}
-        onCancel={handleCancelPendingAction}
+        onCancel={pendingActionDialog.onClose}
       />
 
       <ConfirmDialog
-        open={!!pendingRevoke}
-        title={`Revoke invitation for "${pendingRevoke?.email}"?`}
+        open={revokeDialog.open}
+        title={`Revoke invitation for "${revokeDialog.item?.email}"?`}
         description="The invitation link will be invalidated immediately."
         confirmLabel="Revoke"
         danger
         loading={isRevoking}
         onConfirm={handleRevokeInvitation}
-        onCancel={handleCancelPendingRevoke}
+        onCancel={revokeDialog.onClose}
       />
     </Box>
   );

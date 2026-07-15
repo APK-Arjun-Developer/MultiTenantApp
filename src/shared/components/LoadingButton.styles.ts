@@ -1,4 +1,4 @@
-﻿import type { Sx } from '@/types/styles';
+import type { StyleSheet } from '@/types';
 
 export const buttonRootStyle = { position: 'relative' as const };
 
@@ -16,4 +16,4 @@ export const styles = {
     mt: '-8px',
     ml: '-8px',
   },
-} as const satisfies Record<string, Sx>;
+} as const satisfies StyleSheet;

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { addressZodShape } from '@/shared/forms/addressFields';
+import type { FieldConfig } from 'mui-schema-form-builder';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -16,7 +17,7 @@ export type SettingsValues = z.infer<typeof settingsSchema>;
 
 export interface TenantSettingsFormProps {
   tenantId: string | undefined;
-  fields: import('mui-schema-form-builder').FieldConfig[];
+  fields: FieldConfig[];
   isSaving: boolean;
   onSubmit: (values: SettingsValues) => Promise<void>;
 }

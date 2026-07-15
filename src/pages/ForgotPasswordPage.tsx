@@ -104,7 +104,7 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
               fields={fields}
               onSubmit={onSubmit}
               renderActions={renderActions}
-              sx={styles.formBuilder as never}
+              sx={styles.formBuilder}
             />
 
             <Box sx={styles.backLinkBox}>

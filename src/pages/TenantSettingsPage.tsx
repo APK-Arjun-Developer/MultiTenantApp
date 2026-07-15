@@ -40,7 +40,7 @@ const TenantSettingsForm = memo(function TenantSettingsForm({
           Save changes
         </LoadingButton>
       )}
-      sx={styles.formCard as never}
+      sx={styles.formCard}
     />
   );
 });

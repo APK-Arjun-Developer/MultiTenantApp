@@ -1,20 +1,25 @@
 import { z } from 'zod';
 import type { FieldConfig } from 'mui-schema-form-builder';
-import type { RoleDto } from '@/types/api';
+import type { RoleDto, FilterValues } from '@/types/api';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const permissionOptionSchema = z.union([
+  z.string(),
+  z.object({ value: z.string(), label: z.string() }),
+]);
 
 export const createSchema = z.object({
   name: z.string().min(1, 'Role name is required').max(100),
   description: z.string().optional(),
-  permissions: z.array(z.any()).min(1, 'At least one permission is required'),
+  permissions: z.array(permissionOptionSchema).min(1, 'At least one permission is required'),
 });
 export type CreateValues = z.infer<typeof createSchema>;
 
 export const editSchema = z.object({
   name: z.string().min(1, 'Role name is required').max(100),
   description: z.string().optional(),
-  permissions: z.array(z.any()).min(1, 'At least one permission is required'),
+  permissions: z.array(permissionOptionSchema).min(1, 'At least one permission is required'),
 });
 export type EditValues = z.infer<typeof editSchema>;
 
@@ -50,12 +55,12 @@ export interface RolesPageHeaderProps {
 
 export interface RolesFilterBarProps {
   fields: FieldConfig[];
-  onFilterChange: (values: RolesFilter) => void;
+  onFilterChange: (values: FilterValues) => void;
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
-export interface RolesFilter {
+export interface RolesFilter extends FilterValues {
   search: string;
   permissions: string[];
 }

@@ -1,5 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { memo, useCallback, useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
@@ -37,9 +36,15 @@ import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
 import { ViewDialog } from '@/shared/components/ViewDialog';
 import { formatAddress } from '@/shared/utils/format';
 import { exportToCsv } from '@/shared/utils/exportCsv';
-import { useDebounce } from '@/shared/hooks';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import { usePermission } from '@/shared/hooks/usePermission';
+import {
+  useUrlTabs,
+  useTableState,
+  useFilterState,
+  useBooleanDialog,
+  useItemDialog,
+  useSnackbar,
+  usePermission,
+} from '@/shared/hooks';
 import {
   getAddressFields,
   getSameAsCompanyField,
@@ -89,6 +94,12 @@ import type {
   UserDto,
   UserInvitationDto,
 } from './UsersPage.types';
+
+// ─── Filter defaults (module-level stable references) ─────────────────────────
+
+const USER_FILTER_DEFAULT = { search: '', status: '', createdVia: '' };
+const INV_FILTER_DEFAULT = { status: '' };
+const USERS_TABS = ['users', 'invitations'] as const;
 
 // ─── Status chip ──────────────────────────────────────────────────────────────
 
@@ -193,7 +204,7 @@ const CreateUserDialog = memo(function CreateUserDialog({
           onCancel={onClose}
           submitText="Create user"
           cancelText="Cancel"
-          sx={styles.dialogForm as never}
+          sx={styles.dialogForm}
         />
       </DialogContent>
     </Dialog>
@@ -262,7 +273,7 @@ const InviteUserDialog = memo(function InviteUserDialog({
           onCancel={onClose}
           submitText="Send invitation"
           cancelText="Cancel"
-          sx={styles.dialogForm as never}
+          sx={styles.dialogForm}
         />
       </DialogContent>
     </Dialog>
@@ -350,7 +361,7 @@ const EditUserDialog = memo(function EditUserDialog({
           onCancel={onClose}
           submitText="Save changes"
           cancelText="Cancel"
-          sx={styles.dialogForm as never}
+          sx={styles.dialogForm}
         />
       </DialogContent>
     </Dialog>
@@ -503,13 +514,10 @@ const UsersInvitationsFilterBar = memo(function UsersInvitationsFilterBar({
   );
 });
 
-const USERS_TABS = ['users', 'invitations'] as const;
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const UsersPage = memo(function UsersPage() {
   const snackbar = useSnackbar();
-
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
   const isTenantAdmin = currentUser?.systemRole === 'TenantAdmin';
@@ -526,34 +534,202 @@ export const UsersPage = memo(function UsersPage() {
   const canResend = usePermission('Onboarding.Resend');
   const canRevoke = usePermission('Onboarding.Revoke');
 
-  // Tabs
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tab = useMemo(() => {
-    const idx = (USERS_TABS as readonly string[]).indexOf(searchParams.get('tab') ?? '');
-    return idx >= 0 ? idx : 0;
-  }, [searchParams]);
+  // ── Tabs ─────────────────────────────────────────────────────────────────────
+  const { tab, handleTabChange } = useUrlTabs(USERS_TABS);
 
-  // Users tab state
-  const [userFilter, setUserFilter] = useState({ search: '', status: '', createdVia: '' });
-  const debouncedSearch = useDebounce(userFilter.search, 400);
-  const [usersPage, setUsersPage] = useState(0);
-  const [usersSortBy, setUsersSortBy] = useState<string | undefined>(undefined);
-  const [usersSortOrder, setUsersSortOrder] = useState<'asc' | 'desc'>('asc');
+  // ── Users tab state ───────────────────────────────────────────────────────────
+  const usersTable = useTableState();
+  const {
+    filter: userFilter,
+    debouncedSearch,
+    handleFilterChange: handleUserFilterChange,
+  } = useFilterState(USER_FILTER_DEFAULT, usersTable.setPage);
 
-  // Dialogs
-  const [createOpen, setCreateOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [editUser, setEditUser] = useState<UserDto | null>(null);
-  const [viewUser, setViewUser] = useState<UserDto | null>(null);
-  const [avatarUser, setAvatarUser] = useState<UserDto | null>(null);
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  // ── Invitations tab state ─────────────────────────────────────────────────────
+  const invTable = useTableState();
+  const { filter: invFilter, handleFilterChange: handleInvFilterChange } = useFilterState(
+    INV_FILTER_DEFAULT,
+    invTable.setPage,
+  );
 
-  // Invitations tab state
-  const [invStatusFilter, setInvStatusFilter] = useState('');
-  const [invitationsPage, setInvitationsPage] = useState(0);
-  const [revokeTarget, setRevokeTarget] = useState<UserInvitationDto | null>(null);
+  // ── Dialogs ───────────────────────────────────────────────────────────────────
+  const createDialog = useBooleanDialog();
+  const inviteDialog = useBooleanDialog();
+  const editDialog = useItemDialog<UserDto>();
+  const viewDialog = useItemDialog<UserDto>();
+  const avatarDialog = useItemDialog<UserDto>();
+  const pendingActionDialog = useItemDialog<PendingAction>();
+  const revokeDialog = useItemDialog<UserInvitationDto>();
 
-  // Field configs
+  // ── Queries & mutations ───────────────────────────────────────────────────────
+  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
+    page: usersTable.page + 1,
+    pageSize: usersTable.pageSize,
+    search: debouncedSearch || undefined,
+    isActive:
+      userFilter.status === 'active' ? true : userFilter.status === 'inactive' ? false : undefined,
+    createdVia: (userFilter.createdVia as 'Direct' | 'Invitation') || undefined,
+    sortBy: usersTable.sortBy,
+    sortOrder: usersTable.sortBy ? usersTable.sortOrder : undefined,
+  });
+
+  const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
+    page: invTable.page + 1,
+    pageSize: invTable.pageSize,
+    status: invFilter.status || undefined,
+  });
+
+  const { data: rolesData } = useGetRolesQuery();
+
+  const [startImpersonation, { isLoading: isImpersonating }] = useStartImpersonationMutation();
+  const [resendSetup, { isLoading: isResendingSetup }] = useResendUserSetupMutation();
+  const [activateUser, { isLoading: isActivating }] = useActivateUserMutation();
+  const [deactivateUser, { isLoading: isDeactivating }] = useDeactivateUserMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [revokeInvitation, { isLoading: isRevoking }] = useRevokeUserInvitationMutation();
+  const [resendInvitation, { isLoading: isResendingInvitation }] =
+    useResendUserInvitationMutation();
+  const [uploadUserAvatar, { isLoading: isUploadingAvatar }] = useUploadUserAvatarByAdminMutation();
+  const [removeUserAvatar, { isLoading: isRemovingAvatar }] = useRemoveUserAvatarByAdminMutation();
+
+  const roleOptions = useMemo<RoleOption[]>(
+    () => (rolesData?.items ?? []).map((r) => ({ value: r.id, label: r.name })),
+    [rolesData],
+  );
+
+  const [exportLoading, setExportLoading] = useState(false);
+
+  const maxUsers = tenantSettings?.planFeatures?.maxUsers ?? -1;
+  const totalUsers = usersData?.totalCount ?? 0;
+  const atUserLimit = useMemo(
+    () => maxUsers !== -1 && totalUsers >= maxUsers,
+    [maxUsers, totalUsers],
+  );
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+
+  const handleResend = useCallback(
+    async (user: UserDto) => {
+      try {
+        await resendSetup(user.id).unwrap();
+        snackbar.success(`Setup email resent to ${user.email}.`);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to resend setup email.');
+      }
+    },
+    [resendSetup, snackbar],
+  );
+
+  const handleImpersonate = useCallback(
+    async (user: UserDto) => {
+      try {
+        await startImpersonation({ targetUserId: user.id }).unwrap();
+        dispatch(apiSlice.util.resetApiState());
+        void dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
+        snackbar.success(`Now impersonating ${user.fullName}.`);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to start impersonation.');
+      }
+    },
+    [startImpersonation, dispatch, snackbar],
+  );
+
+  const handleConfirmAction = useCallback(async () => {
+    if (!pendingActionDialog.item) return;
+    const { type, user } = pendingActionDialog.item;
+    try {
+      if (type === 'delete') {
+        await deleteUser({ email: user.email }).unwrap();
+        snackbar.success(`User "${user.fullName}" deleted.`);
+      } else if (type === 'activate') {
+        await activateUser(user.id).unwrap();
+        snackbar.success(`User "${user.fullName}" activated.`);
+      } else {
+        await deactivateUser(user.id).unwrap();
+        snackbar.success(`User "${user.fullName}" deactivated.`);
+      }
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Action failed.');
+    } finally {
+      pendingActionDialog.onClose();
+    }
+  }, [pendingActionDialog, deleteUser, snackbar, activateUser, deactivateUser]);
+
+  const handleRevokeConfirm = useCallback(async () => {
+    if (!revokeDialog.item) return;
+    try {
+      await revokeInvitation(revokeDialog.item.id).unwrap();
+      snackbar.success(`Invitation to ${revokeDialog.item.email} revoked.`);
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to revoke invitation.');
+    } finally {
+      revokeDialog.onClose();
+    }
+  }, [revokeDialog, revokeInvitation, snackbar]);
+
+  const handleResendInvitation = useCallback(
+    async (inv: UserInvitationDto) => {
+      try {
+        await resendInvitation(inv.id).unwrap();
+        snackbar.success(`Invitation resent to ${inv.email}.`);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to resend invitation.');
+      }
+    },
+    [resendInvitation, snackbar],
+  );
+
+  const handleUploadAvatar = useCallback(
+    async (file: File) => {
+      if (!avatarDialog.item) return;
+      try {
+        const updated = await uploadUserAvatar({ userId: avatarDialog.item.id, file }).unwrap();
+        avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
+        snackbar.success('Profile picture updated.');
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
+      }
+    },
+    [avatarDialog, uploadUserAvatar, snackbar],
+  );
+
+  const handleRemoveAvatar = useCallback(async () => {
+    if (!avatarDialog.item) return;
+    try {
+      const updated = await removeUserAvatar(avatarDialog.item.id).unwrap();
+      avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
+      snackbar.success('Profile picture removed.');
+    } catch (err) {
+      snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
+    }
+  }, [avatarDialog, removeUserAvatar, snackbar]);
+
+  const handleExportUsers = useCallback(async () => {
+    setExportLoading(true);
+    try {
+      const { usersApi } = await import('@/features/users/api/usersApi');
+      const result = await dispatch(
+        usersApi.endpoints.getUsers.initiate({ page: 1, pageSize: 5000 }),
+      );
+      const items = ('data' in result ? result.data?.items : null) ?? usersData?.items ?? [];
+      exportToCsv(
+        'users',
+        items.map((u) => ({
+          Name: u.fullName,
+          Email: u.email,
+          Roles: u.roles.join('; '),
+          Status: u.isActive ? 'Active' : 'Inactive',
+          'Last Login': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '',
+          'Created Via': u.createdVia,
+        })),
+      );
+    } finally {
+      setExportLoading(false);
+    }
+  }, [dispatch, usersData?.items]);
+
+  // ── Field configs ─────────────────────────────────────────────────────────────
+
   const userFilterFields = useMemo<FieldConfig[]>(
     () => [
       {
@@ -608,214 +784,47 @@ export const UsersPage = memo(function UsersPage() {
     [],
   );
 
-  // Default values (memoised objects — prevent referential churn on FilterForm)
-  const userFilterDefaults = useMemo(() => ({ search: '', status: '', createdVia: '' }), []);
+  // ── Confirm dialog copy ───────────────────────────────────────────────────────
 
-  const invFilterDefaults = useMemo(() => ({ status: '' }), []);
-
-  // API
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
-    page: usersPage + 1,
-    pageSize: 20,
-    search: debouncedSearch || undefined,
-    isActive:
-      userFilter.status === 'active' ? true : userFilter.status === 'inactive' ? false : undefined,
-    createdVia: (userFilter.createdVia as 'Direct' | 'Invitation') || undefined,
-    sortBy: usersSortBy,
-    sortOrder: usersSortBy ? usersSortOrder : undefined,
-  });
-
-  const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
-    page: invitationsPage + 1,
-    pageSize: 20,
-    status: invStatusFilter || undefined,
-  });
-
-  const { data: rolesData } = useGetRolesQuery();
-
-  const [startImpersonation, { isLoading: isImpersonating }] = useStartImpersonationMutation();
-
-  const [resendSetup, { isLoading: isResendingSetup }] = useResendUserSetupMutation();
-  const [activateUser, { isLoading: isActivating }] = useActivateUserMutation();
-  const [deactivateUser, { isLoading: isDeactivating }] = useDeactivateUserMutation();
-  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-  const [revokeInvitation, { isLoading: isRevoking }] = useRevokeUserInvitationMutation();
-  const [resendInvitation, { isLoading: isResendingInvitation }] =
-    useResendUserInvitationMutation();
-  const [uploadUserAvatar, { isLoading: isUploadingAvatar }] = useUploadUserAvatarByAdminMutation();
-  const [removeUserAvatar, { isLoading: isRemovingAvatar }] = useRemoveUserAvatarByAdminMutation();
-
-  const roleOptions = useMemo<RoleOption[]>(
-    () => (rolesData?.items ?? []).map((r) => ({ value: r.id, label: r.name })),
-    [rolesData],
+  const confirmTitle = useMemo(
+    () =>
+      pendingActionDialog.item?.type === 'delete'
+        ? `Delete "${pendingActionDialog.item.user.fullName}"?`
+        : pendingActionDialog.item?.type === 'activate'
+          ? `Activate "${pendingActionDialog.item.user.fullName}"?`
+          : `Deactivate "${pendingActionDialog.item?.user.fullName}"?`,
+    [pendingActionDialog.item],
   );
 
-  const [exportLoading, setExportLoading] = useState(false);
-
-  const maxUsers = tenantSettings?.planFeatures?.maxUsers ?? -1;
-  const totalUsers = usersData?.totalCount ?? 0;
-  const atUserLimit = useMemo(
-    () => maxUsers !== -1 && totalUsers >= maxUsers,
-    [maxUsers, totalUsers],
+  const confirmMessage = useMemo(
+    () =>
+      pendingActionDialog.item?.type === 'delete'
+        ? 'This will permanently remove the user. This action cannot be undone.'
+        : pendingActionDialog.item?.type === 'activate'
+          ? 'The user will be able to sign in again.'
+          : 'The user will be unable to sign in until reactivated.',
+    [pendingActionDialog.item],
   );
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // ── Avatar modal helpers ──────────────────────────────────────────────────────
 
-  const handleUsersSortChange = useCallback(
-    (newSortBy: string | undefined, newSortOrder: 'asc' | 'desc' | undefined) => {
-      setUsersSortBy(newSortBy);
-      setUsersSortOrder(newSortOrder ?? 'asc');
-      setUsersPage(0);
-    },
-    [],
+  const avatarSrc = useMemo(
+    () => (avatarDialog.item?.profileFileId ? getUserAvatarUrl(avatarDialog.item.id) : null),
+    [avatarDialog.item],
   );
 
-  const handleTabChange = useCallback(
-    (_: React.SyntheticEvent, v: number) => {
-      setSearchParams({ tab: USERS_TABS[v] }, { replace: true });
-    },
-    [setSearchParams],
+  const avatarInitials = useMemo(
+    () =>
+      avatarDialog.item
+        ? avatarDialog.item.fullName
+            .split(' ')
+            .map((n) => n[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase()
+        : '',
+    [avatarDialog.item],
   );
-
-  const handleCreateOpen = useCallback(() => setCreateOpen(true), []);
-  const handleCreateClose = useCallback(() => setCreateOpen(false), []);
-  const handleInviteOpen = useCallback(() => setInviteOpen(true), []);
-  const handleInviteClose = useCallback(() => setInviteOpen(false), []);
-  const handleViewClose = useCallback(() => setViewUser(null), []);
-  const handleEditClose = useCallback(() => setEditUser(null), []);
-  const handleAvatarClose = useCallback(() => setAvatarUser(null), []);
-  const handlePendingCancel = useCallback(() => setPendingAction(null), []);
-  const handleRevokeCancel = useCallback(() => setRevokeTarget(null), []);
-
-  const handleUserFilterChange = useCallback((values: Record<string, unknown>) => {
-    setUserFilter(values as { search: string; status: string; createdVia: string });
-    setUsersPage(0);
-  }, []);
-
-  const handleInvFilterChange = useCallback((values: Record<string, unknown>) => {
-    setInvStatusFilter((values.status as string) ?? '');
-    setInvitationsPage(0);
-  }, []);
-
-  const handleResend = useCallback(
-    async (user: UserDto) => {
-      try {
-        await resendSetup(user.id).unwrap();
-        snackbar.success(`Setup email resent to ${user.email}.`);
-      } catch (err) {
-        snackbar.error((err as ApiError).message || 'Failed to resend setup email.');
-      }
-    },
-    [resendSetup, snackbar],
-  );
-
-  const handleImpersonate = useCallback(
-    async (user: UserDto) => {
-      try {
-        await startImpersonation({ targetUserId: user.id }).unwrap();
-        dispatch(apiSlice.util.resetApiState());
-        dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true }));
-        snackbar.success(`Now impersonating ${user.fullName}.`);
-      } catch (err) {
-        snackbar.error((err as ApiError).message || 'Failed to start impersonation.');
-      }
-    },
-    [startImpersonation, dispatch, snackbar],
-  );
-
-  const handleConfirmAction = useCallback(async () => {
-    if (!pendingAction) return;
-    const { type, user } = pendingAction;
-    try {
-      if (type === 'delete') {
-        await deleteUser({ email: user.email }).unwrap();
-        snackbar.success(`User "${user.fullName}" deleted.`);
-      } else if (type === 'activate') {
-        await activateUser(user.id).unwrap();
-        snackbar.success(`User "${user.fullName}" activated.`);
-      } else {
-        await deactivateUser(user.id).unwrap();
-        snackbar.success(`User "${user.fullName}" deactivated.`);
-      }
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Action failed.');
-    } finally {
-      setPendingAction(null);
-    }
-  }, [pendingAction, deleteUser, activateUser, deactivateUser, snackbar]);
-
-  const handleRevokeConfirm = useCallback(async () => {
-    if (!revokeTarget) return;
-    try {
-      await revokeInvitation(revokeTarget.id).unwrap();
-      snackbar.success(`Invitation to ${revokeTarget.email} revoked.`);
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to revoke invitation.');
-    } finally {
-      setRevokeTarget(null);
-    }
-  }, [revokeTarget, revokeInvitation, snackbar]);
-
-  const handleResendInvitation = useCallback(
-    async (inv: UserInvitationDto) => {
-      try {
-        await resendInvitation(inv.id).unwrap();
-        snackbar.success(`Invitation resent to ${inv.email}.`);
-      } catch (err) {
-        snackbar.error((err as ApiError).message || 'Failed to resend invitation.');
-      }
-    },
-    [resendInvitation, snackbar],
-  );
-
-  const handleUploadAvatar = useCallback(
-    async (file: File) => {
-      if (!avatarUser) return;
-      try {
-        const updated = await uploadUserAvatar({ userId: avatarUser.id, file }).unwrap();
-        setAvatarUser({ ...avatarUser, profileFileId: updated.profileFileId });
-        snackbar.success('Profile picture updated.');
-      } catch (err) {
-        snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
-      }
-    },
-    [avatarUser, uploadUserAvatar, snackbar],
-  );
-
-  const handleRemoveAvatar = useCallback(async () => {
-    if (!avatarUser) return;
-    try {
-      const updated = await removeUserAvatar(avatarUser.id).unwrap();
-      setAvatarUser({ ...avatarUser, profileFileId: updated.profileFileId });
-      snackbar.success('Profile picture removed.');
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
-    }
-  }, [avatarUser, removeUserAvatar, snackbar]);
-
-  const handleExportUsers = useCallback(async () => {
-    setExportLoading(true);
-    try {
-      const { usersApi } = await import('@/features/users/api/usersApi');
-      const result = await dispatch(
-        usersApi.endpoints.getUsers.initiate({ page: 1, pageSize: 5000 }),
-      );
-      const items = ('data' in result ? result.data?.items : null) ?? usersData?.items ?? [];
-      exportToCsv(
-        'users',
-        items.map((u) => ({
-          Name: u.fullName,
-          Email: u.email,
-          Roles: u.roles.join('; '),
-          Status: u.isActive ? 'Active' : 'Inactive',
-          'Last Login': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '',
-          'Created Via': u.createdVia,
-        })),
-      );
-    } finally {
-      setExportLoading(false);
-    }
-  }, [dispatch, usersData?.items]);
 
   // ── Table columns ─────────────────────────────────────────────────────────────
 
@@ -837,7 +846,7 @@ export const UsersPage = memo(function UsersPage() {
               <Avatar
                 src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
                 sx={styles.avatarClickable}
-                onClick={() => setAvatarUser(user)}
+                onClick={() => avatarDialog.onOpen(user)}
               >
                 {initials}
               </Avatar>
@@ -903,14 +912,14 @@ export const UsersPage = memo(function UsersPage() {
             <Box sx={styles.actionsCell}>
               {canView && (
                 <Tooltip title="View">
-                  <IconButton size="small" onClick={() => setViewUser(user)}>
+                  <IconButton size="small" onClick={() => viewDialog.onOpen(user)}>
                     <VisibilityIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
               {canEdit && (
                 <Tooltip title="Edit">
-                  <IconButton size="small" onClick={() => setEditUser(user)}>
+                  <IconButton size="small" onClick={() => editDialog.onOpen(user)}>
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -937,7 +946,7 @@ export const UsersPage = memo(function UsersPage() {
                   <IconButton
                     size="small"
                     onClick={() =>
-                      setPendingAction({
+                      pendingActionDialog.onOpen({
                         type: user.isActive ? 'deactivate' : 'activate',
                         user,
                       })
@@ -970,7 +979,7 @@ export const UsersPage = memo(function UsersPage() {
                   <IconButton
                     size="small"
                     color="error"
-                    onClick={() => setPendingAction({ type: 'delete', user })}
+                    onClick={() => pendingActionDialog.onOpen({ type: 'delete', user })}
                   >
                     <DeleteIcon fontSize="small" />
                   </IconButton>
@@ -982,16 +991,20 @@ export const UsersPage = memo(function UsersPage() {
       },
     ],
     [
-      canView,
       canEdit,
+      avatarDialog,
+      canView,
       canResend,
+      isResendingSetup,
       canActivate,
       canDeactivate,
-      canDelete,
-      isResendingSetup,
+      currentUser?.systemRole,
       isImpersonating,
-      currentUser,
+      canDelete,
+      viewDialog,
+      editDialog,
       handleResend,
+      pendingActionDialog,
       handleImpersonate,
     ],
   );
@@ -1050,7 +1063,11 @@ export const UsersPage = memo(function UsersPage() {
                     )}
                     {canRevokeRow && (
                       <Tooltip title="Revoke invitation">
-                        <IconButton size="small" color="error" onClick={() => setRevokeTarget(inv)}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => revokeDialog.onOpen(inv)}
+                        >
                           <ClearIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -1062,66 +1079,22 @@ export const UsersPage = memo(function UsersPage() {
           ] as ColumnDef<UserInvitationDto>[])
         : []),
     ],
-    [canRevoke, canResend, isResendingInvitation, handleResendInvitation],
-  );
-
-  // ── Confirm dialog copy ───────────────────────────────────────────────────────
-
-  const confirmTitle = useMemo(
-    () =>
-      pendingAction?.type === 'delete'
-        ? `Delete "${pendingAction.user.fullName}"?`
-        : pendingAction?.type === 'activate'
-          ? `Activate "${pendingAction?.user.fullName}"?`
-          : `Deactivate "${pendingAction?.user.fullName}"?`,
-    [pendingAction],
-  );
-
-  const confirmMessage = useMemo(
-    () =>
-      pendingAction?.type === 'delete'
-        ? 'This will permanently remove the user. This action cannot be undone.'
-        : pendingAction?.type === 'activate'
-          ? 'The user will be able to sign in again.'
-          : 'The user will be unable to sign in until reactivated.',
-    [pendingAction],
-  );
-
-  // ── Avatar modal helpers ──────────────────────────────────────────────────────
-
-  const avatarSrc = useMemo(
-    () => (avatarUser?.profileFileId ? getUserAvatarUrl(avatarUser.id) : null),
-    [avatarUser],
-  );
-
-  const avatarInitials = useMemo(
-    () =>
-      avatarUser
-        ? avatarUser.fullName
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .slice(0, 2)
-            .toUpperCase()
-        : '',
-    [avatarUser],
+    [canRevoke, canResend, isResendingInvitation, handleResendInvitation, revokeDialog],
   );
 
   return (
     <TenantContextGuard>
       <Box sx={styles.root}>
-        {/* Header */}
         <UsersPageHeader
           canCreate={canCreate}
           canInvite={canInvite}
           atUserLimit={atUserLimit}
           maxUsers={maxUsers}
           planName={tenantSettings?.planName}
-          onCreateOpen={handleCreateOpen}
-          onInviteOpen={handleInviteOpen}
+          onCreateOpen={createDialog.onOpen}
+          onInviteOpen={inviteDialog.onOpen}
         />
 
-        {/* Plan limit banner */}
         {atUserLimit && (
           <Alert severity="warning" sx={styles.limitAlert}>
             You've reached the <strong>{maxUsers}-user limit</strong> on the{' '}
@@ -1129,7 +1102,6 @@ export const UsersPage = memo(function UsersPage() {
           </Alert>
         )}
 
-        {/* Tabs */}
         <Tabs value={tab} onChange={handleTabChange} sx={styles.tabsRow}>
           <Tab label="Users" />
           <Tab label="Invitations" />
@@ -1145,7 +1117,7 @@ export const UsersPage = memo(function UsersPage() {
           <Box>
             <UsersPageFilterBar
               userFilterFields={userFilterFields}
-              defaultValues={userFilterDefaults}
+              defaultValues={USER_FILTER_DEFAULT}
               onChange={handleUserFilterChange}
             />
             <UsersPageActions
@@ -1157,14 +1129,14 @@ export const UsersPage = memo(function UsersPage() {
               columns={userColumns}
               data={usersData?.items ?? []}
               isLoading={usersLoading}
-              page={usersPage}
-              pageSize={20}
+              page={usersTable.page}
+              pageSize={usersTable.pageSize}
               totalCount={usersData?.totalCount ?? 0}
-              onPageChange={setUsersPage}
-              sortBy={usersSortBy}
-              sortOrder={usersSortOrder}
+              onPageChange={usersTable.setPage}
+              sortBy={usersTable.sortBy}
+              sortOrder={usersTable.sortOrder}
               sortableColumns={['fullName', 'lastLoginAt']}
-              onSortChange={handleUsersSortChange}
+              onSortChange={usersTable.handleSortChange}
             />
           </Box>
         )}
@@ -1181,68 +1153,76 @@ export const UsersPage = memo(function UsersPage() {
           <Box>
             <UsersInvitationsFilterBar
               invFilterFields={invFilterFields}
-              defaultValues={invFilterDefaults}
+              defaultValues={INV_FILTER_DEFAULT}
               onChange={handleInvFilterChange}
             />
             <DataTable
               columns={invitationColumns}
               data={invitationsData?.items ?? []}
               isLoading={invLoading}
-              page={invitationsPage}
-              pageSize={20}
+              page={invTable.page}
+              pageSize={invTable.pageSize}
               totalCount={invitationsData?.totalCount ?? 0}
-              onPageChange={setInvitationsPage}
+              onPageChange={invTable.setPage}
             />
           </Box>
         )}
 
         {/* Dialogs */}
         <AvatarManageModal
-          open={!!avatarUser}
-          onClose={handleAvatarClose}
+          open={avatarDialog.open}
+          onClose={avatarDialog.onClose}
           src={avatarSrc}
           initials={avatarInitials}
-          title={`Profile photo — ${avatarUser?.fullName ?? ''}`}
+          title={`Profile photo — ${avatarDialog.item?.fullName ?? ''}`}
           uploading={isUploadingAvatar || isRemovingAvatar}
           onUpload={handleUploadAvatar}
-          onRemove={avatarUser?.profileFileId ? handleRemoveAvatar : undefined}
+          onRemove={avatarDialog.item?.profileFileId ? handleRemoveAvatar : undefined}
         />
-        <ViewUserDialog user={viewUser} onClose={handleViewClose} />
-        <CreateUserDialog open={createOpen} onClose={handleCreateClose} roleOptions={roleOptions} />
-        <InviteUserDialog open={inviteOpen} onClose={handleInviteClose} roleOptions={roleOptions} />
+        <ViewUserDialog user={viewDialog.item} onClose={viewDialog.onClose} />
+        <CreateUserDialog
+          open={createDialog.open}
+          onClose={createDialog.onClose}
+          roleOptions={roleOptions}
+        />
+        <InviteUserDialog
+          open={inviteDialog.open}
+          onClose={inviteDialog.onClose}
+          roleOptions={roleOptions}
+        />
         <EditUserDialog
-          open={!!editUser}
-          onClose={handleEditClose}
-          user={editUser}
+          open={editDialog.open}
+          onClose={editDialog.onClose}
+          user={editDialog.item}
           roleOptions={roleOptions}
         />
 
         <ConfirmDialog
-          open={!!pendingAction}
+          open={pendingActionDialog.open}
           title={confirmTitle}
           description={confirmMessage}
           confirmLabel={
-            pendingAction?.type === 'delete'
+            pendingActionDialog.item?.type === 'delete'
               ? 'Delete'
-              : pendingAction?.type === 'activate'
+              : pendingActionDialog.item?.type === 'activate'
                 ? 'Activate'
                 : 'Deactivate'
           }
-          danger={pendingAction?.type === 'delete'}
+          danger={pendingActionDialog.item?.type === 'delete'}
           loading={isActivating || isDeactivating || isDeleting}
           onConfirm={handleConfirmAction}
-          onCancel={handlePendingCancel}
+          onCancel={pendingActionDialog.onClose}
         />
 
         <ConfirmDialog
-          open={!!revokeTarget}
-          title={`Revoke invitation for "${revokeTarget?.email}"?`}
+          open={revokeDialog.open}
+          title={`Revoke invitation for "${revokeDialog.item?.email}"?`}
           description="The invitation link will be invalidated immediately."
           confirmLabel="Revoke"
           danger
           loading={isRevoking}
           onConfirm={handleRevokeConfirm}
-          onCancel={handleRevokeCancel}
+          onCancel={revokeDialog.onClose}
         />
       </Box>
     </TenantContextGuard>
