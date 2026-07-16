@@ -1,5 +1,6 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -9,7 +10,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import { AvatarUpload } from '@/shared/components/AvatarUpload';
+import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { LabelValue } from '@/shared/components/LabelValue';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
@@ -52,7 +53,7 @@ import type {
 import { profileSchema, addressSchema, companySchema, passwordSchema } from './ProfilePage.types';
 import { Icon } from '@/shared/components/Icon';
 
-// ─── Static field configs (no runtime deps, defined once) ─────────────────────
+// ─── Static field configs ──────────────────────────────────────────────────────
 
 const passwordFields: FieldConfig[] = [
   {
@@ -85,24 +86,34 @@ const PROFILE_TABS = ['profile', 'address', 'security', 'company'] as const;
 const ProfileAvatarSection = memo(function ProfileAvatarSection({
   avatarSrc,
   initials,
-  avatarUploading,
-  avatarRemoving,
   fullName,
   email,
   systemRole,
-  onAvatarUpload,
-  onAvatarRemove,
+  onOpenModal,
 }: ProfileAvatarSectionProps) {
+  const [hover, setHover] = useState(false);
+
   return (
     <Box sx={styles.avatarContainer}>
-      <AvatarUpload
-        src={avatarSrc}
-        initials={initials}
-        size={64}
-        uploading={avatarUploading || avatarRemoving}
-        onFileSelect={onAvatarUpload}
-        onRemove={avatarSrc ? onAvatarRemove : undefined}
-      />
+      <Box
+        sx={styles.avatarClickable}
+        onClick={onOpenModal}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        <Avatar
+          src={avatarSrc ?? undefined}
+          slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+          sx={styles.avatarMedium}
+        >
+          {!avatarSrc && initials}
+        </Avatar>
+        {hover && (
+          <Box sx={styles.avatarOverlay}>
+            <Icon name="CameraAlt" sx={styles.avatarOverlayIcon} />
+          </Box>
+        )}
+      </Box>
       <Box>
         <Typography variant="subtitle1" sx={styles.userName}>
           {fullName}
@@ -180,24 +191,35 @@ const ProfilePasswordSection = memo(function ProfilePasswordSection({
 const ProfileCompanySection = memo(function ProfileCompanySection({
   tenantSettings,
   tenantLogoSrc,
-  logoUploading,
-  logoRemoving,
   companyFields,
-  onTenantLogoUpload,
-  onTenantLogoRemove,
+  onOpenLogoModal,
   onCompanySubmit,
 }: ProfileCompanySectionProps) {
+  const [hover, setHover] = useState(false);
+  const logoInitial = tenantSettings?.name?.[0]?.toUpperCase() ?? '?';
+
   return (
     <Box>
       <Box sx={styles.companyLogoRow}>
-        <AvatarUpload
-          src={tenantLogoSrc}
-          initials={tenantSettings?.name?.[0]?.toUpperCase() ?? '?'}
-          size={64}
-          uploading={logoUploading || logoRemoving}
-          onFileSelect={onTenantLogoUpload}
-          onRemove={tenantLogoSrc ? onTenantLogoRemove : undefined}
-        />
+        <Box
+          sx={styles.avatarClickable}
+          onClick={onOpenLogoModal}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+        >
+          <Avatar
+            src={tenantLogoSrc ?? undefined}
+            slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+            sx={styles.avatarMedium}
+          >
+            {!tenantLogoSrc && logoInitial}
+          </Avatar>
+          {hover && (
+            <Box sx={styles.avatarOverlay}>
+              <Icon name="CameraAlt" sx={styles.avatarOverlayIcon} />
+            </Box>
+          )}
+        </Box>
         <Box>
           <Typography variant="subtitle2" sx={styles.companyLogoLabel}>
             Company logo
@@ -227,6 +249,8 @@ export const ProfilePage = memo(function ProfilePage() {
   const navigate = useNavigate();
   const { tab, handleTabChange } = useUrlTabs(PROFILE_TABS);
   const logoutDialog = useBooleanDialog();
+  const avatarModal = useBooleanDialog();
+  const companyLogoModal = useBooleanDialog();
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const { data: profile, isLoading } = useGetCurrentUserQuery();
@@ -236,6 +260,8 @@ export const ProfilePage = memo(function ProfilePage() {
   const [removeAvatar, { isLoading: avatarRemoving }] = useRemoveCurrentUserAvatarMutation();
 
   const isTenantAdmin = profile?.systemRole === 'TenantAdmin';
+  // Clamp tab to valid range — non-TenantAdmin users have no Company tab (index 3)
+  const activeTab = !isTenantAdmin && tab === 3 ? 0 : tab;
   const { data: tenantSettings } = useGetTenantSettingsQuery(undefined, { skip: !isTenantAdmin });
   const [updateTenantSettings] = useUpdateTenantSettingsMutation();
   const [uploadTenantLogo, { isLoading: logoUploading }] = useUploadTenantLogoMutation();
@@ -419,18 +445,15 @@ export const ProfilePage = memo(function ProfilePage() {
       <ProfileAvatarSection
         avatarSrc={avatarSrc}
         initials={initials}
-        avatarUploading={avatarUploading}
-        avatarRemoving={avatarRemoving}
         fullName={profile?.fullName}
         email={profile?.email}
         systemRole={profile?.systemRole}
-        onAvatarUpload={onAvatarUpload}
-        onAvatarRemove={onAvatarRemove}
+        onOpenModal={avatarModal.onOpen}
       />
 
       {/* Tabs */}
       <Paper variant="outlined" sx={styles.tabsPaper}>
-        <Tabs value={tab} onChange={handleTabChange} sx={styles.tabs}>
+        <Tabs value={activeTab} onChange={handleTabChange} sx={styles.tabs}>
           <Tab
             label="Profile"
             icon={<Icon name="AccountCircle" fontSize="small" />}
@@ -452,7 +475,7 @@ export const ProfilePage = memo(function ProfilePage() {
         </Tabs>
 
         <Box sx={styles.tabPanel}>
-          {tab === 0 && (
+          {activeTab === 0 && (
             <ProfileInfoSection
               profileId={profile?.id}
               email={profile?.email}
@@ -460,28 +483,25 @@ export const ProfilePage = memo(function ProfilePage() {
               onProfileSubmit={onProfileSubmit}
             />
           )}
-          {tab === 1 && (
+          {activeTab === 1 && (
             <ProfileAddressSection
               profileId={profile?.id}
               addressFields={addressFields}
               onAddressSubmit={onAddressSubmit}
             />
           )}
-          {tab === 2 && (
+          {activeTab === 2 && (
             <ProfilePasswordSection
               passwordFields={passwordFields}
               onPasswordSubmit={onPasswordSubmit}
             />
           )}
-          {tab === 3 && isTenantAdmin && (
+          {activeTab === 3 && isTenantAdmin && (
             <ProfileCompanySection
               tenantSettings={tenantSettings}
               tenantLogoSrc={tenantLogoSrc}
-              logoUploading={logoUploading}
-              logoRemoving={logoRemoving}
               companyFields={companyFields}
-              onTenantLogoUpload={onTenantLogoUpload}
-              onTenantLogoRemove={onTenantLogoRemove}
+              onOpenLogoModal={companyLogoModal.onOpen}
               onCompanySubmit={onCompanySubmit}
             />
           )}
@@ -500,6 +520,31 @@ export const ProfilePage = memo(function ProfilePage() {
         </Button>
       </Box>
 
+      {/* Profile photo modal */}
+      <AvatarManageModal
+        open={avatarModal.open}
+        onClose={avatarModal.onClose}
+        src={avatarSrc}
+        initials={initials}
+        title="Profile photo"
+        uploading={avatarUploading || avatarRemoving}
+        onUpload={onAvatarUpload}
+        onRemove={avatarSrc ? onAvatarRemove : undefined}
+      />
+
+      {/* Company logo modal */}
+      <AvatarManageModal
+        open={companyLogoModal.open}
+        onClose={companyLogoModal.onClose}
+        src={tenantLogoSrc}
+        initials={tenantSettings?.name?.[0]?.toUpperCase() ?? '?'}
+        title="Company logo"
+        uploading={logoUploading || logoRemoving}
+        onUpload={onTenantLogoUpload}
+        onRemove={tenantLogoSrc ? onTenantLogoRemove : undefined}
+      />
+
+      {/* Sign-out confirmation */}
       <ConfirmDialog
         open={logoutDialog.open}
         title="Sign out?"

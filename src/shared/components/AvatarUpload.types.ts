@@ -4,5 +4,4 @@ export interface AvatarUploadProps {
   size?: number;
   uploading?: boolean;
   onFileSelect: (file: File) => void;
-  onRemove?: () => void;
 }

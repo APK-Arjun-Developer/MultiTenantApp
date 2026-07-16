@@ -47,9 +47,6 @@ export const styles = {
     bgcolor: 'primary.dark',
     fontSize: 13,
     fontWeight: 700,
-    border: '2px solid',
-    borderColor: 'primary.light',
-    boxSizing: 'border-box',
   },
 
   profileButton: {

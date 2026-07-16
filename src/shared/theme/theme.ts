@@ -247,13 +247,18 @@ export function buildTheme(mode: 'light' | 'dark') {
           },
           outlined: {
             borderColor: isDark ? zinc[700] : zinc[300],
-            '&:hover': {
-              borderColor: violet[600],
-              backgroundColor: alpha(violet[600], 0.06),
-            },
           },
         },
         variants: [
+          {
+            props: { variant: 'outlined', color: 'primary' },
+            style: {
+              '&:hover': {
+                borderColor: violet[600],
+                backgroundColor: alpha(violet[600], 0.06),
+              },
+            },
+          },
           {
             props: { variant: 'contained', color: 'primary' },
             style: {

@@ -48,26 +48,6 @@ const NAV_ITEMS: NavItem[] = [
     path: '/dashboard',
   },
   {
-    text: 'Users',
-    icon: <Icon name="People" />,
-    path: '/users',
-    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
-    permission: 'Users.View',
-  },
-  {
-    text: 'Roles',
-    icon: <Icon name="AdminPanelSettings" />,
-    path: '/roles',
-    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
-    permission: 'Roles.View',
-  },
-  {
-    text: 'Audit Log',
-    icon: <Icon name="History" />,
-    path: '/audit-logs',
-    allowedRoles: ['SystemAdmin'],
-  },
-  {
     text: 'Tenants',
     icon: <Icon name="Business" />,
     path: '/tenants',
@@ -82,9 +62,24 @@ const NAV_ITEMS: NavItem[] = [
     permission: 'Tenants.View',
   },
   {
-    text: 'Profile',
-    icon: <Icon name="AccountCircle" />,
-    path: '/profile',
+    text: 'Roles',
+    icon: <Icon name="AdminPanelSettings" />,
+    path: '/roles',
+    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+    permission: 'Roles.View',
+  },
+  {
+    text: 'Users',
+    icon: <Icon name="People" />,
+    path: '/users',
+    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+    permission: 'Users.View',
+  },
+  {
+    text: 'Audit Log',
+    icon: <Icon name="History" />,
+    path: '/audit-logs',
+    allowedRoles: ['SystemAdmin'],
   },
 ];
 

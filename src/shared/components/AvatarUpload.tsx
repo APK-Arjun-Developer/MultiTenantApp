@@ -9,15 +9,13 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
 import Slider from '@mui/material/Slider';
-import Tooltip from '@mui/material/Tooltip';
 import type { AvatarUploadProps } from './AvatarUpload.types';
 import { styles, hiddenInputStyle } from './AvatarUpload.styles';
 import { Icon } from '@/shared/components/Icon';
 
 const OUTPUT_SIZE = 512;
-const MIN_VALID_PX = 16; // discard crop values smaller than this — they're bogus initial fires
+const MIN_VALID_PX = 16;
 
 async function getCroppedBlob(imageSrc: string, pixelCrop: Area | null): Promise<Blob> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -32,17 +30,14 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area | null): Promise
 
   let sx: number, sy: number, sSize: number;
 
-  // Use pixelCrop only if both dimensions look plausible (>= MIN_VALID_PX and roughly square)
   const cropOk =
     pixelCrop !== null && pixelCrop.width >= MIN_VALID_PX && pixelCrop.height >= MIN_VALID_PX;
 
   if (cropOk && pixelCrop) {
-    // Force square from the smaller dimension; clamp to image bounds
     sSize = Math.min(pixelCrop.width, pixelCrop.height, imgW, imgH);
     sx = Math.max(0, Math.min(pixelCrop.x, imgW - sSize));
     sy = Math.max(0, Math.min(pixelCrop.y, imgH - sSize));
   } else {
-    // Fallback: centered square crop using the full shorter side
     sSize = Math.min(imgW, imgH);
     sx = Math.floor((imgW - sSize) / 2);
     sy = Math.floor((imgH - sSize) / 2);
@@ -75,7 +70,6 @@ export const AvatarUpload = React.memo(function AvatarUpload({
   size = 72,
   uploading = false,
   onFileSelect,
-  onRemove,
 }: AvatarUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hover, setHover] = useState(false);
@@ -97,7 +91,6 @@ export const AvatarUpload = React.memo(function AvatarUpload({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      // Reset all crop state before showing new image
       setCrop({ x: 0, y: 0 });
       setZoom(1);
       setCroppedAreaPixels(null);
@@ -123,14 +116,6 @@ export const AvatarUpload = React.memo(function AvatarUpload({
     setCropSrc(null);
     setCroppedAreaPixels(null);
   }, []);
-
-  const handleRemoveClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onRemove?.();
-    },
-    [onRemove],
-  );
 
   const handleSliderChange = useCallback((_e: Event, v: number | number[]) => {
     setZoom(v as number);
@@ -168,14 +153,6 @@ export const AvatarUpload = React.memo(function AvatarUpload({
             </Box>
           )}
         </Box>
-
-        {src && onRemove && !uploading && (
-          <Tooltip title="Remove photo">
-            <IconButton size="small" onClick={handleRemoveClick} sx={styles.removeButton}>
-              <Icon name="Close" sx={styles.removeIcon} />
-            </IconButton>
-          </Tooltip>
-        )}
 
         <input
           ref={inputRef}

@@ -46,13 +46,10 @@ export type PasswordValues = z.infer<typeof passwordSchema>;
 export interface ProfileAvatarSectionProps {
   avatarSrc: string | null;
   initials: string;
-  avatarUploading: boolean;
-  avatarRemoving: boolean;
   fullName: string | undefined;
   email: string | undefined;
   systemRole: string | undefined;
-  onAvatarUpload: (file: File) => Promise<void>;
-  onAvatarRemove: () => Promise<void>;
+  onOpenModal: () => void;
 }
 
 export interface ProfileInfoSectionProps {
@@ -83,10 +80,7 @@ export interface ProfileCompanySectionProps {
       }
     | undefined;
   tenantLogoSrc: string | null;
-  logoUploading: boolean;
-  logoRemoving: boolean;
   companyFields: FieldConfig[];
-  onTenantLogoUpload: (file: File) => Promise<void>;
-  onTenantLogoRemove: () => Promise<void>;
+  onOpenLogoModal: () => void;
   onCompanySubmit: (values: CompanyValues) => Promise<void>;
 }

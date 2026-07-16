@@ -79,20 +79,12 @@ export const styles = {
 
   // ─── Admin column cells ───────────────────────────────────────────────────────
 
-  /** Avatar in the first column — clickable to open avatar manager */
   adminAvatar: {
     width: 34,
     height: 34,
     cursor: 'pointer',
     fontSize: '0.8125rem',
     bgcolor: 'primary.dark',
-    border: '1.5px solid',
-    borderColor: 'primary.light',
-    boxSizing: 'border-box',
-    transition: 'box-shadow 0.15s ease',
-    '&:hover': {
-      boxShadow: '0 0 0 2px rgba(124,58,237,0.35)',
-    },
   },
 
   /** Cell wrapper for the name + email stacked layout */

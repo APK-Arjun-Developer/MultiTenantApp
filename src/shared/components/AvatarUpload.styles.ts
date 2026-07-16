@@ -33,24 +33,6 @@ export const styles = {
     color: 'white',
     fontSize: size * 0.35,
   }),
-  removeButton: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 22,
-    height: 22,
-    bgcolor: 'background.paper',
-    border: '1px solid',
-    borderColor: 'divider',
-    '&:hover': {
-      bgcolor: 'error.lighter',
-      borderColor: 'error.main',
-      color: 'error.main',
-    },
-  },
-  removeIcon: {
-    fontSize: 13,
-  },
   cropDialogContent: {
     p: 0,
   },

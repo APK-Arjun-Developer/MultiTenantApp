@@ -118,4 +118,34 @@ export const styles = {
   pageIconSize: {
     fontSize: '1.125rem',
   },
+
+  avatarClickable: {
+    position: 'relative',
+    display: 'inline-flex',
+    cursor: 'pointer',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+
+  avatarMedium: {
+    width: 64,
+    height: 64,
+    bgcolor: 'primary.main',
+    fontSize: '1.375rem',
+  },
+
+  avatarOverlay: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '50%',
+    bgcolor: 'rgba(0,0,0,0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  avatarOverlayIcon: {
+    color: '#fff',
+    fontSize: '1.375rem',
+  },
 } as const satisfies StyleSheet;
