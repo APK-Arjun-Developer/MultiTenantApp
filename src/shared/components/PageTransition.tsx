@@ -3,10 +3,7 @@ import { motion } from 'framer-motion';
 import type { PageTransitionProps } from './PageTransition.types';
 import { motionDivStyle } from './PageTransition.styles';
 
-export const PageTransition = React.memo(function PageTransition({
-  children,
-  motionKey,
-}: PageTransitionProps) {
+const PageTransition = React.memo(({ children, motionKey }: PageTransitionProps) => {
   return (
     <motion.div
       key={motionKey}
@@ -20,3 +17,4 @@ export const PageTransition = React.memo(function PageTransition({
     </motion.div>
   );
 });
+export default PageTransition;

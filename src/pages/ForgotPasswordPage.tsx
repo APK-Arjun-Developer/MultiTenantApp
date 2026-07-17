@@ -7,13 +7,11 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
-import { LoadingButton } from '@/shared/components/LoadingButton';
+import { LoadingButton, Icon } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 import { styles } from './ForgotPasswordPage.styles';
-import { forgotPasswordSchema } from './ForgotPasswordPage.types';
-import type { ForgotPasswordFormValues } from './ForgotPasswordPage.types';
-import { Icon } from '@/shared/components/Icon';
+import { forgotPasswordSchema, type ForgotPasswordFormValues } from './ForgotPasswordPage.types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -35,7 +33,7 @@ const variants = {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
+const ForgotPasswordPage = memo(() => {
   const snackbar = useSnackbar();
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const [sent, setSent] = useState(false);
@@ -160,3 +158,4 @@ export const ForgotPasswordPage = memo(function ForgotPasswordPage() {
     </Box>
   );
 });
+export default ForgotPasswordPage;

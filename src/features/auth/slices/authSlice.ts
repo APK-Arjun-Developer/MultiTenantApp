@@ -1,5 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
-import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
 import type { AuthUser, ImpersonatedByInfo } from '@/types/api';
 
@@ -14,14 +13,14 @@ interface AuthState {
 
 const USER_KEY = 'auth.user';
 
-function readUser(): AuthUser | null {
+const readUser = (): AuthUser | null => {
   try {
     const raw = localStorage.getItem(USER_KEY);
     return raw ? (JSON.parse(raw) as AuthUser) : null;
   } catch {
     return null;
   }
-}
+};
 
 const storedUser = readUser();
 
@@ -80,13 +79,26 @@ const authSlice = createSlice({
   },
 });
 
-export const { login, logout, setPermissions, setImpersonation, clearImpersonation } =
-  authSlice.actions;
-export default authSlice.reducer;
+const { login, logout, setPermissions, setImpersonation, clearImpersonation } = authSlice.actions;
 
-export const selectCurrentUser = (state: RootState) => state.auth.user;
-export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
-export const selectPermissions = (state: RootState) => state.auth.permissions;
-export const selectPermissionsLoaded = (state: RootState) => state.auth.permissionsLoaded;
-export const selectIsImpersonating = (state: RootState) => state.auth.isImpersonating;
-export const selectImpersonatedBy = (state: RootState) => state.auth.impersonatedBy;
+const selectCurrentUser = (state: RootState) => state.auth.user;
+const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
+const selectPermissions = (state: RootState) => state.auth.permissions;
+const selectPermissionsLoaded = (state: RootState) => state.auth.permissionsLoaded;
+const selectIsImpersonating = (state: RootState) => state.auth.isImpersonating;
+const selectImpersonatedBy = (state: RootState) => state.auth.impersonatedBy;
+
+export {
+  login,
+  logout,
+  setPermissions,
+  setImpersonation,
+  clearImpersonation,
+  selectCurrentUser,
+  selectIsAuthenticated,
+  selectPermissions,
+  selectPermissionsLoaded,
+  selectIsImpersonating,
+  selectImpersonatedBy,
+};
+export default authSlice.reducer;

@@ -7,7 +7,7 @@ import type {
   PermissionCatalogResponse,
 } from '@/types/api';
 
-export interface GetRolesParams {
+interface GetRolesParams {
   page?: number;
   pageSize?: number;
   search?: string;
@@ -16,7 +16,7 @@ export interface GetRolesParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-export const rolesApi = apiSlice.injectEndpoints({
+const rolesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getRoles: builder.query<PaginatedResponse<RoleDto>, GetRolesParams | void>({
       query: (params) => ({
@@ -71,10 +71,20 @@ export const rolesApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
+const {
   useGetRolesQuery,
   useCreateRoleMutation,
   useUpdateRoleMutation,
   useDeleteRoleMutation,
   useGetPermissionsQuery,
 } = rolesApi;
+
+export {
+  rolesApi,
+  useGetRolesQuery,
+  useCreateRoleMutation,
+  useUpdateRoleMutation,
+  useDeleteRoleMutation,
+  useGetPermissionsQuery,
+  type GetRolesParams,
+};

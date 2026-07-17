@@ -5,9 +5,7 @@ import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { FilterForm, FIELD_TYPE } from 'mui-schema-form-builder';
-import { LoadingButton } from '@/shared/components/LoadingButton';
-import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
-import { DataTable } from '@/shared/components/DataTable';
+import { LoadingButton, TenantContextGuard, DataTable, Icon } from '@/shared/components';
 import { exportToCsv } from '@/shared/utils/exportCsv';
 import { useDebounce, useTableState } from '@/shared/hooks';
 import { useAppDispatch } from '@/app/hooks';
@@ -23,7 +21,6 @@ import type {
   AuditLogsPageHeaderProps,
   AuditLogsFilterBarProps,
 } from './AuditLogsPage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -51,44 +48,39 @@ const AUDIT_FILTER_DEFAULT: AuditFilter = { module: '', dateFrom: '', dateTo: ''
 
 // ─── Header sub-component ─────────────────────────────────────────────────────
 
-const AuditLogsPageHeader = memo(function AuditLogsPageHeader({
-  exportLoading,
-  disableExport,
-  onExport,
-}: AuditLogsPageHeaderProps) {
-  return (
-    <Box sx={styles.header}>
-      <Box sx={styles.headerTitle}>
-        <Box sx={styles.pageIconBox}>
-          <Icon name="History" sx={styles.pageIconSize} />
+const AuditLogsPageHeader = memo(
+  ({ exportLoading, disableExport, onExport }: AuditLogsPageHeaderProps) => {
+    return (
+      <Box sx={styles.header}>
+        <Box sx={styles.headerTitle}>
+          <Box sx={styles.pageIconBox}>
+            <Icon name="History" sx={styles.pageIconSize} />
+          </Box>
+          <Typography variant="h5" sx={styles.titleText}>
+            Audit Log
+          </Typography>
         </Box>
-        <Typography variant="h5" sx={styles.titleText}>
-          Audit Log
-        </Typography>
+        <Tooltip title="Export to CSV">
+          <span>
+            <LoadingButton
+              variant="outlined"
+              size="small"
+              loading={exportLoading}
+              disabled={disableExport}
+              onClick={onExport}
+            >
+              Export CSV
+            </LoadingButton>
+          </span>
+        </Tooltip>
       </Box>
-      <Tooltip title="Export to CSV">
-        <span>
-          <LoadingButton
-            variant="outlined"
-            size="small"
-            loading={exportLoading}
-            disabled={disableExport}
-            onClick={onExport}
-          >
-            Export CSV
-          </LoadingButton>
-        </span>
-      </Tooltip>
-    </Box>
-  );
-});
+    );
+  },
+);
 
 // ─── FilterBar sub-component ──────────────────────────────────────────────────
 
-const AuditLogsFilterBar = memo(function AuditLogsFilterBar({
-  fields,
-  onFilterChange,
-}: AuditLogsFilterBarProps) {
+const AuditLogsFilterBar = memo(({ fields, onFilterChange }: AuditLogsFilterBarProps) => {
   return (
     <Box sx={styles.filterBar}>
       <FilterForm
@@ -104,7 +96,7 @@ const AuditLogsFilterBar = memo(function AuditLogsFilterBar({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const AuditLogsPage = memo(function AuditLogsPage() {
+const AuditLogsPage = memo(() => {
   const dispatch = useAppDispatch();
   const table = useTableState();
   const [auditFilter, setAuditFilter] = useState<AuditFilter>(AUDIT_FILTER_DEFAULT);
@@ -287,3 +279,4 @@ export const AuditLogsPage = memo(function AuditLogsPage() {
     </TenantContextGuard>
   );
 });
+export default AuditLogsPage;

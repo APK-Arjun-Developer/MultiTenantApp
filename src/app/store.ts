@@ -1,5 +1,4 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import type { UnknownAction } from '@reduxjs/toolkit';
+import { configureStore, combineReducers, type UnknownAction } from '@reduxjs/toolkit';
 import authReducer, { logout } from '@/features/auth/slices/authSlice';
 import uiReducer, { SELECTED_TENANT_STORAGE_KEY, THEME_STORAGE_KEY } from '@/features/ui/uiSlice';
 import { apiSlice } from '@/shared/api/apiSlice';
@@ -12,15 +11,15 @@ const combinedReducer = combineReducers({
 
 type AppState = ReturnType<typeof combinedReducer>;
 
-function rootReducer(state: AppState | undefined, action: UnknownAction): AppState {
+const rootReducer = (state: AppState | undefined, action: UnknownAction): AppState => {
   if (action.type === logout.type && state) {
     // auth handles its own logout; reset ui (clears selectedTenantId) and api (clears all RTK Query cache)
     return combinedReducer({ auth: state.auth }, action);
   }
   return combinedReducer(state, action);
-}
+};
 
-export const store = configureStore({
+const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware),
 });
@@ -49,5 +48,7 @@ store.subscribe(() => {
   }
 });
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+type RootState = ReturnType<typeof store.getState>;
+type AppDispatch = typeof store.dispatch;
+
+export { store, type RootState, type AppDispatch };

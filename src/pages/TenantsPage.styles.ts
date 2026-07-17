@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   root: {},
 
   header: {
@@ -113,3 +113,5 @@ export const styles = {
     borderColor: 'divider',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

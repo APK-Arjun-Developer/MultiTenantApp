@@ -4,9 +4,9 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { styles } from './ErrorPage.styles';
-import { Icon } from '@/shared/components/Icon';
+import Icon from './Icon';
 
-export const ErrorPage = React.memo(function ErrorPage() {
+const ErrorPage = React.memo(() => {
   const error = useRouteError();
   const navigate = useNavigate();
 
@@ -41,3 +41,4 @@ export const ErrorPage = React.memo(function ErrorPage() {
     </Box>
   );
 });
+export default ErrorPage;

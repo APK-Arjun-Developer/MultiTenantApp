@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   alert: {
     width: '100%',
     minWidth: 280,
@@ -8,3 +8,5 @@ export const styles = {
     '& .MuiAlert-icon': { color: '#fff' },
   },
 } as const satisfies StyleSheet;
+
+export { styles };

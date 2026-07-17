@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 
-export interface PermissionGuardProps {
+interface PermissionGuardProps {
   permission: string;
   children: ReactNode;
 }
+
+export { type PermissionGuardProps };

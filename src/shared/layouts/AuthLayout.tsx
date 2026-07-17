@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import { styles } from './AuthLayout.styles';
 import type {} from './AuthLayout.types';
 
-const PageLoader = memo(function PageLoader() {
+const PageLoader = memo(() => {
   return (
     <Box sx={styles.pageLoader}>
       <CircularProgress size={24} />
@@ -17,7 +17,7 @@ const PageLoader = memo(function PageLoader() {
   );
 });
 
-export const AuthLayout = memo(function AuthLayout() {
+const AuthLayout = memo(() => {
   usePageTitle();
 
   return (
@@ -43,3 +43,4 @@ export const AuthLayout = memo(function AuthLayout() {
     </Box>
   );
 });
+export default AuthLayout;

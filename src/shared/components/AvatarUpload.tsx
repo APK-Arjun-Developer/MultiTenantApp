@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import Cropper from 'react-easy-crop';
-import type { Area } from 'react-easy-crop';
+import Cropper, { type Area } from 'react-easy-crop';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -12,12 +11,12 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Slider from '@mui/material/Slider';
 import type { AvatarUploadProps } from './AvatarUpload.types';
 import { styles, hiddenInputStyle } from './AvatarUpload.styles';
-import { Icon } from '@/shared/components/Icon';
+import Icon from './Icon';
 
 const OUTPUT_SIZE = 512;
 const MIN_VALID_PX = 16;
 
-async function getCroppedBlob(imageSrc: string, pixelCrop: Area | null): Promise<Blob> {
+const getCroppedBlob = async (imageSrc: string, pixelCrop: Area | null): Promise<Blob> => {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
@@ -62,144 +61,141 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area | null): Promise
       0.9,
     );
   });
-}
+};
 
-export const AvatarUpload = React.memo(function AvatarUpload({
-  src,
-  initials,
-  size = 72,
-  uploading = false,
-  onFileSelect,
-}: AvatarUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [hover, setHover] = useState(false);
+const AvatarUpload = React.memo(
+  ({ src, initials, size = 72, uploading = false, onFileSelect }: AvatarUploadProps) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [hover, setHover] = useState(false);
 
-  const [cropSrc, setCropSrc] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+    const [cropSrc, setCropSrc] = useState<string | null>(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
-  const handleMouseEnter = useCallback(() => setHover(true), []);
-  const handleMouseLeave = useCallback(() => setHover(false), []);
+    const handleMouseEnter = useCallback(() => setHover(true), []);
+    const handleMouseLeave = useCallback(() => setHover(false), []);
 
-  const handleClick = useCallback(() => {
-    if (!uploading) inputRef.current?.click();
-  }, [uploading]);
+    const handleClick = useCallback(() => {
+      if (!uploading) inputRef.current?.click();
+    }, [uploading]);
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCrop({ x: 0, y: 0 });
-      setZoom(1);
+    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+        setCroppedAreaPixels(null);
+        setCropSrc(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }, []);
+
+    const onCropComplete = useCallback((_: Area, pixels: Area) => {
+      setCroppedAreaPixels(pixels);
+    }, []);
+
+    const handleCropConfirm = useCallback(async () => {
+      if (!cropSrc) return;
+      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels);
+      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+      setCropSrc(null);
+      onFileSelect(file);
+    }, [cropSrc, croppedAreaPixels, onFileSelect]);
+
+    const handleCropCancel = useCallback(() => {
+      setCropSrc(null);
       setCroppedAreaPixels(null);
-      setCropSrc(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  }, []);
+    }, []);
 
-  const onCropComplete = useCallback((_: Area, pixels: Area) => {
-    setCroppedAreaPixels(pixels);
-  }, []);
+    const handleSliderChange = useCallback((_e: Event, v: number | number[]) => {
+      setZoom(v as number);
+    }, []);
 
-  const handleCropConfirm = useCallback(async () => {
-    if (!cropSrc) return;
-    const blob = await getCroppedBlob(cropSrc, croppedAreaPixels);
-    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
-    setCropSrc(null);
-    onFileSelect(file);
-  }, [cropSrc, croppedAreaPixels, onFileSelect]);
+    const overlayIconSx = styles.overlayIcon(size);
+    const overlaySpinnerSx = styles.overlaySpinner(size);
+    const avatarSx = styles.avatar(size);
+    const clickableSx = styles.clickable(uploading);
 
-  const handleCropCancel = useCallback(() => {
-    setCropSrc(null);
-    setCroppedAreaPixels(null);
-  }, []);
-
-  const handleSliderChange = useCallback((_e: Event, v: number | number[]) => {
-    setZoom(v as number);
-  }, []);
-
-  const overlayIconSx = styles.overlayIcon(size);
-  const overlaySpinnerSx = styles.overlaySpinner(size);
-  const avatarSx = styles.avatar(size);
-  const clickableSx = styles.clickable(uploading);
-
-  return (
-    <>
-      <Box sx={styles.outerBox}>
-        <Box
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onClick={handleClick}
-          sx={clickableSx}
-        >
-          <Avatar
-            src={src ?? undefined}
-            slotProps={{ img: { crossOrigin: 'use-credentials' } }}
-            sx={avatarSx}
+    return (
+      <>
+        <Box sx={styles.outerBox}>
+          <Box
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onClick={handleClick}
+            sx={clickableSx}
           >
-            {!src && initials}
-          </Avatar>
+            <Avatar
+              src={src ?? undefined}
+              slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+              sx={avatarSx}
+            >
+              {!src && initials}
+            </Avatar>
 
-          {(hover || uploading) && (
-            <Box sx={styles.overlay}>
-              {uploading ? (
-                <CircularProgress size={size * 0.35} sx={overlaySpinnerSx} />
-              ) : (
-                <Icon name="CameraAlt" sx={overlayIconSx} />
-              )}
-            </Box>
-          )}
-        </Box>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/gif,image/webp"
-          style={hiddenInputStyle}
-          onChange={handleFileChange}
-        />
-      </Box>
-
-      {/* Crop dialog */}
-      <Dialog open={!!cropSrc} maxWidth="xs" fullWidth>
-        <DialogTitle>Crop photo</DialogTitle>
-        <DialogContent sx={styles.cropDialogContent}>
-          <Box sx={styles.cropBox('#111')}>
-            {cropSrc && (
-              <Cropper
-                image={cropSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-              />
+            {(hover || uploading) && (
+              <Box sx={styles.overlay}>
+                {uploading ? (
+                  <CircularProgress size={size * 0.35} sx={overlaySpinnerSx} />
+                ) : (
+                  <Icon name="CameraAlt" sx={overlayIconSx} />
+                )}
+              </Box>
             )}
           </Box>
-          <Box sx={styles.sliderBox}>
-            <Slider
-              value={zoom}
-              min={1}
-              max={3}
-              step={0.05}
-              onChange={handleSliderChange}
-              size="small"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions sx={styles.dialogActions}>
-          <Button onClick={handleCropCancel}>Cancel</Button>
-          <Button variant="contained" onClick={handleCropConfirm}>
-            Apply
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
-});
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            style={hiddenInputStyle}
+            onChange={handleFileChange}
+          />
+        </Box>
+
+        {/* Crop dialog */}
+        <Dialog open={!!cropSrc} maxWidth="xs" fullWidth>
+          <DialogTitle>Crop photo</DialogTitle>
+          <DialogContent sx={styles.cropDialogContent}>
+            <Box sx={styles.cropBox('#111')}>
+              {cropSrc && (
+                <Cropper
+                  image={cropSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid={false}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={onCropComplete}
+                />
+              )}
+            </Box>
+            <Box sx={styles.sliderBox}>
+              <Slider
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.05}
+                onChange={handleSliderChange}
+                size="small"
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={styles.dialogActions}>
+            <Button onClick={handleCropCancel}>Cancel</Button>
+            <Button variant="contained" onClick={handleCropConfirm}>
+              Apply
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </>
+    );
+  },
+);
+export default AvatarUpload;

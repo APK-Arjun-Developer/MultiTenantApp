@@ -1,19 +1,19 @@
 import type { StyleSheet } from '@/types';
 
-export const DRAWER_WIDTH = 240;
-export const DRAWER_COLLAPSED_WIDTH = 64;
+const DRAWER_WIDTH = 240;
+const DRAWER_COLLAPSED_WIDTH = 64;
 
 const SIDEBAR_TRANSITION = 'width 225ms cubic-bezier(0.4, 0, 0.6, 1)';
 const APPBAR_TRANSITION =
   'width 225ms cubic-bezier(0.4, 0, 0.6, 1), margin-left 225ms cubic-bezier(0.4, 0, 0.6, 1)';
 
-export const navLinkStyle = {
+const navLinkStyle = {
   width: '100%',
   textDecoration: 'none',
   color: 'inherit',
 } as const;
 
-export const styles = {
+const styles = {
   root: {
     display: 'flex',
     minHeight: '100vh',
@@ -281,3 +281,5 @@ export const styles = {
     py: 8,
   },
 } as const satisfies StyleSheet;
+
+export { DRAWER_WIDTH, DRAWER_COLLAPSED_WIDTH, navLinkStyle, styles };

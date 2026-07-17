@@ -4,7 +4,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { getAddressFields, buildAddressPayload } from '@/shared/forms/addressFields';
-import { LoadingButton } from '@/shared/components/LoadingButton';
+import { LoadingButton, Icon } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
   useGetTenantSettingsQuery,
@@ -12,42 +12,41 @@ import {
 } from '@/features/tenantSettings/api/tenantSettingsApi';
 import type { ApiError } from '@/types/api';
 import { styles } from './TenantSettingsPage.styles';
-import type { SettingsValues, TenantSettingsFormProps } from './TenantSettingsPage.types';
-import { settingsSchema } from './TenantSettingsPage.types';
-import { Icon } from '@/shared/components/Icon';
+import {
+  settingsSchema,
+  type SettingsValues,
+  type TenantSettingsFormProps,
+} from './TenantSettingsPage.types';
 
 // ─── Sub-component ────────────────────────────────────────────────────────────
 
-const TenantSettingsForm = memo(function TenantSettingsForm({
-  tenantId,
-  fields,
-  isSaving,
-  onSubmit,
-}: TenantSettingsFormProps) {
-  return (
-    <FormBuilder
-      key={tenantId}
-      schema={settingsSchema}
-      fields={fields}
-      onSubmit={onSubmit}
-      renderActions={({ isSubmitting }) => (
-        <LoadingButton
-          type="submit"
-          loading={isSubmitting || isSaving}
-          variant="contained"
-          sx={styles.saveButton}
-        >
-          Save changes
-        </LoadingButton>
-      )}
-      sx={styles.formCard}
-    />
-  );
-});
+const TenantSettingsForm = memo(
+  ({ tenantId, fields, isSaving, onSubmit }: TenantSettingsFormProps) => {
+    return (
+      <FormBuilder
+        key={tenantId}
+        schema={settingsSchema}
+        fields={fields}
+        onSubmit={onSubmit}
+        renderActions={({ isSubmitting }) => (
+          <LoadingButton
+            type="submit"
+            loading={isSubmitting || isSaving}
+            variant="contained"
+            sx={styles.saveButton}
+          >
+            Save changes
+          </LoadingButton>
+        )}
+        sx={styles.formCard}
+      />
+    );
+  },
+);
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const TenantSettingsPage = memo(function TenantSettingsPage() {
+const TenantSettingsPage = memo(() => {
   const snackbar = useSnackbar();
   const { data: tenant, isLoading } = useGetTenantSettingsQuery();
   const [updateSettings, { isLoading: isSaving }] = useUpdateTenantSettingsMutation();
@@ -111,3 +110,4 @@ export const TenantSettingsPage = memo(function TenantSettingsPage() {
     </Box>
   );
 });
+export default TenantSettingsPage;

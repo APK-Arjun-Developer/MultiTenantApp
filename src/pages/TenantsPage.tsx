@@ -21,13 +21,16 @@ import {
   type FieldConfig,
 } from 'mui-schema-form-builder';
 import Avatar from '@mui/material/Avatar';
-import { DataTable } from '@/shared/components/DataTable';
-import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
-import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
-import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
-import { LoadingButton } from '@/shared/components/LoadingButton';
-import { LabelValue } from '@/shared/components/LabelValue';
-import { ViewDialog } from '@/shared/components/ViewDialog';
+import {
+  DataTable,
+  AvatarManageModal,
+  ConfirmDialog,
+  CreatedViaChip,
+  LoadingButton,
+  LabelValue,
+  ViewDialog,
+  Icon,
+} from '@/shared/components';
 import { formatAddress } from '@/shared/utils/format';
 import {
   useTableState,
@@ -78,7 +81,6 @@ import type {
   TenantDto,
   TenantCreationInvitationDto,
 } from './TenantsPage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -116,38 +118,34 @@ const INV_FILTER_DEFAULT = { status: '' };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const TenantsPageHeader = memo(function TenantsPageHeader({
-  canCreate,
-  onInviteClick,
-  onOnboardClick,
-}: TenantsPageHeaderProps) {
-  return (
-    <Box sx={styles.header}>
-      <Box sx={styles.headerTitle}>
-        <Box sx={styles.pageIconBox}>
-          <Icon name="Business" sx={styles.pageIconSize} />
+const TenantsPageHeader = memo(
+  ({ canCreate, onInviteClick, onOnboardClick }: TenantsPageHeaderProps) => {
+    return (
+      <Box sx={styles.header}>
+        <Box sx={styles.headerTitle}>
+          <Box sx={styles.pageIconBox}>
+            <Icon name="Business" sx={styles.pageIconSize} />
+          </Box>
+          <Typography variant="h5" sx={styles.headerTitleText}>
+            Tenants
+          </Typography>
         </Box>
-        <Typography variant="h5" sx={styles.headerTitleText}>
-          Tenants
-        </Typography>
+        {canCreate && (
+          <Box sx={styles.headerActions}>
+            <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
+              Invite Tenant
+            </Button>
+            <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onOnboardClick}>
+              New Tenant
+            </Button>
+          </Box>
+        )}
       </Box>
-      {canCreate && (
-        <Box sx={styles.headerActions}>
-          <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
-            Invite Tenant
-          </Button>
-          <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onOnboardClick}>
-            New Tenant
-          </Button>
-        </Box>
-      )}
-    </Box>
-  );
-});
+    );
+  },
+);
 
-const TenantsPageFilterBar = memo(function TenantsPageFilterBar({
-  onChange,
-}: TenantsPageFilterBarProps) {
+const TenantsPageFilterBar = memo(({ onChange }: TenantsPageFilterBarProps) => {
   const fields = useMemo<FieldConfig[]>(
     () => [
       {
@@ -196,9 +194,7 @@ const TenantsPageFilterBar = memo(function TenantsPageFilterBar({
   );
 });
 
-const TenantsInvitationsFilterBar = memo(function TenantsInvitationsFilterBar({
-  onChange,
-}: TenantsInvitationsFilterBarProps) {
+const TenantsInvitationsFilterBar = memo(({ onChange }: TenantsInvitationsFilterBarProps) => {
   const fields = useMemo<FieldConfig[]>(
     () => [
       {
@@ -233,10 +229,7 @@ const TenantsInvitationsFilterBar = memo(function TenantsInvitationsFilterBar({
 
 // ─── Onboard dialog ───────────────────────────────────────────────────────────
 
-const OnboardTenantDialog = memo(function OnboardTenantDialog({
-  open,
-  onClose,
-}: OnboardDialogProps) {
+const OnboardTenantDialog = memo(({ open, onClose }: OnboardDialogProps) => {
   const [onboardTenant, { isLoading }] = useOnboardTenantMutation();
   const snackbar = useSnackbar();
 
@@ -369,7 +362,7 @@ const OnboardTenantDialog = memo(function OnboardTenantDialog({
 
 // ─── Invite dialog ────────────────────────────────────────────────────────────
 
-const InviteTenantDialog = memo(function InviteTenantDialog({ open, onClose }: InviteDialogProps) {
+const InviteTenantDialog = memo(({ open, onClose }: InviteDialogProps) => {
   const [inviteTenant, { isLoading }] = useInviteTenantMutation();
   const snackbar = useSnackbar();
 
@@ -424,7 +417,7 @@ const InviteTenantDialog = memo(function InviteTenantDialog({ open, onClose }: I
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-const EditTenantDialog = memo(function EditTenantDialog({ tenant, onClose }: EditDialogProps) {
+const EditTenantDialog = memo(({ tenant, onClose }: EditDialogProps) => {
   const [updateTenant, { isLoading }] = useUpdateTenantMutation();
   const snackbar = useSnackbar();
 
@@ -490,10 +483,7 @@ const EditTenantDialog = memo(function EditTenantDialog({ tenant, onClose }: Edi
 
 // ─── View dialog ──────────────────────────────────────────────────────────────
 
-const ViewTenantDialog = memo(function ViewTenantDialog({
-  tenant,
-  onClose,
-}: ViewTenantDialogProps) {
+const ViewTenantDialog = memo(({ tenant, onClose }: ViewTenantDialogProps) => {
   return (
     <ViewDialog open={!!tenant} title="Tenant details" onClose={onClose}>
       <Box sx={styles.viewDialogContent}>
@@ -524,7 +514,7 @@ const ViewTenantDialog = memo(function ViewTenantDialog({
 
 // ─── Plan badge ───────────────────────────────────────────────────────────────
 
-const PlanBadge = memo(function PlanBadge({ plan }: { plan?: PlanType | string }) {
+const PlanBadge = memo(({ plan }: { plan?: PlanType | string }) => {
   const isPro = plan === 'Pro';
   return (
     <Chip
@@ -539,10 +529,7 @@ const PlanBadge = memo(function PlanBadge({ plan }: { plan?: PlanType | string }
 
 // ─── Change plan dialog ───────────────────────────────────────────────────────
 
-const ChangePlanDialog = memo(function ChangePlanDialog({
-  tenant,
-  onClose,
-}: ChangePlanDialogProps) {
+const ChangePlanDialog = memo(({ tenant, onClose }: ChangePlanDialogProps) => {
   const snackbar = useSnackbar();
   const { data: plans = [] } = useGetSubscriptionPlansQuery();
   const [updatePlan, { isLoading }] = useUpdateTenantPlanMutation();
@@ -599,7 +586,7 @@ const ChangePlanDialog = memo(function ChangePlanDialog({
 
 // ─── Invitation status chip ───────────────────────────────────────────────────
 
-const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { status: string }) {
+const InvitationStatusChip = memo(({ status }: { status: string }) => {
   const lower = status.toLowerCase();
   const color =
     lower === 'accepted'
@@ -614,7 +601,7 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const TenantsPage = memo(function TenantsPage() {
+const TenantsPage = memo(() => {
   const snackbar = useSnackbar();
 
   const canList = usePermission('Tenants.List');
@@ -1038,3 +1025,4 @@ export const TenantsPage = memo(function TenantsPage() {
     </Box>
   );
 });
+export default TenantsPage;

@@ -12,7 +12,7 @@ import type {
   InviteResponse,
 } from '@/types/api';
 
-export interface GetTenantsParams {
+interface GetTenantsParams {
   page?: number;
   pageSize?: number;
   search?: string;
@@ -22,7 +22,7 @@ export interface GetTenantsParams {
   createdVia?: 'Direct' | 'Invitation';
 }
 
-export const tenantsApi = apiSlice.injectEndpoints({
+const tenantsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTenants: builder.query<PaginatedResponse<TenantDto>, GetTenantsParams | void>({
       query: (params) => ({
@@ -148,7 +148,7 @@ export const tenantsApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
+const {
   useGetTenantsQuery,
   useOnboardTenantMutation,
   useUpdateTenantMutation,
@@ -161,3 +161,19 @@ export const {
   useUploadTenantLogoByAdminMutation,
   useRemoveTenantLogoByAdminMutation,
 } = tenantsApi;
+
+export {
+  tenantsApi,
+  useGetTenantsQuery,
+  useOnboardTenantMutation,
+  useUpdateTenantMutation,
+  useUpdateCurrentTenantAddressMutation,
+  useDeleteTenantMutation,
+  useGetTenantCreationInvitationsQuery,
+  useInviteTenantMutation,
+  useRevokeTenantInvitationMutation,
+  useResendTenantInvitationMutation,
+  useUploadTenantLogoByAdminMutation,
+  useRemoveTenantLogoByAdminMutation,
+  type GetTenantsParams,
+};

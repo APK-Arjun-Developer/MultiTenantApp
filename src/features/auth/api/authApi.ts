@@ -19,7 +19,7 @@ import type {
   VerifyEmailOtpRequest,
 } from '@/types/api';
 
-export const authApi = apiSlice.injectEndpoints({
+const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getMe: builder.query<AuthUser, void>({
       query: () => ({ url: '/api/v1/auth/me', method: 'GET', skipTenantHeader: true }),
@@ -135,7 +135,7 @@ export const authApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
+const {
   useGetMeQuery,
   useLoginMutation,
   useLogoutMutation,
@@ -151,3 +151,21 @@ export const {
   useValidateAccountSetupQuery,
   useSetPasswordMutation,
 } = authApi;
+
+export {
+  authApi,
+  useGetMeQuery,
+  useLoginMutation,
+  useLogoutMutation,
+  useVerifyEmailMutation,
+  useResendVerificationMutation,
+  useForgotPasswordMutation,
+  useValidateResetTokenQuery,
+  useResetPasswordMutation,
+  useValidateInvitationQuery,
+  useAcceptTenantAdminInvitationMutation,
+  useAcceptTenantUserInvitationMutation,
+  useAcceptTenantCreationInvitationMutation,
+  useValidateAccountSetupQuery,
+  useSetPasswordMutation,
+};

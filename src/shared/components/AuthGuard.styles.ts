@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   loadingContainer: {
     display: 'flex',
     justifyContent: 'center',
@@ -8,3 +8,5 @@ export const styles = {
     height: '100vh',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

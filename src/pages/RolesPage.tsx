@@ -10,11 +10,14 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FilterForm, FIELD_TYPE } from 'mui-schema-form-builder';
-import { DataTable } from '@/shared/components/DataTable';
-import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
-import { LabelValue } from '@/shared/components/LabelValue';
-import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
-import { ViewDialog } from '@/shared/components/ViewDialog';
+import {
+  DataTable,
+  ConfirmDialog,
+  LabelValue,
+  TenantContextGuard,
+  ViewDialog,
+  Icon,
+} from '@/shared/components';
 import {
   useTableState,
   useFilterState,
@@ -32,25 +35,25 @@ import {
 } from '@/features/roles/api/rolesApi';
 import type { RoleDto, ApiError } from '@/types/api';
 import { styles } from './RolesPage.styles';
-import type {
-  CreateValues,
-  EditValues,
-  PermissionOption,
-  CreateRoleDialogProps,
-  EditRoleDialogProps,
-  ViewRoleDialogProps,
-  RolesPageHeaderProps,
-  RolesFilterBarProps,
-  RolesFilter,
+import {
+  createSchema,
+  editSchema,
+  type CreateValues,
+  type EditValues,
+  type PermissionOption,
+  type CreateRoleDialogProps,
+  type EditRoleDialogProps,
+  type ViewRoleDialogProps,
+  type RolesPageHeaderProps,
+  type RolesFilterBarProps,
+  type RolesFilter,
 } from './RolesPage.types';
-import { createSchema, editSchema } from './RolesPage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function extractPermissionIds(raw: unknown[]): string[] {
+const extractPermissionIds = (raw: unknown[]): string[] => {
   return raw.map((r) => (typeof r === 'string' ? r : (r as { value: string }).value));
-}
+};
 
 // ─── Module-level filter default (stable reference) ───────────────────────────
 
@@ -58,10 +61,7 @@ const ROLES_FILTER_DEFAULT: RolesFilter = { search: '', permissions: [] };
 
 // ─── Header sub-component ─────────────────────────────────────────────────────
 
-const RolesPageHeader = memo(function RolesPageHeader({
-  canCreate,
-  onCreateClick,
-}: RolesPageHeaderProps) {
+const RolesPageHeader = memo(({ canCreate, onCreateClick }: RolesPageHeaderProps) => {
   return (
     <Box sx={styles.header}>
       <Box sx={styles.headerTitle}>
@@ -83,10 +83,7 @@ const RolesPageHeader = memo(function RolesPageHeader({
 
 // ─── FilterBar sub-component ──────────────────────────────────────────────────
 
-const RolesFilterBar = memo(function RolesFilterBar({
-  fields,
-  onFilterChange,
-}: RolesFilterBarProps) {
+const RolesFilterBar = memo(({ fields, onFilterChange }: RolesFilterBarProps) => {
   return (
     <Box sx={styles.filterBar}>
       <FilterForm
@@ -102,11 +99,7 @@ const RolesFilterBar = memo(function RolesFilterBar({
 
 // ─── Create dialog ────────────────────────────────────────────────────────────
 
-const CreateRoleDialog = memo(function CreateRoleDialog({
-  open,
-  onClose,
-  permissionOptions,
-}: CreateRoleDialogProps) {
+const CreateRoleDialog = memo(({ open, onClose, permissionOptions }: CreateRoleDialogProps) => {
   const [createRole, { isLoading }] = useCreateRoleMutation();
   const snackbar = useSnackbar();
 
@@ -174,12 +167,7 @@ const CreateRoleDialog = memo(function CreateRoleDialog({
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-const EditRoleDialog = memo(function EditRoleDialog({
-  open,
-  onClose,
-  role,
-  permissionOptions,
-}: EditRoleDialogProps) {
+const EditRoleDialog = memo(({ open, onClose, role, permissionOptions }: EditRoleDialogProps) => {
   const [updateRole, { isLoading }] = useUpdateRoleMutation();
   const snackbar = useSnackbar();
 
@@ -257,7 +245,7 @@ const EditRoleDialog = memo(function EditRoleDialog({
 
 // ─── View dialog ──────────────────────────────────────────────────────────────
 
-const ViewRoleDialog = memo(function ViewRoleDialog({ role, onClose }: ViewRoleDialogProps) {
+const ViewRoleDialog = memo(({ role, onClose }: ViewRoleDialogProps) => {
   return (
     <ViewDialog open={!!role} title="Role details" onClose={onClose}>
       <Box sx={styles.viewDialogContent}>
@@ -286,7 +274,7 @@ const ViewRoleDialog = memo(function ViewRoleDialog({ role, onClose }: ViewRoleD
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const RolesPage = memo(function RolesPage() {
+const RolesPage = memo(() => {
   const snackbar = useSnackbar();
 
   const canList = usePermission('Roles.List');
@@ -488,3 +476,4 @@ export const RolesPage = memo(function RolesPage() {
     </TenantContextGuard>
   );
 });
+export default RolesPage;

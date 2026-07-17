@@ -13,7 +13,7 @@ import type {
   DeleteUserRequest,
 } from '@/types/api';
 
-export interface GetUsersParams {
+interface GetUsersParams {
   page?: number;
   pageSize?: number;
   search?: string;
@@ -23,13 +23,13 @@ export interface GetUsersParams {
   createdVia?: 'Direct' | 'Invitation';
 }
 
-export interface GetUserInvitationsParams {
+interface GetUserInvitationsParams {
   page?: number;
   pageSize?: number;
   status?: string;
 }
 
-export const usersApi = apiSlice.injectEndpoints({
+const usersApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<PaginatedResponse<UserDto>, GetUsersParams | void>({
       query: (params) => ({
@@ -208,7 +208,7 @@ export const usersApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
+const {
   useGetUsersQuery,
   useCreateUserMutation,
   useInviteUserMutation,
@@ -229,6 +229,31 @@ export const {
   useRemoveUserAvatarByAdminMutation,
 } = usersApi;
 
-export function getUserAvatarUrl(userId: string): string {
+const getUserAvatarUrl = (userId: string): string => {
   return `${import.meta.env.VITE_API_BASE_URL}/api/v1/users/${userId}/avatar`;
-}
+};
+
+export {
+  usersApi,
+  useGetUsersQuery,
+  useCreateUserMutation,
+  useInviteUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useResendUserSetupMutation,
+  useActivateUserMutation,
+  useDeactivateUserMutation,
+  useGetUserInvitationsQuery,
+  useRevokeUserInvitationMutation,
+  useResendUserInvitationMutation,
+  useGetCurrentUserQuery,
+  useUpdateCurrentUserMutation,
+  useChangePasswordMutation,
+  useUploadCurrentUserAvatarMutation,
+  useRemoveCurrentUserAvatarMutation,
+  useUploadUserAvatarByAdminMutation,
+  useRemoveUserAvatarByAdminMutation,
+  getUserAvatarUrl,
+  type GetUsersParams,
+  type GetUserInvitationsParams,
+};

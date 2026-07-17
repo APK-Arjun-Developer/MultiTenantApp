@@ -1,7 +1,7 @@
-import { alpha } from '@mui/material/styles';
+﻿import { alpha } from '@mui/material/styles';
 import type { Sx, StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   // ── Page root ──────────────────────────────────────────────────────────────
   pageRoot: {
     pb: 4,
@@ -171,11 +171,13 @@ export const styles = {
   },
 } as const satisfies StyleSheet;
 
-export function statCardIconBoxColor(hex: string): Sx {
+const statCardIconBoxColor = (hex: string): Sx => {
   return {
     background: `linear-gradient(135deg, ${alpha(hex, 0.15)} 0%, ${alpha(hex, 0.28)} 100%)`,
     boxShadow: `0 0 14px ${alpha(hex, 0.18)}`,
     color: hex,
     border: `1px solid ${alpha(hex, 0.2)}`,
   };
-}
+};
+
+export { styles, statCardIconBoxColor };

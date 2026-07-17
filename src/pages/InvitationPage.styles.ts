@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   // InvitationInvalid
   invalidStack: { alignItems: 'center', textAlign: 'center' },
   invalidIconBox: {
@@ -76,3 +76,5 @@ export const styles = {
     fontSize: '0.875rem',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

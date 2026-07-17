@@ -1,8 +1,10 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   label: {
     mb: 0.25,
     display: 'block',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

@@ -1,66 +1,80 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { FieldConfig } from 'mui-schema-form-builder';
 import type { RoleDto, FilterValues } from '@/types/api';
 
-// ─── Schemas ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const permissionOptionSchema = z.union([
   z.string(),
   z.object({ value: z.string(), label: z.string() }),
 ]);
 
-export const createSchema = z.object({
+const createSchema = z.object({
   name: z.string().min(1, 'Role name is required').max(100),
   description: z.string().optional(),
   permissions: z.array(permissionOptionSchema).min(1, 'At least one permission is required'),
 });
-export type CreateValues = z.infer<typeof createSchema>;
+type CreateValues = z.infer<typeof createSchema>;
 
-export const editSchema = z.object({
+const editSchema = z.object({
   name: z.string().min(1, 'Role name is required').max(100),
   description: z.string().optional(),
   permissions: z.array(permissionOptionSchema).min(1, 'At least one permission is required'),
 });
-export type EditValues = z.infer<typeof editSchema>;
+type EditValues = z.infer<typeof editSchema>;
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export interface PermissionOption {
+interface PermissionOption {
   value: string;
   label: string;
 }
 
-export interface CreateRoleDialogProps {
+interface CreateRoleDialogProps {
   open: boolean;
   onClose: () => void;
   permissionOptions: PermissionOption[];
 }
 
-export interface EditRoleDialogProps {
+interface EditRoleDialogProps {
   open: boolean;
   onClose: () => void;
   role: RoleDto | null;
   permissionOptions: PermissionOption[];
 }
 
-export interface ViewRoleDialogProps {
+interface ViewRoleDialogProps {
   role: RoleDto | null;
   onClose: () => void;
 }
 
-export interface RolesPageHeaderProps {
+interface RolesPageHeaderProps {
   canCreate: boolean;
   onCreateClick: () => void;
 }
 
-export interface RolesFilterBarProps {
+interface RolesFilterBarProps {
   fields: FieldConfig[];
   onFilterChange: (values: FilterValues) => void;
 }
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export interface RolesFilter extends FilterValues {
+interface RolesFilter extends FilterValues {
   search: string;
   permissions: string[];
 }
+
+export {
+  createSchema,
+  editSchema,
+  type CreateValues,
+  type EditValues,
+  type PermissionOption,
+  type CreateRoleDialogProps,
+  type EditRoleDialogProps,
+  type ViewRoleDialogProps,
+  type RolesPageHeaderProps,
+  type RolesFilterBarProps,
+  type RolesFilter,
+};

@@ -1,42 +1,53 @@
-import type { TenantDto, TenantCreationInvitationDto, FilterValues } from '@/types/api';
+﻿import type { TenantDto, TenantCreationInvitationDto, FilterValues } from '@/types/api';
 
-export interface OnboardDialogProps {
+interface OnboardDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-export interface InviteDialogProps {
+interface InviteDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-export interface EditDialogProps {
+interface EditDialogProps {
   tenant: TenantDto | null;
   onClose: () => void;
 }
 
-export interface ViewTenantDialogProps {
+interface ViewTenantDialogProps {
   tenant: TenantDto | null;
   onClose: () => void;
 }
 
-export interface ChangePlanDialogProps {
+interface ChangePlanDialogProps {
   tenant: TenantDto | null;
   onClose: () => void;
 }
 
-export interface TenantsPageHeaderProps {
+interface TenantsPageHeaderProps {
   canCreate: boolean;
   onInviteClick: () => void;
   onOnboardClick: () => void;
 }
 
-export interface TenantsPageFilterBarProps {
+interface TenantsPageFilterBarProps {
   onChange: (values: FilterValues) => void;
 }
 
-export interface TenantsInvitationsFilterBarProps {
+interface TenantsInvitationsFilterBarProps {
   onChange: (values: FilterValues) => void;
 }
 
 export type { TenantDto, TenantCreationInvitationDto };
+
+export {
+  type OnboardDialogProps,
+  type InviteDialogProps,
+  type EditDialogProps,
+  type ViewTenantDialogProps,
+  type ChangePlanDialogProps,
+  type TenantsPageHeaderProps,
+  type TenantsPageFilterBarProps,
+  type TenantsInvitationsFilterBarProps,
+};

@@ -1,5 +1,5 @@
 /** @type {import('prettier').Config} */
-export default {
+const config = {
   semi: true,
   singleQuote: true,
   trailingComma: 'all',
@@ -8,3 +8,5 @@ export default {
   arrowParens: 'always',
   endOfLine: 'lf',
 };
+
+export default config;

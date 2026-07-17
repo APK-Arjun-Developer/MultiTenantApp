@@ -1,4 +1,4 @@
-import { createTheme, alpha } from '@mui/material/styles';
+﻿import { createTheme, alpha } from '@mui/material/styles';
 
 // ─── Raw design tokens ────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ const zinc = {
 
 // ─── Theme builder ────────────────────────────────────────────────────────────
 
-export function buildTheme(mode: 'light' | 'dark') {
+const buildTheme = (mode: 'light' | 'dark') => {
   const isDark = mode === 'dark';
 
   return createTheme({
@@ -540,4 +540,6 @@ export function buildTheme(mode: 'light' | 'dark') {
       },
     },
   });
-}
+};
+
+export { buildTheme };

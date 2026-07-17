@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   /** Outer page wrapper */
   root: {},
 
@@ -152,3 +152,5 @@ export const styles = {
     fontSize: '1.125rem',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

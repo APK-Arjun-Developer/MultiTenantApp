@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   root: {
     minHeight: '100vh',
     display: 'flex',
@@ -66,3 +66,5 @@ export const styles = {
     py: 4,
   },
 } as const satisfies StyleSheet;
+
+export { styles };

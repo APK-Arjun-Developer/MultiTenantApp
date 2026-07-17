@@ -1,9 +1,8 @@
-import { createSlice } from '@reduxjs/toolkit';
-import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
 
-export const SELECTED_TENANT_STORAGE_KEY = 'selectedTenant';
-export const THEME_STORAGE_KEY = 'themeMode';
+const SELECTED_TENANT_STORAGE_KEY = 'selectedTenant';
+const THEME_STORAGE_KEY = 'themeMode';
 
 interface UiState {
   themeMode: 'light' | 'dark';
@@ -12,7 +11,7 @@ interface UiState {
   selectedTenantName: string | null;
 }
 
-function loadThemeFromStorage(): 'light' | 'dark' {
+const loadThemeFromStorage = (): 'light' | 'dark' => {
   try {
     const raw = localStorage.getItem(THEME_STORAGE_KEY);
     if (raw === 'light' || raw === 'dark') return raw;
@@ -20,9 +19,9 @@ function loadThemeFromStorage(): 'light' | 'dark' {
     // corrupted storage — ignore
   }
   return 'dark';
-}
+};
 
-function loadTenantFromStorage(): Pick<UiState, 'selectedTenantId' | 'selectedTenantName'> {
+const loadTenantFromStorage = (): Pick<UiState, 'selectedTenantId' | 'selectedTenantName'> => {
   try {
     const raw = localStorage.getItem(SELECTED_TENANT_STORAGE_KEY);
     if (!raw) return { selectedTenantId: null, selectedTenantName: null };
@@ -37,7 +36,7 @@ function loadTenantFromStorage(): Pick<UiState, 'selectedTenantId' | 'selectedTe
     // corrupted storage — ignore
   }
   return { selectedTenantId: null, selectedTenantName: null };
-}
+};
 
 const initialState: UiState = {
   themeMode: loadThemeFromStorage(),
@@ -72,7 +71,7 @@ const uiSlice = createSlice({
   },
 });
 
-export const {
+const {
   toggleTheme,
   setThemeMode,
   toggleSidebar,
@@ -80,9 +79,24 @@ export const {
   setSelectedTenant,
   clearSelectedTenant,
 } = uiSlice.actions;
-export default uiSlice.reducer;
 
-export const selectThemeMode = (state: RootState) => state.ui.themeMode;
-export const selectSidebarOpen = (state: RootState) => state.ui.sidebarOpen;
-export const selectSelectedTenantId = (state: RootState) => state.ui.selectedTenantId;
-export const selectSelectedTenantName = (state: RootState) => state.ui.selectedTenantName;
+const selectThemeMode = (state: RootState) => state.ui.themeMode;
+const selectSidebarOpen = (state: RootState) => state.ui.sidebarOpen;
+const selectSelectedTenantId = (state: RootState) => state.ui.selectedTenantId;
+const selectSelectedTenantName = (state: RootState) => state.ui.selectedTenantName;
+
+export {
+  SELECTED_TENANT_STORAGE_KEY,
+  THEME_STORAGE_KEY,
+  toggleTheme,
+  setThemeMode,
+  toggleSidebar,
+  setSidebarOpen,
+  setSelectedTenant,
+  clearSelectedTenant,
+  selectThemeMode,
+  selectSidebarOpen,
+  selectSelectedTenantId,
+  selectSelectedTenantName,
+};
+export default uiSlice.reducer;

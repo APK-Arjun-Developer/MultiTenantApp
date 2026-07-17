@@ -4,7 +4,7 @@ import { useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 
 /** Allows TenantAdmin and SystemAdmin. TenantUsers are sent to /dashboard. */
-export const TenantAdminGuard = React.memo(function TenantAdminGuard() {
+const TenantAdminGuard = React.memo(() => {
   const user = useAppSelector(selectCurrentUser);
   const role = user?.systemRole;
   return role === 'TenantAdmin' || role === 'SystemAdmin' ? (
@@ -13,3 +13,4 @@ export const TenantAdminGuard = React.memo(function TenantAdminGuard() {
     <Navigate to="/dashboard" replace />
   );
 });
+export default TenantAdminGuard;

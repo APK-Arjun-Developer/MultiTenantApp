@@ -1,22 +1,22 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import {
   requiredAddressZodShape,
   requiredTenantAddressZodShape,
 } from '@/shared/forms/addressFields';
 import type { AcceptInvitationResponse } from '@/types/api';
 
-// ─── Schemas ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export const passwordRule = z
+const passwordRule = z
   .string()
   .min(8, 'At least 8 characters')
   .regex(/[A-Z]/, 'Must include an uppercase letter')
   .regex(/[0-9]/, 'Must include a number')
   .regex(/[^A-Za-z0-9]/, 'Must include a special character');
 
-export const phoneZodShape = z.object({ select: z.string(), input: z.string() }).optional();
+const phoneZodShape = z.object({ select: z.string(), input: z.string() }).optional();
 
-export const inviteSchema = z
+const inviteSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
     phone: phoneZodShape,
@@ -29,9 +29,9 @@ export const inviteSchema = z
     path: ['confirmPassword'],
   });
 
-export type FormValues = z.infer<typeof inviteSchema>;
+type FormValues = z.infer<typeof inviteSchema>;
 
-export const tenantCreationSchema = z
+const tenantCreationSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
     phone: phoneZodShape,
@@ -46,14 +46,25 @@ export const tenantCreationSchema = z
     path: ['confirmPassword'],
   });
 
-export type TenantCreationValues = z.infer<typeof tenantCreationSchema>;
+type TenantCreationValues = z.infer<typeof tenantCreationSchema>;
 
-// ─── Component prop types ──────────────────────────────────────────────────────
+// â”€â”€â”€ Component prop types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export interface InvitationInvalidProps {
+interface InvitationInvalidProps {
   message?: string | null;
 }
 
-export interface InvitationSuccessProps {
+interface InvitationSuccessProps {
   result: AcceptInvitationResponse;
 }
+
+export {
+  passwordRule,
+  phoneZodShape,
+  inviteSchema,
+  tenantCreationSchema,
+  type FormValues,
+  type TenantCreationValues,
+  type InvitationInvalidProps,
+  type InvitationSuccessProps,
+};

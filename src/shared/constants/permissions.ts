@@ -1,5 +1,5 @@
 // Permission name strings must match server PermissionNames.cs constants.
-export const PERMISSIONS = {
+const PERMISSIONS = {
   USERS_CREATE: 'Users.Create',
   USERS_UPDATE: 'Users.Edit',
   USERS_DELETE: 'Users.Delete',
@@ -13,4 +13,6 @@ export const PERMISSIONS = {
   SUBSCRIPTIONS_EDIT: 'Subscriptions.Edit',
 } as const;
 
-export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+export { PERMISSIONS, type Permission };

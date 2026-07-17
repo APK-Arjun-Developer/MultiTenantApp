@@ -1,4 +1,4 @@
-export interface AvatarManageModalProps {
+﻿interface AvatarManageModalProps {
   open: boolean;
   onClose: () => void;
   src?: string | null;
@@ -8,3 +8,5 @@ export interface AvatarManageModalProps {
   onUpload: (file: File) => void;
   onRemove?: () => void;
 }
+
+export { type AvatarManageModalProps };

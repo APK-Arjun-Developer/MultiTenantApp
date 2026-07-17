@@ -1,8 +1,8 @@
 import { createContext } from 'react';
 
-export type Severity = 'success' | 'error' | 'warning' | 'info';
+type Severity = 'success' | 'error' | 'warning' | 'info';
 
-export interface SnackbarContextValue {
+interface SnackbarContextValue {
   show: (message: string, severity?: Severity, duration?: number) => void;
   success: (message: string, duration?: number) => void;
   error: (message: string, duration?: number) => void;
@@ -10,11 +10,13 @@ export interface SnackbarContextValue {
   info: (message: string, duration?: number) => void;
 }
 
-export const SnackbarContext = createContext<SnackbarContextValue | null>(null);
+const SnackbarContext = createContext<SnackbarContextValue | null>(null);
 
-export const DEFAULT_SNACKBAR_DURATION: Record<Severity, number> = {
+const DEFAULT_SNACKBAR_DURATION: Record<Severity, number> = {
   success: 3000,
   error: 5000,
   warning: 4000,
   info: 4000,
 };
+
+export { SnackbarContext, DEFAULT_SNACKBAR_DURATION, type Severity, type SnackbarContextValue };

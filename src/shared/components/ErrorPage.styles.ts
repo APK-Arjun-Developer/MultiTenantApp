@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   container: {
     display: 'flex',
     flexDirection: 'column',
@@ -46,3 +46,5 @@ export const styles = {
     mt: 1,
   },
 } as const satisfies StyleSheet;
+
+export { styles };

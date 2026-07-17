@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { useDebounce } from './useDebounce';
 import { SEARCH_DEBOUNCE_MS } from '@/shared/constants/list';
 import type { FilterValues } from '@/types/api';
 
-export function useFilterState<T extends object>(initial: T, setPage: (page: number) => void) {
+const useFilterState = <T extends object>(initial: T, setPage: (page: number) => void) => {
   const [filter, setFilter] = useState<T>(initial);
 
   const rawSearch = (filter as Record<string, unknown>)['search'];
@@ -21,4 +21,6 @@ export function useFilterState<T extends object>(initial: T, setPage: (page: num
   );
 
   return { filter, debouncedSearch, handleFilterChange };
-}
+};
+
+export { useFilterState };

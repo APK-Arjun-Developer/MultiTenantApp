@@ -12,13 +12,15 @@ import {
   type FormBuilderHandle,
 } from 'mui-schema-form-builder';
 import { useValidateResetTokenQuery, useResetPasswordMutation } from '@/features/auth/api/authApi';
-import { LoadingButton } from '@/shared/components/LoadingButton';
+import { LoadingButton, Icon } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 import { styles } from './ResetPasswordPage.styles';
-import { resetPasswordSchema } from './ResetPasswordPage.types';
-import type { ResetPasswordFormValues, TokenInvalidProps } from './ResetPasswordPage.types';
-import { Icon } from '@/shared/components/Icon';
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormValues,
+  type TokenInvalidProps,
+} from './ResetPasswordPage.types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -41,7 +43,7 @@ const resetFields: FieldConfig[] = [
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const TokenInvalid = memo(function TokenInvalid({ message }: TokenInvalidProps) {
+const TokenInvalid = memo(({ message }: TokenInvalidProps) => {
   return (
     <Stack spacing={2} sx={styles.invalidStack}>
       <Box sx={styles.invalidIconBox}>
@@ -70,7 +72,7 @@ const TokenInvalid = memo(function TokenInvalid({ message }: TokenInvalidProps) 
   );
 });
 
-const ResetSuccess = memo(function ResetSuccess() {
+const ResetSuccess = memo(() => {
   return (
     <Stack spacing={2} sx={styles.successStack}>
       <Box sx={styles.successIconBox}>
@@ -98,7 +100,7 @@ const ResetSuccess = memo(function ResetSuccess() {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export const ResetPasswordPage = memo(function ResetPasswordPage() {
+const ResetPasswordPage = memo(() => {
   const formRef = useRef<FormBuilderHandle>(null);
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
@@ -202,3 +204,4 @@ export const ResetPasswordPage = memo(function ResetPasswordPage() {
     </Box>
   );
 });
+export default ResetPasswordPage;

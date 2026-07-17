@@ -1,6 +1,6 @@
-import type { ColumnDef } from '@tanstack/react-table';
+﻿import type { ColumnDef } from '@tanstack/react-table';
 
-export interface DataTableProps<TData> {
+interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
   isLoading?: boolean;
@@ -14,3 +14,5 @@ export interface DataTableProps<TData> {
   sortableColumns?: string[];
   onSortChange?: (sortBy: string | undefined, sortOrder: 'asc' | 'desc' | undefined) => void;
 }
+
+export { type DataTableProps };

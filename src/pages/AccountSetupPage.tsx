@@ -7,23 +7,23 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
-import { LoadingButton } from '@/shared/components/LoadingButton';
+import { LoadingButton, Icon } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { getAddressFields, buildAddressPayload } from '@/shared/forms/addressFields';
 import type { ApiError, SetPasswordResponse } from '@/types/api';
 import { styles } from './AccountSetupPage.styles';
-import { directPasswordSchema, fullSetupSchema } from './AccountSetupPage.types';
-import type {
-  DirectPasswordValues,
-  FullSetupValues,
-  SetupInvalidProps,
-  SetupSuccessProps,
+import {
+  directPasswordSchema,
+  fullSetupSchema,
+  type DirectPasswordValues,
+  type FullSetupValues,
+  type SetupInvalidProps,
+  type SetupSuccessProps,
 } from './AccountSetupPage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const SetupInvalid = memo(function SetupInvalid({ message }: SetupInvalidProps) {
+const SetupInvalid = memo(({ message }: SetupInvalidProps) => {
   return (
     <Stack spacing={2} sx={styles.invalidIconRoot}>
       <Box sx={styles.invalidIconBox}>
@@ -50,7 +50,7 @@ const SetupInvalid = memo(function SetupInvalid({ message }: SetupInvalidProps) 
   );
 });
 
-const SetupSuccess = memo(function SetupSuccess({ result }: SetupSuccessProps) {
+const SetupSuccess = memo(({ result }: SetupSuccessProps) => {
   return (
     <Stack spacing={2} sx={styles.successIconRoot}>
       <Box sx={styles.successIconBox}>
@@ -82,7 +82,7 @@ const SetupSuccess = memo(function SetupSuccess({ result }: SetupSuccessProps) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const AccountSetupPage = memo(function AccountSetupPage() {
+const AccountSetupPage = memo(() => {
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -315,3 +315,4 @@ export const AccountSetupPage = memo(function AccountSetupPage() {
     </Box>
   );
 });
+export default AccountSetupPage;

@@ -10,7 +10,7 @@ import type {
   UpdateTenantAdminRequest,
 } from '@/types/api';
 
-export interface GetTenantAdminsParams {
+interface GetTenantAdminsParams {
   page?: number;
   pageSize?: number;
   search?: string;
@@ -21,13 +21,13 @@ export interface GetTenantAdminsParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-export interface GetTenantAdminInvitationsParams {
+interface GetTenantAdminInvitationsParams {
   page?: number;
   pageSize?: number;
   status?: string;
 }
 
-export const tenantAdminsApi = apiSlice.injectEndpoints({
+const tenantAdminsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTenantAdmins: builder.query<
       PaginatedResponse<TenantAdminDto>,
@@ -150,7 +150,7 @@ export const tenantAdminsApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
+const {
   useGetTenantAdminsQuery,
   useCreateTenantAdminMutation,
   useInviteTenantAdminMutation,
@@ -163,3 +163,20 @@ export const {
   useRevokeInvitationMutation,
   useResendInvitationMutation,
 } = tenantAdminsApi;
+
+export {
+  tenantAdminsApi,
+  useGetTenantAdminsQuery,
+  useCreateTenantAdminMutation,
+  useInviteTenantAdminMutation,
+  useUpdateTenantAdminMutation,
+  useDeleteTenantAdminMutation,
+  useResendTenantAdminSetupMutation,
+  useActivateTenantAdminMutation,
+  useDeactivateTenantAdminMutation,
+  useGetTenantAdminInvitationsQuery,
+  useRevokeInvitationMutation,
+  useResendInvitationMutation,
+  type GetTenantAdminsParams,
+  type GetTenantAdminInvitationsParams,
+};

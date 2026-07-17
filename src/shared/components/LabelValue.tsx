@@ -4,12 +4,7 @@ import Typography from '@mui/material/Typography';
 import type { LabelValueProps } from './LabelValue.types';
 import { styles } from './LabelValue.styles';
 
-export const LabelValue = React.memo(function LabelValue({
-  label,
-  value,
-  emptyText = '—',
-  sx,
-}: LabelValueProps) {
+const LabelValue = React.memo(({ label, value, emptyText = '—', sx }: LabelValueProps) => {
   const isEmpty = useMemo(() => value === undefined || value === null || value === '', [value]);
 
   return (
@@ -23,3 +18,4 @@ export const LabelValue = React.memo(function LabelValue({
     </Box>
   );
 });
+export default LabelValue;

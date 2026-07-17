@@ -1,6 +1,8 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 
-export interface PageTransitionProps {
+interface PageTransitionProps {
   children: ReactNode;
   motionKey?: string;
 }
+
+export { type PageTransitionProps };

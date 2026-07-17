@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 
-export interface TenantContextGuardProps {
+interface TenantContextGuardProps {
   children: ReactNode;
 }
+
+export { type TenantContextGuardProps };

@@ -4,7 +4,6 @@ import type { AddressDto, AddressRequest } from '@/types/api';
 
 const optStr = (max: number) => z.string().max(max).optional().or(z.literal(''));
 
-/** Trims a string and returns null if the result is empty or undefined. */
 const nonEmpty = (value: string | undefined): string | null => {
   const t = value?.trim();
   if (!t) return null;
@@ -12,7 +11,7 @@ const nonEmpty = (value: string | undefined): string | null => {
 };
 const reqStr = (max: number) => z.string().min(1, 'Required').max(max);
 
-export const addressZodShape = {
+const addressZodShape = {
   addressLine1: optStr(200),
   addressLine2: optStr(200),
   addressCity: optStr(100),
@@ -21,11 +20,11 @@ export const addressZodShape = {
   addressCountry: optStr(100),
 };
 
-export function getAddressFields(
+const getAddressFields = (
   address?: AddressDto | null,
   section?: string,
   required?: boolean,
-): FieldConfig[] {
+): FieldConfig[] => {
   return [
     {
       name: 'addressLine1',
@@ -74,9 +73,9 @@ export function getAddressFields(
       section,
     },
   ];
-}
+};
 
-export const requiredAddressZodShape = {
+const requiredAddressZodShape = {
   addressLine1: reqStr(200),
   addressLine2: optStr(200),
   addressCity: reqStr(100),
@@ -85,7 +84,7 @@ export const requiredAddressZodShape = {
   addressCountry: reqStr(100),
 };
 
-export function getSameAsCompanyField(section?: string): FieldConfig {
+const getSameAsCompanyField = (section?: string): FieldConfig => {
   return {
     name: 'sameAsCompany',
     label: 'Same as company address',
@@ -93,9 +92,9 @@ export function getSameAsCompanyField(section?: string): FieldConfig {
     defaultValue: false,
     section,
   };
-}
+};
 
-export interface AddressValues {
+interface AddressValues {
   addressLine1?: string;
   addressLine2?: string;
   addressCity?: string;
@@ -104,11 +103,12 @@ export interface AddressValues {
   addressCountry?: string;
 }
 
-/** Converts flat form values into the nested address payload for PUT requests. */
-export function buildAddressPayload(values: AddressValues): {
+const buildAddressPayload = (
+  values: AddressValues,
+): {
   address?: AddressRequest;
   clearAddress?: boolean;
-} {
+} => {
   const line1 = nonEmpty(values.addressLine1);
   const line2 = nonEmpty(values.addressLine2);
   const city = nonEmpty(values.addressCity);
@@ -120,11 +120,11 @@ export function buildAddressPayload(values: AddressValues): {
   return hasAny
     ? { address: { line1, line2, city, state, postalCode, country } }
     : { clearAddress: true };
-}
+};
 
 // ─── Tenant address (separate field names, used when both user + company sections are shown) ───
 
-export const tenantAddressZodShape = {
+const tenantAddressZodShape = {
   tenantAddressLine1: optStr(200),
   tenantAddressLine2: optStr(200),
   tenantAddressCity: optStr(100),
@@ -133,11 +133,11 @@ export const tenantAddressZodShape = {
   tenantAddressCountry: optStr(100),
 };
 
-export function getTenantAddressFields(
+const getTenantAddressFields = (
   address?: AddressDto | null,
   section?: string,
   required?: boolean,
-): FieldConfig[] {
+): FieldConfig[] => {
   return [
     {
       name: 'tenantAddressLine1',
@@ -186,9 +186,9 @@ export function getTenantAddressFields(
       section,
     },
   ];
-}
+};
 
-export const requiredTenantAddressZodShape = {
+const requiredTenantAddressZodShape = {
   tenantAddressLine1: reqStr(200),
   tenantAddressLine2: optStr(200),
   tenantAddressCity: reqStr(100),
@@ -197,7 +197,7 @@ export const requiredTenantAddressZodShape = {
   tenantAddressCountry: reqStr(100),
 };
 
-export interface TenantAddressValues {
+interface TenantAddressValues {
   tenantAddressLine1?: string;
   tenantAddressLine2?: string;
   tenantAddressCity?: string;
@@ -206,10 +206,12 @@ export interface TenantAddressValues {
   tenantAddressCountry?: string;
 }
 
-export function buildTenantAddressPayload(values: TenantAddressValues): {
+const buildTenantAddressPayload = (
+  values: TenantAddressValues,
+): {
   address?: AddressRequest;
   clearAddress?: boolean;
-} {
+} => {
   const line1 = nonEmpty(values.tenantAddressLine1);
   const line2 = nonEmpty(values.tenantAddressLine2);
   const city = nonEmpty(values.tenantAddressCity);
@@ -221,4 +223,18 @@ export function buildTenantAddressPayload(values: TenantAddressValues): {
   return hasAny
     ? { address: { line1, line2, city, state, postalCode, country } }
     : { clearAddress: true };
-}
+};
+
+export {
+  addressZodShape,
+  requiredAddressZodShape,
+  tenantAddressZodShape,
+  requiredTenantAddressZodShape,
+  getAddressFields,
+  getSameAsCompanyField,
+  getTenantAddressFields,
+  buildAddressPayload,
+  buildTenantAddressPayload,
+  type AddressValues,
+  type TenantAddressValues,
+};

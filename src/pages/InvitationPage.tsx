@@ -14,7 +14,7 @@ import {
   useAcceptTenantUserInvitationMutation,
   useAcceptTenantCreationInvitationMutation,
 } from '@/features/auth/api/authApi';
-import { LoadingButton } from '@/shared/components/LoadingButton';
+import { LoadingButton, Icon } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import {
   getAddressFields,
@@ -24,18 +24,18 @@ import {
 } from '@/shared/forms/addressFields';
 import type { AcceptInvitationResponse, ApiError } from '@/types/api';
 import { styles } from './InvitationPage.styles';
-import { inviteSchema, tenantCreationSchema } from './InvitationPage.types';
-import type {
-  FormValues,
-  TenantCreationValues,
-  InvitationInvalidProps,
-  InvitationSuccessProps,
+import {
+  inviteSchema,
+  tenantCreationSchema,
+  type FormValues,
+  type TenantCreationValues,
+  type InvitationInvalidProps,
+  type InvitationSuccessProps,
 } from './InvitationPage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── InvitationInvalid ────────────────────────────────────────────────────────
 
-const InvitationInvalid = memo(function InvitationInvalid({ message }: InvitationInvalidProps) {
+const InvitationInvalid = memo(({ message }: InvitationInvalidProps) => {
   return (
     <Stack spacing={2} sx={styles.invalidStack}>
       <Box sx={styles.invalidIconBox}>
@@ -63,7 +63,7 @@ const InvitationInvalid = memo(function InvitationInvalid({ message }: Invitatio
 
 // ─── InvitationSuccess ────────────────────────────────────────────────────────
 
-const InvitationSuccess = memo(function InvitationSuccess({ result }: InvitationSuccessProps) {
+const InvitationSuccess = memo(({ result }: InvitationSuccessProps) => {
   return (
     <Stack spacing={2} sx={styles.successStack}>
       <Box sx={styles.successIconBox}>
@@ -105,7 +105,7 @@ const InvitationSuccess = memo(function InvitationSuccess({ result }: Invitation
 
 // ─── InvitationPage ───────────────────────────────────────────────────────────
 
-export const InvitationPage = memo(function InvitationPage() {
+const InvitationPage = memo(() => {
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -514,3 +514,4 @@ export const InvitationPage = memo(function InvitationPage() {
     </Box>
   );
 });
+export default InvitationPage;

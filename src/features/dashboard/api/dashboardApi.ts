@@ -1,7 +1,7 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type { DashboardStatsDto } from '@/types/api';
 
-export const dashboardApi = apiSlice.injectEndpoints({
+const dashboardApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardStats: builder.query<DashboardStatsDto, void>({
       query: () => ({
@@ -14,4 +14,6 @@ export const dashboardApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetDashboardStatsQuery } = dashboardApi;
+const { useGetDashboardStatsQuery } = dashboardApi;
+
+export { dashboardApi, useGetDashboardStatsQuery };

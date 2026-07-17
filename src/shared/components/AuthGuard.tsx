@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { styles } from './AuthGuard.styles';
 
-export const AuthGuard = React.memo(function AuthGuard() {
+const AuthGuard = React.memo(() => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   // Verifies session and populates user + permissions via onQueryStarted.
@@ -27,3 +27,4 @@ export const AuthGuard = React.memo(function AuthGuard() {
 
   return <Outlet />;
 });
+export default AuthGuard;

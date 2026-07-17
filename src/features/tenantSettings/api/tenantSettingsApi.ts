@@ -1,11 +1,11 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type { TenantDto, UpdateTenantSettingsRequest } from '@/types/api';
 
-export function getTenantLogoUrl(tenantId: string): string {
+const getTenantLogoUrl = (tenantId: string): string => {
   return `/api/v1/files/${tenantId}/download`;
-}
+};
 
-export const tenantSettingsApi = apiSlice.injectEndpoints({
+const tenantSettingsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTenantSettings: builder.query<TenantDto, void>({
       query: () => ({ url: '/api/v1/tenant-settings' }),
@@ -37,9 +37,18 @@ export const tenantSettingsApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
+const {
   useGetTenantSettingsQuery,
   useUpdateTenantSettingsMutation,
   useUploadTenantLogoMutation,
   useRemoveTenantLogoMutation,
 } = tenantSettingsApi;
+
+export {
+  getTenantLogoUrl,
+  tenantSettingsApi,
+  useGetTenantSettingsQuery,
+  useUpdateTenantSettingsMutation,
+  useUploadTenantLogoMutation,
+  useRemoveTenantLogoMutation,
+};

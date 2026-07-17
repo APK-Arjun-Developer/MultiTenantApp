@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { styles } from './NotFoundPage.styles';
 
-export const NotFoundPage = React.memo(function NotFoundPage() {
+const NotFoundPage = React.memo(() => {
   return (
     <Box sx={styles.root}>
       <Typography variant="h1" sx={styles.heading}>
@@ -20,3 +20,4 @@ export const NotFoundPage = React.memo(function NotFoundPage() {
     </Box>
   );
 });
+export default NotFoundPage;

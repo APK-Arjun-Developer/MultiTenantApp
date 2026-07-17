@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { DEFAULT_PAGE_SIZE } from '@/shared/constants/list';
 
 interface UseTableStateOptions {
   initialPageSize?: number;
 }
 
-export function useTableState(options?: UseTableStateOptions) {
+const useTableState = (options?: UseTableStateOptions) => {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(options?.initialPageSize ?? DEFAULT_PAGE_SIZE);
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
@@ -26,4 +26,6 @@ export function useTableState(options?: UseTableStateOptions) {
   }, []);
 
   return { page, pageSize, sortBy, sortOrder, setPage, handleSortChange, handlePageSizeChange };
-}
+};
+
+export { useTableState };

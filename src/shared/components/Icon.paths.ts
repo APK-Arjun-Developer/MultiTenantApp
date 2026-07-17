@@ -1,9 +1,9 @@
-/**
+﻿/**
  * SVG path data extracted from @mui/icons-material.
  * String = single <path>. Array = multiple <path> elements.
  * viewBox is 0 0 24 24 for all icons.
  */
-export const ICON_PATHS = {
+const ICON_PATHS = {
   AccountCircle:
     'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6m0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20',
   Add: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z',
@@ -77,3 +77,5 @@ export const ICON_PATHS = {
   WorkspacePremium:
     'M9.68 13.69 12 11.93l2.31 1.76-.88-2.85L15.75 9h-2.84L12 6.19 11.09 9H8.25l2.31 1.84zM20 10c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 2.03.76 3.87 2 5.28V23l6-2 6 2v-7.72c1.24-1.41 2-3.25 2-5.28m-8-6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6',
 } as const;
+
+export { ICON_PATHS };

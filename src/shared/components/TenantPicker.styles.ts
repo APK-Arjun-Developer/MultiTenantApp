@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   formControl: {
     minWidth: 180,
     maxWidth: 260,
@@ -58,3 +58,5 @@ export const styles = {
     color: 'text.secondary',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

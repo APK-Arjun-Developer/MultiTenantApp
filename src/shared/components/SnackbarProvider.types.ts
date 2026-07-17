@@ -1,9 +1,11 @@
-import type { Severity } from '@/shared/hooks/snackbarContext';
+﻿import type { Severity } from '@/shared/hooks/snackbarContext';
 
-export interface SnackbarState {
+interface SnackbarState {
   open: boolean;
   message: string;
   severity: Severity;
   duration: number;
   key: number;
 }
+
+export { type SnackbarState };

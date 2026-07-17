@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   dialogTitle: {
     display: 'flex',
     alignItems: 'center',
@@ -22,3 +22,5 @@ export const styles = {
     mb: 2,
   },
 } as const satisfies StyleSheet;
+
+export { styles };

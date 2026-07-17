@@ -10,7 +10,7 @@ type StartImpersonationArgs = StartImpersonationRequest & {
   tenantId?: string;
 };
 
-export const impersonationApi = apiSlice.injectEndpoints({
+const impersonationApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     startImpersonation: builder.mutation<StartImpersonationResponse, StartImpersonationArgs>({
       query: ({ tenantId, ...body }) => ({
@@ -29,4 +29,6 @@ export const impersonationApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useStartImpersonationMutation, useStopImpersonationMutation } = impersonationApi;
+const { useStartImpersonationMutation, useStopImpersonationMutation } = impersonationApi;
+
+export { impersonationApi, useStartImpersonationMutation, useStopImpersonationMutation };

@@ -1,19 +1,19 @@
 import dayjs from 'dayjs';
 
-export function formatDate(value: string | null | undefined, pattern = 'MMM D, YYYY'): string {
+const formatDate = (value: string | null | undefined, pattern = 'MMM D, YYYY'): string => {
   if (!value) return '—';
   return dayjs(value).format(pattern);
-}
+};
 
-export function formatDateTime(value: string | null | undefined): string {
+const formatDateTime = (value: string | null | undefined): string => {
   return formatDate(value, 'MMM D, YYYY h:mm A');
-}
+};
 
-export function formatCurrency(value: number, currency = 'USD'): string {
+const formatCurrency = (value: number, currency = 'USD'): string => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
-}
+};
 
-export function formatAddress(
+const formatAddress = (
   address?: {
     line1?: string | null;
     line2?: string | null;
@@ -22,7 +22,7 @@ export function formatAddress(
     postalCode?: string | null;
     country?: string | null;
   } | null,
-): string {
+): string => {
   if (!address) return '—';
   const parts = [
     address.line1,
@@ -33,4 +33,6 @@ export function formatAddress(
     address.country,
   ].filter(Boolean);
   return parts.length ? parts.join(', ') : '—';
-}
+};
+
+export { formatDate, formatDateTime, formatCurrency, formatAddress };

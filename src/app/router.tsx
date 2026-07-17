@@ -1,45 +1,23 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { AuthLayout } from '@/shared/layouts/AuthLayout';
-import { DashboardLayout } from '@/shared/layouts/DashboardLayout';
-import { AuthGuard } from '@/shared/components/AuthGuard';
-import { SystemAdminGuard } from '@/shared/components/SystemAdminGuard';
-import { TenantAdminGuard } from '@/shared/components/TenantAdminGuard';
-import { ErrorPage } from '@/shared/components/ErrorPage';
-import { NotFoundPage } from '@/pages/NotFoundPage';
+import { AuthLayout, DashboardLayout } from '@/shared/layouts';
+import { AuthGuard, SystemAdminGuard, TenantAdminGuard, ErrorPage } from '@/shared/components';
+import NotFoundPage from '@/pages/NotFoundPage';
 
-const LoginPage = lazy(() => import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })));
-const ForgotPasswordPage = lazy(() =>
-  import('@/pages/ForgotPasswordPage').then((m) => ({ default: m.ForgotPasswordPage })),
-);
-const ResetPasswordPage = lazy(() =>
-  import('@/pages/ResetPasswordPage').then((m) => ({ default: m.ResetPasswordPage })),
-);
-const InvitationPage = lazy(() =>
-  import('@/pages/InvitationPage').then((m) => ({ default: m.InvitationPage })),
-);
-const AccountSetupPage = lazy(() =>
-  import('@/pages/AccountSetupPage').then((m) => ({ default: m.AccountSetupPage })),
-);
-const DashboardPage = lazy(() =>
-  import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
-);
-const UsersPage = lazy(() => import('@/pages/UsersPage').then((m) => ({ default: m.UsersPage })));
-const RolesPage = lazy(() => import('@/pages/RolesPage').then((m) => ({ default: m.RolesPage })));
-const TenantsPage = lazy(() =>
-  import('@/pages/TenantsPage').then((m) => ({ default: m.TenantsPage })),
-);
-const TenantAdminsPage = lazy(() =>
-  import('@/pages/TenantAdminsPage').then((m) => ({ default: m.TenantAdminsPage })),
-);
-const ProfilePage = lazy(() =>
-  import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
-);
-const AuditLogsPage = lazy(() =>
-  import('@/pages/AuditLogsPage').then((m) => ({ default: m.AuditLogsPage })),
-);
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
+const InvitationPage = lazy(() => import('@/pages/InvitationPage'));
+const AccountSetupPage = lazy(() => import('@/pages/AccountSetupPage'));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const UsersPage = lazy(() => import('@/pages/UsersPage'));
+const RolesPage = lazy(() => import('@/pages/RolesPage'));
+const TenantsPage = lazy(() => import('@/pages/TenantsPage'));
+const TenantAdminsPage = lazy(() => import('@/pages/TenantAdminsPage'));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'));
 
-export const router = createBrowserRouter([
+const router = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
@@ -101,3 +79,5 @@ export const router = createBrowserRouter([
   },
   { path: '*', element: <NotFoundPage /> },
 ]);
+
+export default router;

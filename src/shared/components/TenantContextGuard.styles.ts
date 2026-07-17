@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
@@ -39,3 +39,5 @@ export const styles = {
     color: 'text.secondary',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

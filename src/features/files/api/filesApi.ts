@@ -1,7 +1,7 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type { FileDto } from '@/types/api';
 
-export const filesApi = apiSlice.injectEndpoints({
+const filesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getFiles: builder.query<FileDto[], void>({
       query: () => ({ url: '/api/v1/files' }),
@@ -34,9 +34,18 @@ export const filesApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetFilesQuery, useGetFileQuery, useUploadFileMutation, useDeleteFileMutation } =
+const { useGetFilesQuery, useGetFileQuery, useUploadFileMutation, useDeleteFileMutation } =
   filesApi;
 
-export function getFileDownloadUrl(id: string): string {
+const getFileDownloadUrl = (id: string): string => {
   return `${import.meta.env.VITE_API_BASE_URL}/api/v1/files/${id}/download`;
-}
+};
+
+export {
+  filesApi,
+  useGetFilesQuery,
+  useGetFileQuery,
+  useUploadFileMutation,
+  useDeleteFileMutation,
+  getFileDownloadUrl,
+};

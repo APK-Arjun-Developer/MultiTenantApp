@@ -1,8 +1,7 @@
-import { useMemo, useCallback } from 'react';
-import type { SyntheticEvent } from 'react';
+﻿import { useMemo, useCallback, type SyntheticEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-export function useUrlTabs<T extends readonly string[]>(tabs: T) {
+const useUrlTabs = <T extends readonly string[]>(tabs: T) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const tab = useMemo(() => {
@@ -18,4 +17,6 @@ export function useUrlTabs<T extends readonly string[]>(tabs: T) {
   );
 
   return { tab, handleTabChange };
-}
+};
+
+export { useUrlTabs };

@@ -1,5 +1,7 @@
-import type { UserCreatedVia } from '@/types/api';
+﻿import type { UserCreatedVia } from '@/types/api';
 
-export interface CreatedViaChipProps {
+interface CreatedViaChipProps {
   createdVia: UserCreatedVia;
 }
+
+export { type CreatedViaChipProps };

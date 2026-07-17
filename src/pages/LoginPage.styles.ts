@@ -1,6 +1,6 @@
 ﻿import type { Sx } from '@/types';
 
-export const styles = {
+const styles = {
   root: {
     overflow: 'hidden',
   },
@@ -103,9 +103,11 @@ export const styles = {
   },
 } as const;
 
-export const otpInputStyle = {
+const otpInputStyle = {
   textAlign: 'center',
   fontSize: 22,
   fontWeight: 700,
   padding: 0,
 } as const;
+
+export { styles, otpInputStyle };

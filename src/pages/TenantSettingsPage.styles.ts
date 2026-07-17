@@ -1,6 +1,6 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
-export const styles = {
+const styles = {
   // Page root container
   root: {
     maxWidth: 680,
@@ -51,3 +51,5 @@ export const styles = {
     fontSize: '1.125rem',
   },
 } as const satisfies StyleSheet;
+
+export { styles };

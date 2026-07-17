@@ -1,17 +1,17 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import { addressZodShape, tenantAddressZodShape } from '@/shared/forms/addressFields';
 import type { AddressDto } from '@/types/api';
 import type { FieldConfig } from 'mui-schema-form-builder';
 
-// ─── Schemas ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export const profileSchema = z.object({
+const profileSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
 });
 
-export const addressSchema = z.object(addressZodShape);
+const addressSchema = z.object(addressZodShape);
 
-export const companySchema = z.object({
+const companySchema = z.object({
   name: z.string().min(1, 'Company name is required').max(200),
   ...tenantAddressZodShape,
 });
@@ -23,7 +23,7 @@ const passwordRule = z
   .regex(/[0-9]/, 'Must include a number')
   .regex(/[^A-Za-z0-9]/, 'Must include a special character');
 
-export const passwordSchema = z
+const passwordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: passwordRule,
@@ -34,16 +34,16 @@ export const passwordSchema = z
     path: ['confirmPassword'],
   });
 
-// ─── Value types ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Value types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export type ProfileValues = z.infer<typeof profileSchema>;
-export type AddressValues = z.infer<typeof addressSchema>;
-export type CompanyValues = z.infer<typeof companySchema>;
-export type PasswordValues = z.infer<typeof passwordSchema>;
+type ProfileValues = z.infer<typeof profileSchema>;
+type AddressValues = z.infer<typeof addressSchema>;
+type CompanyValues = z.infer<typeof companySchema>;
+type PasswordValues = z.infer<typeof passwordSchema>;
 
-// ─── Component prop types ─────────────────────────────────────────────────────
+// â”€â”€â”€ Component prop types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export interface ProfileAvatarSectionProps {
+interface ProfileAvatarSectionProps {
   avatarSrc: string | null;
   initials: string;
   fullName: string | undefined;
@@ -52,25 +52,25 @@ export interface ProfileAvatarSectionProps {
   onOpenModal: () => void;
 }
 
-export interface ProfileInfoSectionProps {
+interface ProfileInfoSectionProps {
   profileId: string | undefined;
   email: string | undefined;
   profileFields: FieldConfig[];
   onProfileSubmit: (values: ProfileValues) => Promise<void>;
 }
 
-export interface ProfileAddressSectionProps {
+interface ProfileAddressSectionProps {
   profileId: string | undefined;
   addressFields: FieldConfig[];
   onAddressSubmit: (values: AddressValues) => Promise<void>;
 }
 
-export interface ProfilePasswordSectionProps {
+interface ProfilePasswordSectionProps {
   passwordFields: FieldConfig[];
   onPasswordSubmit: (values: PasswordValues) => Promise<void>;
 }
 
-export interface ProfileCompanySectionProps {
+interface ProfileCompanySectionProps {
   tenantSettings:
     | {
         id: string;
@@ -84,3 +84,19 @@ export interface ProfileCompanySectionProps {
   onOpenLogoModal: () => void;
   onCompanySubmit: (values: CompanyValues) => Promise<void>;
 }
+
+export {
+  profileSchema,
+  addressSchema,
+  companySchema,
+  passwordSchema,
+  type ProfileValues,
+  type AddressValues,
+  type CompanyValues,
+  type PasswordValues,
+  type ProfileAvatarSectionProps,
+  type ProfileInfoSectionProps,
+  type ProfileAddressSectionProps,
+  type ProfilePasswordSectionProps,
+  type ProfileCompanySectionProps,
+};

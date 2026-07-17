@@ -15,12 +15,15 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import Avatar from '@mui/material/Avatar';
-import { DataTable } from '@/shared/components/DataTable';
-import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
-import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
-import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
-import { LabelValue } from '@/shared/components/LabelValue';
-import { ViewDialog } from '@/shared/components/ViewDialog';
+import {
+  DataTable,
+  AvatarManageModal,
+  ConfirmDialog,
+  CreatedViaChip,
+  LabelValue,
+  ViewDialog,
+  Icon,
+} from '@/shared/components';
 import { formatAddress } from '@/shared/utils/format';
 import {
   useTableState,
@@ -83,7 +86,6 @@ import type {
   TenantAdminInvitationDto,
   AddressDto,
 } from './TenantAdminsPage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -113,81 +115,70 @@ const INV_FILTER_DEFAULT = { status: '' };
 
 // ─── Section sub-components ───────────────────────────────────────────────────
 
-const TenantAdminsPageHeader = memo(function TenantAdminsPageHeader({
-  canCreate,
-  canInvite,
-  onCreateClick,
-  onInviteClick,
-}: TenantAdminsPageHeaderProps) {
-  return (
-    <Box sx={styles.headerRow}>
-      <Box sx={styles.headerTitle}>
-        <Box sx={styles.pageIconBox}>
-          <Icon name="ManageAccounts" sx={styles.pageIconSize} />
+const TenantAdminsPageHeader = memo(
+  ({ canCreate, canInvite, onCreateClick, onInviteClick }: TenantAdminsPageHeaderProps) => {
+    return (
+      <Box sx={styles.headerRow}>
+        <Box sx={styles.headerTitle}>
+          <Box sx={styles.pageIconBox}>
+            <Icon name="ManageAccounts" sx={styles.pageIconSize} />
+          </Box>
+          <Typography variant="h5" sx={styles.headerTitleText}>
+            Tenant Admins
+          </Typography>
         </Box>
-        <Typography variant="h5" sx={styles.headerTitleText}>
-          Tenant Admins
-        </Typography>
+        <Box sx={styles.headerActions}>
+          {canInvite && (
+            <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
+              Invite Admin
+            </Button>
+          )}
+          {canCreate && (
+            <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onCreateClick}>
+              Create Admin
+            </Button>
+          )}
+        </Box>
       </Box>
-      <Box sx={styles.headerActions}>
-        {canInvite && (
-          <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
-            Invite Admin
-          </Button>
-        )}
-        {canCreate && (
-          <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onCreateClick}>
-            Create Admin
-          </Button>
-        )}
+    );
+  },
+);
+
+const TenantAdminsFilterBar = memo(
+  ({ adminsFilterFields, defaultValues, onChange }: TenantAdminsFilterBarProps) => {
+    return (
+      <Box sx={styles.filterBarWrapper}>
+        <FilterForm
+          fields={adminsFilterFields}
+          defaultValues={defaultValues}
+          onChange={onChange}
+          showReset
+          spacing={2}
+        />
       </Box>
-    </Box>
-  );
-});
+    );
+  },
+);
 
-const TenantAdminsFilterBar = memo(function TenantAdminsFilterBar({
-  adminsFilterFields,
-  defaultValues,
-  onChange,
-}: TenantAdminsFilterBarProps) {
-  return (
-    <Box sx={styles.filterBarWrapper}>
-      <FilterForm
-        fields={adminsFilterFields}
-        defaultValues={defaultValues}
-        onChange={onChange}
-        showReset
-        spacing={2}
-      />
-    </Box>
-  );
-});
-
-const TenantAdminsInvitationsFilterBar = memo(function TenantAdminsInvitationsFilterBar({
-  adminsInvFilterFields,
-  defaultValues,
-  onChange,
-}: TenantAdminsInvitationsFilterBarProps) {
-  return (
-    <Box sx={styles.filterBarWrapper}>
-      <FilterForm
-        fields={adminsInvFilterFields}
-        defaultValues={defaultValues}
-        onChange={onChange}
-        showReset
-        spacing={2}
-      />
-    </Box>
-  );
-});
+const TenantAdminsInvitationsFilterBar = memo(
+  ({ adminsInvFilterFields, defaultValues, onChange }: TenantAdminsInvitationsFilterBarProps) => {
+    return (
+      <Box sx={styles.filterBarWrapper}>
+        <FilterForm
+          fields={adminsInvFilterFields}
+          defaultValues={defaultValues}
+          onChange={onChange}
+          showReset
+          spacing={2}
+        />
+      </Box>
+    );
+  },
+);
 
 // ─── Create dialog ────────────────────────────────────────────────────────────
 
-const CreateAdminDialog = memo(function CreateAdminDialog({
-  open,
-  onClose,
-  tenantOptions,
-}: CreateAdminDialogProps) {
+const CreateAdminDialog = memo(({ open, onClose, tenantOptions }: CreateAdminDialogProps) => {
   const [createTenantAdmin, { isLoading }] = useCreateTenantAdminMutation();
   const snackbar = useSnackbar();
 
@@ -260,11 +251,7 @@ const CreateAdminDialog = memo(function CreateAdminDialog({
 
 // ─── Invite dialog ────────────────────────────────────────────────────────────
 
-const InviteAdminDialog = memo(function InviteAdminDialog({
-  open,
-  onClose,
-  tenantOptions,
-}: InviteAdminDialogProps) {
+const InviteAdminDialog = memo(({ open, onClose, tenantOptions }: InviteAdminDialogProps) => {
   const [inviteTenantAdmin, { isLoading }] = useInviteTenantAdminMutation();
   const snackbar = useSnackbar();
 
@@ -322,11 +309,7 @@ const InviteAdminDialog = memo(function InviteAdminDialog({
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-const EditAdminDialog = memo(function EditAdminDialog({
-  admin,
-  tenantAddress,
-  onClose,
-}: EditAdminDialogProps) {
+const EditAdminDialog = memo(({ admin, tenantAddress, onClose }: EditAdminDialogProps) => {
   const [updateTenantAdmin, { isLoading: isUpdatingAdmin }] = useUpdateTenantAdminMutation();
   const [updateTenant, { isLoading: isUpdatingTenant }] = useUpdateTenantMutation();
   const isLoading = isUpdatingAdmin || isUpdatingTenant;
@@ -394,7 +377,7 @@ const EditAdminDialog = memo(function EditAdminDialog({
 
 // ─── View dialog ──────────────────────────────────────────────────────────────
 
-const ViewAdminDialog = memo(function ViewAdminDialog({ admin, onClose }: ViewAdminDialogProps) {
+const ViewAdminDialog = memo(({ admin, onClose }: ViewAdminDialogProps) => {
   return (
     <ViewDialog open={!!admin} title="Tenant admin details" onClose={onClose}>
       <Box sx={styles.viewDialogContent}>
@@ -424,7 +407,7 @@ const ViewAdminDialog = memo(function ViewAdminDialog({ admin, onClose }: ViewAd
 
 // ─── Invitation status chip ───────────────────────────────────────────────────
 
-const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { status: string }) {
+const InvitationStatusChip = memo(({ status }: { status: string }) => {
   const lower = status.toLowerCase();
   const color =
     lower === 'accepted'
@@ -439,7 +422,7 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const TenantAdminsPage = memo(function TenantAdminsPage() {
+const TenantAdminsPage = memo(() => {
   const snackbar = useSnackbar();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
@@ -1135,3 +1118,4 @@ export const TenantAdminsPage = memo(function TenantAdminsPage() {
     </Box>
   );
 });
+export default TenantAdminsPage;

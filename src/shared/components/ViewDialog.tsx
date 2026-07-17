@@ -7,12 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import type { ViewDialogProps } from './ViewDialog.types';
 import { styles } from './ViewDialog.styles';
 
-export const ViewDialog = React.memo(function ViewDialog({
-  open,
-  title,
-  onClose,
-  children,
-}: ViewDialogProps) {
+const ViewDialog = React.memo(({ open, title, onClose, children }: ViewDialogProps) => {
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
@@ -27,3 +22,4 @@ export const ViewDialog = React.memo(function ViewDialog({
     </Dialog>
   );
 });
+export default ViewDialog;

@@ -23,11 +23,12 @@ import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useGetDashboardStatsQuery } from '@/features/dashboard/api/dashboardApi';
 import { styles, statCardIconBoxColor } from './DashboardPage.styles';
 import type { StatCardProps, StatCardColor } from './DashboardPage.types';
-import { Icon } from '@/shared/components/Icon';
+import type { DashboardStatsDto } from '@/types/api';
+import { Icon } from '@/shared/components';
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 
-function resolveHex(theme: Theme, color: StatCardColor): string {
+const resolveHex = (theme: Theme, color: StatCardColor): string => {
   const map: Record<StatCardColor, string> = {
     primary: theme.palette.primary.main,
     secondary: theme.palette.secondary.main,
@@ -37,17 +38,11 @@ function resolveHex(theme: Theme, color: StatCardColor): string {
     info: theme.palette.info.main,
   };
   return map[color];
-}
+};
 
-const StatCard = memo(function StatCard({
-  label,
-  value,
-  icon,
-  color = 'primary',
-  isLoading,
-}: StatCardProps) {
+const StatCard = memo(({ label, value, icon, color, isLoading }: StatCardProps) => {
   const theme = useTheme();
-  const hex = resolveHex(theme, color);
+  const hex = resolveHex(theme, color ?? 'primary');
 
   return (
     <Paper variant="outlined" sx={styles.statCardPaper}>
@@ -66,38 +61,34 @@ const StatCard = memo(function StatCard({
 
 // ─── SystemAdminDashboard ─────────────────────────────────────────────────────
 
-const SystemAdminStatsGrid = memo(function SystemAdminStatsGrid({
-  stats,
-  isLoading,
-}: {
-  stats: ReturnType<typeof useGetDashboardStatsQuery>['data'];
-  isLoading: boolean;
-}) {
-  return (
-    <Box sx={styles.systemAdminStatsGrid}>
-      <StatCard
-        label="Tenants"
-        value={stats?.totalTenants}
-        icon={<Icon name="Business" />}
-        isLoading={isLoading}
-      />
-      <StatCard
-        label="Tenant Admins"
-        value={stats?.totalTenantAdmins}
-        icon={<Icon name="ManageAccounts" />}
-        isLoading={isLoading}
-      />
-      <StatCard
-        label="Tenant Users"
-        value={stats?.totalTenantUsers}
-        icon={<Icon name="People" />}
-        isLoading={isLoading}
-      />
-    </Box>
-  );
-});
+const SystemAdminStatsGrid = memo(
+  ({ stats, isLoading }: { stats: DashboardStatsDto | undefined; isLoading: boolean }) => {
+    return (
+      <Box sx={styles.systemAdminStatsGrid}>
+        <StatCard
+          label="Tenants"
+          value={stats?.totalTenants}
+          icon={<Icon name="Business" />}
+          isLoading={isLoading}
+        />
+        <StatCard
+          label="Tenant Admins"
+          value={stats?.totalTenantAdmins}
+          icon={<Icon name="ManageAccounts" />}
+          isLoading={isLoading}
+        />
+        <StatCard
+          label="Tenant Users"
+          value={stats?.totalTenantUsers}
+          icon={<Icon name="People" />}
+          isLoading={isLoading}
+        />
+      </Box>
+    );
+  },
+);
 
-const SystemAdminDashboard = memo(function SystemAdminDashboard() {
+const SystemAdminDashboard = memo(() => {
   const theme = useTheme();
   const { data: stats, isLoading } = useGetDashboardStatsQuery(undefined);
 
@@ -168,40 +159,36 @@ const SystemAdminDashboard = memo(function SystemAdminDashboard() {
 
 // ─── TenantAdminDashboard ─────────────────────────────────────────────────────
 
-const TenantAdminStatsGrid = memo(function TenantAdminStatsGrid({
-  stats,
-  isLoading,
-}: {
-  stats: ReturnType<typeof useGetDashboardStatsQuery>['data'];
-  isLoading: boolean;
-}) {
-  return (
-    <Box sx={styles.tenantAdminStatsGrid}>
-      <StatCard
-        label="Users"
-        value={stats?.totalTenantUsers}
-        icon={<Icon name="People" />}
-        isLoading={isLoading}
-      />
-      <StatCard
-        label="Roles"
-        value={stats?.totalRoles}
-        icon={<Icon name="Security" />}
-        color="secondary"
-        isLoading={isLoading}
-      />
-      <StatCard
-        label="Pending Invitations"
-        value={stats?.totalPendingInvitations}
-        icon={<Icon name="HourglassEmpty" />}
-        color="warning"
-        isLoading={isLoading}
-      />
-    </Box>
-  );
-});
+const TenantAdminStatsGrid = memo(
+  ({ stats, isLoading }: { stats: DashboardStatsDto | undefined; isLoading: boolean }) => {
+    return (
+      <Box sx={styles.tenantAdminStatsGrid}>
+        <StatCard
+          label="Users"
+          value={stats?.totalTenantUsers}
+          icon={<Icon name="People" />}
+          isLoading={isLoading}
+        />
+        <StatCard
+          label="Roles"
+          value={stats?.totalRoles}
+          icon={<Icon name="Security" />}
+          color="secondary"
+          isLoading={isLoading}
+        />
+        <StatCard
+          label="Pending Invitations"
+          value={stats?.totalPendingInvitations}
+          icon={<Icon name="HourglassEmpty" />}
+          color="warning"
+          isLoading={isLoading}
+        />
+      </Box>
+    );
+  },
+);
 
-const TenantAdminDashboard = memo(function TenantAdminDashboard() {
+const TenantAdminDashboard = memo(() => {
   const theme = useTheme();
   const { data: stats, isLoading } = useGetDashboardStatsQuery(undefined);
 
@@ -298,7 +285,7 @@ const TenantAdminDashboard = memo(function TenantAdminDashboard() {
 
 // ─── TenantUserDashboard ──────────────────────────────────────────────────────
 
-const TenantUserDashboard = memo(function TenantUserDashboard() {
+const TenantUserDashboard = memo(() => {
   const user = useAppSelector(selectCurrentUser);
 
   return (
@@ -348,7 +335,7 @@ const TenantUserDashboard = memo(function TenantUserDashboard() {
 
 // ─── DashboardPage ────────────────────────────────────────────────────────────
 
-const WelcomeHeader = memo(function WelcomeHeader({ fullName }: { fullName?: string | null }) {
+const WelcomeHeader = memo(({ fullName }: { fullName?: string | null }) => {
   return (
     <>
       <Box sx={styles.welcomeHeader}>
@@ -366,7 +353,7 @@ const WelcomeHeader = memo(function WelcomeHeader({ fullName }: { fullName?: str
   );
 });
 
-export const DashboardPage = memo(function DashboardPage() {
+const DashboardPage = memo(() => {
   const user = useAppSelector(selectCurrentUser);
 
   const isSystemAdmin = useMemo(() => user?.systemRole === 'SystemAdmin', [user?.systemRole]);
@@ -385,3 +372,4 @@ export const DashboardPage = memo(function DashboardPage() {
     </Box>
   );
 });
+export default DashboardPage;

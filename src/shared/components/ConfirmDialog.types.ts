@@ -1,4 +1,4 @@
-export interface ConfirmDialogProps {
+﻿interface ConfirmDialogProps {
   open: boolean;
   title: string;
   description?: string;
@@ -8,3 +8,5 @@ export interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
 }
+
+export { type ConfirmDialogProps };

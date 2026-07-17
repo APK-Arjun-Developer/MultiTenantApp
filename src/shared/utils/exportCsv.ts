@@ -1,4 +1,4 @@
-export function exportToCsv(filename: string, rows: Record<string, unknown>[]): void {
+﻿const exportToCsv = (filename: string, rows: Record<string, unknown>[]): void => {
   if (rows.length === 0) return;
 
   const headers = Object.keys(rows[0]);
@@ -20,4 +20,6 @@ export function exportToCsv(filename: string, rows: Record<string, unknown>[]): 
   link.download = `${filename}.csv`;
   link.click();
   URL.revokeObjectURL(url);
-}
+};
+
+export { exportToCsv };

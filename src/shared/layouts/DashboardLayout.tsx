@@ -2,8 +2,7 @@ import { memo, useState, useCallback, useMemo, Suspense } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { usePageTitle } from '@/shared/hooks';
 import { AnimatePresence } from 'framer-motion';
-import { PageTransition } from '@/shared/components/PageTransition';
-import { TenantPicker } from '@/shared/components/TenantPicker';
+import { PageTransition, TenantPicker, Icon } from '@/shared/components';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import {
   selectCurrentUser,
@@ -38,8 +37,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { styles, navLinkStyle, DRAWER_WIDTH } from './DashboardLayout.styles';
-import { Icon } from '@/shared/components/Icon';
+import { styles, navLinkStyle } from './DashboardLayout.styles';
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -95,11 +93,7 @@ interface DashboardNavItemProps {
   onClose: () => void;
 }
 
-const DashboardNavItem = memo(function DashboardNavItem({
-  item,
-  collapsed,
-  onClose,
-}: DashboardNavItemProps) {
+const DashboardNavItem = memo(({ item, collapsed, onClose }: DashboardNavItemProps) => {
   const { text, icon, path } = item;
 
   const navLink = (
@@ -145,62 +139,59 @@ interface DashboardSidebarProps {
   onBrandClick: () => void;
 }
 
-const DashboardSidebar = memo(function DashboardSidebar({
-  visibleNavItems,
-  collapsed,
-  onClose,
-  onBrandClick,
-}: DashboardSidebarProps) {
-  const mainItems = visibleNavItems.filter((item) => item.path !== '/profile');
-  const accountItems = visibleNavItems.filter((item) => item.path === '/profile');
+const DashboardSidebar = memo(
+  ({ visibleNavItems, collapsed, onClose, onBrandClick }: DashboardSidebarProps) => {
+    const mainItems = visibleNavItems.filter((item) => item.path !== '/profile');
+    const accountItems = visibleNavItems.filter((item) => item.path === '/profile');
 
-  return (
-    <Box sx={styles.drawer}>
-      <Toolbar sx={collapsed ? styles.sidebarToolbarCollapsed : styles.sidebarToolbar}>
-        <Tooltip title={collapsed ? 'Expand' : 'Collapse'} placement="right">
-          <ButtonBase
-            onClick={onBrandClick}
-            sx={collapsed ? styles.brandContainerCollapsed : styles.brandContainer}
-            focusRipple
-          >
-            <Box sx={styles.brandMark}>M</Box>
-            <Typography
-              variant="h6"
-              sx={[
-                styles.drawerTitle,
-                collapsed ? styles.brandTitleCollapsed : styles.brandTitleExpanded,
-              ]}
-              noWrap
+    return (
+      <Box sx={styles.drawer}>
+        <Toolbar sx={collapsed ? styles.sidebarToolbarCollapsed : styles.sidebarToolbar}>
+          <Tooltip title={collapsed ? 'Expand' : 'Collapse'} placement="right">
+            <ButtonBase
+              onClick={onBrandClick}
+              sx={collapsed ? styles.brandContainerCollapsed : styles.brandContainer}
+              focusRipple
             >
-              MultiTenant
-            </Typography>
-          </ButtonBase>
-        </Tooltip>
-      </Toolbar>
-      <Divider />
-      <List sx={styles.navList}>
-        {mainItems.map((item) => (
-          <DashboardNavItem key={item.path} item={item} collapsed={collapsed} onClose={onClose} />
-        ))}
-      </List>
-      {accountItems.length > 0 && (
-        <>
-          <Divider />
-          <List sx={styles.navBottomList}>
-            {accountItems.map((item) => (
-              <DashboardNavItem
-                key={item.path}
-                item={item}
-                collapsed={collapsed}
-                onClose={onClose}
-              />
-            ))}
-          </List>
-        </>
-      )}
-    </Box>
-  );
-});
+              <Box sx={styles.brandMark}>M</Box>
+              <Typography
+                variant="h6"
+                sx={[
+                  styles.drawerTitle,
+                  collapsed ? styles.brandTitleCollapsed : styles.brandTitleExpanded,
+                ]}
+                noWrap
+              >
+                MultiTenant
+              </Typography>
+            </ButtonBase>
+          </Tooltip>
+        </Toolbar>
+        <Divider />
+        <List sx={styles.navList}>
+          {mainItems.map((item) => (
+            <DashboardNavItem key={item.path} item={item} collapsed={collapsed} onClose={onClose} />
+          ))}
+        </List>
+        {accountItems.length > 0 && (
+          <>
+            <Divider />
+            <List sx={styles.navBottomList}>
+              {accountItems.map((item) => (
+                <DashboardNavItem
+                  key={item.path}
+                  item={item}
+                  collapsed={collapsed}
+                  onClose={onClose}
+                />
+              ))}
+            </List>
+          </>
+        )}
+      </Box>
+    );
+  },
+);
 
 interface DashboardAppBarProps {
   themeMode: 'light' | 'dark';
@@ -212,55 +203,54 @@ interface DashboardAppBarProps {
   initials: string;
 }
 
-const DashboardAppBar = memo(function DashboardAppBar({
-  themeMode,
-  showTenantPicker,
-  sidebarCollapsed,
-  onDrawerToggle,
-  onThemeToggle,
-  avatarSrc,
-  initials,
-}: DashboardAppBarProps) {
-  return (
-    <AppBar
-      position="fixed"
-      elevation={0}
-      sx={[styles.appBar, sidebarCollapsed ? styles.appBarCollapsed : styles.appBarExpanded]}
-    >
-      <Toolbar sx={styles.appBarToolbar}>
-        <IconButton edge="start" onClick={onDrawerToggle} sx={styles.menuButton}>
-          <Icon name="Menu" />
-        </IconButton>
-
-        {showTenantPicker && <TenantPicker />}
-
-        <Box sx={styles.toolbarSpacer} />
-
-        <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
-          <IconButton onClick={onThemeToggle} sx={styles.themeToggle}>
-            {themeMode === 'dark' ? (
-              <Icon name="Brightness7" fontSize="small" />
-            ) : (
-              <Icon name="Brightness4" fontSize="small" />
-            )}
+const DashboardAppBar = memo(
+  ({
+    themeMode,
+    showTenantPicker,
+    sidebarCollapsed,
+    onDrawerToggle,
+    onThemeToggle,
+    avatarSrc,
+    initials,
+  }: DashboardAppBarProps) => {
+    return (
+      <AppBar
+        position="fixed"
+        elevation={0}
+        sx={[styles.appBar, sidebarCollapsed ? styles.appBarCollapsed : styles.appBarExpanded]}
+      >
+        <Toolbar sx={styles.appBarToolbar}>
+          <IconButton edge="start" onClick={onDrawerToggle} sx={styles.menuButton}>
+            <Icon name="Menu" />
           </IconButton>
-        </Tooltip>
 
-        <DashboardUserSection avatarSrc={avatarSrc} initials={initials} />
-      </Toolbar>
-    </AppBar>
-  );
-});
+          {showTenantPicker && <TenantPicker />}
+
+          <Box sx={styles.toolbarSpacer} />
+
+          <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
+            <IconButton onClick={onThemeToggle} sx={styles.themeToggle}>
+              {themeMode === 'dark' ? (
+                <Icon name="Brightness7" fontSize="small" />
+              ) : (
+                <Icon name="Brightness4" fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+
+          <DashboardUserSection avatarSrc={avatarSrc} initials={initials} />
+        </Toolbar>
+      </AppBar>
+    );
+  },
+);
 
 interface DashboardUserSectionProps {
   avatarSrc: string | undefined;
   initials: string;
 }
 
-const DashboardUserSection = memo(function DashboardUserSection({
-  avatarSrc,
-  initials,
-}: DashboardUserSectionProps) {
+const DashboardUserSection = memo(({ avatarSrc, initials }: DashboardUserSectionProps) => {
   return (
     <Tooltip title="Profile">
       <IconButton component={Link} to="/profile" sx={styles.profileButton}>
@@ -276,7 +266,7 @@ const DashboardUserSection = memo(function DashboardUserSection({
   );
 });
 
-const PageLoader = memo(function PageLoader() {
+const PageLoader = memo(() => {
   return (
     <Box sx={styles.pageLoader}>
       <CircularProgress />
@@ -288,7 +278,7 @@ const PageLoader = memo(function PageLoader() {
 // Main layout
 // ---------------------------------------------------------------------------
 
-export const DashboardLayout = memo(function DashboardLayout() {
+const DashboardLayout = memo(() => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
@@ -452,4 +442,4 @@ export const DashboardLayout = memo(function DashboardLayout() {
   );
 });
 
-export { DRAWER_WIDTH };
+export default DashboardLayout;

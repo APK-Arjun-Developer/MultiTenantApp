@@ -9,11 +9,7 @@ import {
 import type { SnackbarState } from './SnackbarProvider.types';
 import { styles } from './SnackbarProvider.styles';
 
-export const SnackbarProvider = React.memo(function SnackbarProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+const SnackbarProvider = React.memo(({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<SnackbarState>({
     open: false,
     message: '',
@@ -66,3 +62,4 @@ export const SnackbarProvider = React.memo(function SnackbarProvider({
     </SnackbarContext.Provider>
   );
 });
+export default SnackbarProvider;

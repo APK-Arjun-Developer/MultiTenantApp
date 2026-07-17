@@ -1,5 +1,7 @@
-import type { ButtonProps } from '@mui/material/Button';
+﻿import type { ButtonProps } from '@mui/material/Button';
 
-export interface LoadingButtonProps extends ButtonProps {
+interface LoadingButtonProps extends ButtonProps {
   loading?: boolean;
 }
+
+export { type LoadingButtonProps };

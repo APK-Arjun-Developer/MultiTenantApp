@@ -6,11 +6,9 @@ import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { selectSelectedTenantId } from '@/features/ui/uiSlice';
 import type { TenantContextGuardProps } from './TenantContextGuard.types';
 import { styles } from './TenantContextGuard.styles';
-import { Icon } from '@/shared/components/Icon';
+import Icon from './Icon';
 
-export const TenantContextGuard = React.memo(function TenantContextGuard({
-  children,
-}: TenantContextGuardProps) {
+const TenantContextGuard = React.memo(({ children }: TenantContextGuardProps) => {
   const user = useAppSelector(selectCurrentUser);
   const selectedTenantId = useAppSelector(selectSelectedTenantId);
 
@@ -32,3 +30,4 @@ export const TenantContextGuard = React.memo(function TenantContextGuard({
 
   return <>{children}</>;
 });
+export default TenantContextGuard;

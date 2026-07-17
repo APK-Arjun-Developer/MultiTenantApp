@@ -1,7 +1,7 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type { SubscriptionPlanDto, TenantPlanResponse, UpdateTenantPlanRequest } from '@/types/api';
 
-export const subscriptionsApi = apiSlice.injectEndpoints({
+const subscriptionsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getSubscriptionPlans: builder.query<SubscriptionPlanDto[], void>({
       query: () => ({
@@ -23,4 +23,6 @@ export const subscriptionsApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetSubscriptionPlansQuery, useUpdateTenantPlanMutation } = subscriptionsApi;
+const { useGetSubscriptionPlansQuery, useUpdateTenantPlanMutation } = subscriptionsApi;
+
+export { subscriptionsApi, useGetSubscriptionPlansQuery, useUpdateTenantPlanMutation };

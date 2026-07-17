@@ -1,7 +1,7 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type { ActivityLogDto, ActivityLogQueryParams, PaginatedResponse } from '@/types/api';
 
-export const activityLogsApi = apiSlice.injectEndpoints({
+const activityLogsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getActivityLogs: builder.query<
       PaginatedResponse<ActivityLogDto>,
@@ -26,4 +26,6 @@ export const activityLogsApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetActivityLogsQuery } = activityLogsApi;
+const { useGetActivityLogsQuery } = activityLogsApi;
+
+export { activityLogsApi, useGetActivityLogsQuery };

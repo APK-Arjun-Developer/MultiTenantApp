@@ -19,13 +19,11 @@ import {
   useVerifyEmailMutation,
   useResendVerificationMutation,
 } from '@/features/auth/api/authApi';
-import { LoadingButton } from '@/shared/components/LoadingButton';
+import { LoadingButton, Icon } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 import { styles, otpInputStyle } from './LoginPage.styles';
-import { loginSchema } from './LoginPage.types';
-import type { LoginValues, Step, OtpInputProps } from './LoginPage.types';
-import { Icon } from '@/shared/components/Icon';
+import { loginSchema, type LoginValues, type Step, type OtpInputProps } from './LoginPage.types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -56,7 +54,7 @@ const stepVariants = {
 
 // ─── OTP Input ───────────────────────────────────────────────────────────────
 
-const OtpInput = memo(function OtpInput({ value, onChange, disabled }: OtpInputProps) {
+const OtpInput = memo(({ value, onChange, disabled }: OtpInputProps) => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = useMemo(
     () => value.padEnd(OTP_LENGTH, '').split('').slice(0, OTP_LENGTH),
@@ -141,7 +139,7 @@ const OtpInput = memo(function OtpInput({ value, onChange, disabled }: OtpInputP
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export const LoginPage = memo(function LoginPage() {
+const LoginPage = memo(() => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [loginMutation, { isLoading: isLoggingIn }] = useLoginMutation();
   const [verifyEmailMutation, { isLoading: isVerifying }] = useVerifyEmailMutation();
@@ -360,3 +358,4 @@ export const LoginPage = memo(function LoginPage() {
     </Box>
   );
 });
+export default LoginPage;

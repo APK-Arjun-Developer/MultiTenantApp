@@ -1,8 +1,8 @@
 import type { StyleSheet } from '@/types';
 
-export const buttonRootStyle = { position: 'relative' as const };
+const buttonRootStyle = { position: 'relative' as const };
 
-export const styles = {
+const styles = {
   spinnerVisible: {
     visibility: 'visible',
   },
@@ -17,3 +17,5 @@ export const styles = {
     ml: '-8px',
   },
 } as const satisfies StyleSheet;
+
+export { buttonRootStyle, styles };

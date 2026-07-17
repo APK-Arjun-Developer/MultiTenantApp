@@ -10,9 +10,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
-import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
-import { LabelValue } from '@/shared/components/LabelValue';
+import { AvatarManageModal, ConfirmDialog, LabelValue, Icon } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import { useUrlTabs, useBooleanDialog } from '@/shared/hooks';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
@@ -39,19 +37,21 @@ import {
 } from '@/features/tenantSettings/api/tenantSettingsApi';
 import type { ApiError } from '@/types/api';
 import { styles } from './ProfilePage.styles';
-import type {
-  ProfileValues,
-  AddressValues,
-  PasswordValues,
-  CompanyValues,
-  ProfileAvatarSectionProps,
-  ProfileInfoSectionProps,
-  ProfileAddressSectionProps,
-  ProfilePasswordSectionProps,
-  ProfileCompanySectionProps,
+import {
+  profileSchema,
+  addressSchema,
+  companySchema,
+  passwordSchema,
+  type ProfileValues,
+  type AddressValues,
+  type PasswordValues,
+  type CompanyValues,
+  type ProfileAvatarSectionProps,
+  type ProfileInfoSectionProps,
+  type ProfileAddressSectionProps,
+  type ProfilePasswordSectionProps,
+  type ProfileCompanySectionProps,
 } from './ProfilePage.types';
-import { profileSchema, addressSchema, companySchema, passwordSchema } from './ProfilePage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── Static field configs ──────────────────────────────────────────────────────
 
@@ -83,136 +83,31 @@ const PROFILE_TABS = ['profile', 'address', 'security', 'company'] as const;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const ProfileAvatarSection = memo(function ProfileAvatarSection({
-  avatarSrc,
-  initials,
-  fullName,
-  email,
-  systemRole,
-  onOpenModal,
-}: ProfileAvatarSectionProps) {
-  const [hover, setHover] = useState(false);
+const ProfileAvatarSection = memo(
+  ({
+    avatarSrc,
+    initials,
+    fullName,
+    email,
+    systemRole,
+    onOpenModal,
+  }: ProfileAvatarSectionProps) => {
+    const [hover, setHover] = useState(false);
 
-  return (
-    <Box sx={styles.avatarContainer}>
-      <Box
-        sx={styles.avatarClickable}
-        onClick={onOpenModal}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
-        <Avatar
-          src={avatarSrc ?? undefined}
-          slotProps={{ img: { crossOrigin: 'use-credentials' } }}
-          sx={styles.avatarMedium}
-        >
-          {!avatarSrc && initials}
-        </Avatar>
-        {hover && (
-          <Box sx={styles.avatarOverlay}>
-            <Icon name="CameraAlt" sx={styles.avatarOverlayIcon} />
-          </Box>
-        )}
-      </Box>
-      <Box>
-        <Typography variant="subtitle1" sx={styles.userName}>
-          {fullName}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {email}
-        </Typography>
-        {systemRole && (
-          <Typography variant="caption" color="primary.main" sx={styles.systemRole}>
-            {systemRole}
-          </Typography>
-        )}
-      </Box>
-    </Box>
-  );
-});
-
-const ProfileInfoSection = memo(function ProfileInfoSection({
-  profileId,
-  email,
-  profileFields,
-  onProfileSubmit,
-}: ProfileInfoSectionProps) {
-  return (
-    <Box>
-      <LabelValue label="Email address" value={email} sx={styles.emailLabelValue} />
-      <Divider sx={styles.divider} />
-      <FormBuilder
-        key={profileId}
-        schema={profileSchema}
-        fields={profileFields}
-        onSubmit={onProfileSubmit}
-        submitText="Save changes"
-        sx={styles.inlineForm}
-      />
-    </Box>
-  );
-});
-
-const ProfileAddressSection = memo(function ProfileAddressSection({
-  profileId,
-  addressFields,
-  onAddressSubmit,
-}: ProfileAddressSectionProps) {
-  return (
-    <Box>
-      <FormBuilder
-        key={`address-${profileId}`}
-        schema={addressSchema}
-        fields={addressFields}
-        onSubmit={onAddressSubmit}
-        submitText="Save address"
-        sx={styles.inlineForm}
-      />
-    </Box>
-  );
-});
-
-const ProfilePasswordSection = memo(function ProfilePasswordSection({
-  passwordFields: pwFields,
-  onPasswordSubmit,
-}: ProfilePasswordSectionProps) {
-  return (
-    <FormBuilder
-      key="change-password"
-      schema={passwordSchema}
-      fields={pwFields}
-      onSubmit={onPasswordSubmit}
-      submitText="Change password"
-      sx={styles.inlineForm}
-    />
-  );
-});
-
-const ProfileCompanySection = memo(function ProfileCompanySection({
-  tenantSettings,
-  tenantLogoSrc,
-  companyFields,
-  onOpenLogoModal,
-  onCompanySubmit,
-}: ProfileCompanySectionProps) {
-  const [hover, setHover] = useState(false);
-  const logoInitial = tenantSettings?.name?.[0]?.toUpperCase() ?? '?';
-
-  return (
-    <Box>
-      <Box sx={styles.companyLogoRow}>
+    return (
+      <Box sx={styles.avatarContainer}>
         <Box
           sx={styles.avatarClickable}
-          onClick={onOpenLogoModal}
+          onClick={onOpenModal}
           onMouseEnter={() => setHover(true)}
           onMouseLeave={() => setHover(false)}
         >
           <Avatar
-            src={tenantLogoSrc ?? undefined}
+            src={avatarSrc ?? undefined}
             slotProps={{ img: { crossOrigin: 'use-credentials' } }}
             sx={styles.avatarMedium}
           >
-            {!tenantLogoSrc && logoInitial}
+            {!avatarSrc && initials}
           </Avatar>
           {hover && (
             <Box sx={styles.avatarOverlay}>
@@ -221,30 +116,133 @@ const ProfileCompanySection = memo(function ProfileCompanySection({
           )}
         </Box>
         <Box>
-          <Typography variant="subtitle2" sx={styles.companyLogoLabel}>
-            Company logo
+          <Typography variant="subtitle1" sx={styles.userName}>
+            {fullName}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Square image recommended
+          <Typography variant="body2" color="text.secondary">
+            {email}
           </Typography>
+          {systemRole && (
+            <Typography variant="caption" color="primary.main" sx={styles.systemRole}>
+              {systemRole}
+            </Typography>
+          )}
         </Box>
       </Box>
-      <Divider sx={styles.companyDivider} />
+    );
+  },
+);
+
+const ProfileInfoSection = memo(
+  ({ profileId, email, profileFields, onProfileSubmit }: ProfileInfoSectionProps) => {
+    return (
+      <Box>
+        <LabelValue label="Email address" value={email} sx={styles.emailLabelValue} />
+        <Divider sx={styles.divider} />
+        <FormBuilder
+          key={profileId}
+          schema={profileSchema}
+          fields={profileFields}
+          onSubmit={onProfileSubmit}
+          submitText="Save changes"
+          sx={styles.inlineForm}
+        />
+      </Box>
+    );
+  },
+);
+
+const ProfileAddressSection = memo(
+  ({ profileId, addressFields, onAddressSubmit }: ProfileAddressSectionProps) => {
+    return (
+      <Box>
+        <FormBuilder
+          key={`address-${profileId}`}
+          schema={addressSchema}
+          fields={addressFields}
+          onSubmit={onAddressSubmit}
+          submitText="Save address"
+          sx={styles.inlineForm}
+        />
+      </Box>
+    );
+  },
+);
+
+const ProfilePasswordSection = memo(
+  ({ passwordFields, onPasswordSubmit }: ProfilePasswordSectionProps) => {
+    return (
       <FormBuilder
-        key={`company-${tenantSettings?.id}`}
-        schema={companySchema}
-        fields={companyFields}
-        onSubmit={onCompanySubmit}
-        submitText="Save company settings"
+        key="change-password"
+        schema={passwordSchema}
+        fields={passwordFields}
+        onSubmit={onPasswordSubmit}
+        submitText="Change password"
         sx={styles.inlineForm}
       />
-    </Box>
-  );
-});
+    );
+  },
+);
+
+const ProfileCompanySection = memo(
+  ({
+    tenantSettings,
+    tenantLogoSrc,
+    companyFields,
+    onOpenLogoModal,
+    onCompanySubmit,
+  }: ProfileCompanySectionProps) => {
+    const [hover, setHover] = useState(false);
+    const logoInitial = tenantSettings?.name?.[0]?.toUpperCase() ?? '?';
+
+    return (
+      <Box>
+        <Box sx={styles.companyLogoRow}>
+          <Box
+            sx={styles.avatarClickable}
+            onClick={onOpenLogoModal}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+          >
+            <Avatar
+              src={tenantLogoSrc ?? undefined}
+              slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+              sx={styles.avatarMedium}
+            >
+              {!tenantLogoSrc && logoInitial}
+            </Avatar>
+            {hover && (
+              <Box sx={styles.avatarOverlay}>
+                <Icon name="CameraAlt" sx={styles.avatarOverlayIcon} />
+              </Box>
+            )}
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" sx={styles.companyLogoLabel}>
+              Company logo
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Square image recommended
+            </Typography>
+          </Box>
+        </Box>
+        <Divider sx={styles.companyDivider} />
+        <FormBuilder
+          key={`company-${tenantSettings?.id}`}
+          schema={companySchema}
+          fields={companyFields}
+          onSubmit={onCompanySubmit}
+          submitText="Save company settings"
+          sx={styles.inlineForm}
+        />
+      </Box>
+    );
+  },
+);
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const ProfilePage = memo(function ProfilePage() {
+const ProfilePage = memo(() => {
   const snackbar = useSnackbar();
   const navigate = useNavigate();
   const { tab, handleTabChange } = useUrlTabs(PROFILE_TABS);
@@ -557,3 +555,4 @@ export const ProfilePage = memo(function ProfilePage() {
     </Box>
   );
 });
+export default ProfilePage;

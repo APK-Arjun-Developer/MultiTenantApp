@@ -1,6 +1,6 @@
 ﻿import type { Sx } from '@/types';
 
-export const styles = {
+const styles = {
   outerBox: {
     position: 'relative',
     display: 'inline-flex',
@@ -53,4 +53,6 @@ export const styles = {
   },
 } as const;
 
-export const hiddenInputStyle = { display: 'none' } as const;
+const hiddenInputStyle = { display: 'none' } as const;
+
+export { styles, hiddenInputStyle };

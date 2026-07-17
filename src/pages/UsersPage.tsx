@@ -15,14 +15,17 @@ import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import { DataTable } from '@/shared/components/DataTable';
-import { AvatarManageModal } from '@/shared/components/AvatarManageModal';
-import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
-import { LoadingButton } from '@/shared/components/LoadingButton';
-import { CreatedViaChip } from '@/shared/components/CreatedViaChip';
-import { LabelValue } from '@/shared/components/LabelValue';
-import { TenantContextGuard } from '@/shared/components/TenantContextGuard';
-import { ViewDialog } from '@/shared/components/ViewDialog';
+import {
+  DataTable,
+  AvatarManageModal,
+  ConfirmDialog,
+  LoadingButton,
+  CreatedViaChip,
+  LabelValue,
+  TenantContextGuard,
+  ViewDialog,
+  Icon,
+} from '@/shared/components';
 import { formatAddress } from '@/shared/utils/format';
 import { exportToCsv } from '@/shared/utils/exportCsv';
 import {
@@ -45,9 +48,9 @@ import { useGetTenantSettingsQuery } from '@/features/tenantSettings/api/tenantS
 import { useStartImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
 import { authApi } from '@/features/auth/api/authApi';
 import { apiSlice } from '@/shared/api/apiSlice';
-import { useGetCurrentUserQuery } from '@/features/users/api/usersApi';
 import { useGetRolesQuery } from '@/features/roles/api/rolesApi';
 import {
+  useGetCurrentUserQuery,
   useGetUsersQuery,
   useCreateUserMutation,
   useInviteUserMutation,
@@ -65,25 +68,26 @@ import {
 } from '@/features/users/api/usersApi';
 import type { ApiError } from '@/types/api';
 import { styles } from './UsersPage.styles';
-import { createSchema, inviteSchema, editSchema } from './UsersPage.types';
-import type {
-  CreateValues,
-  InviteValues,
-  EditValues,
-  PendingAction,
-  RoleOption,
-  CreateUserDialogProps,
-  InviteUserDialogProps,
-  EditUserDialogProps,
-  ViewUserDialogProps,
-  UsersPageHeaderProps,
-  UsersPageFilterBarProps,
-  UsersPageActionsProps,
-  UsersInvitationsFilterBarProps,
-  UserDto,
-  UserInvitationDto,
+import {
+  createSchema,
+  inviteSchema,
+  editSchema,
+  type CreateValues,
+  type InviteValues,
+  type EditValues,
+  type PendingAction,
+  type RoleOption,
+  type CreateUserDialogProps,
+  type InviteUserDialogProps,
+  type EditUserDialogProps,
+  type ViewUserDialogProps,
+  type UsersPageHeaderProps,
+  type UsersPageFilterBarProps,
+  type UsersPageActionsProps,
+  type UsersInvitationsFilterBarProps,
+  type UserDto,
+  type UserInvitationDto,
 } from './UsersPage.types';
-import { Icon } from '@/shared/components/Icon';
 
 // ─── Filter defaults (module-level stable references) ─────────────────────────
 
@@ -93,7 +97,7 @@ const USERS_TABS = ['users', 'invitations'] as const;
 
 // ─── Status chip ──────────────────────────────────────────────────────────────
 
-const UserStatusChip = memo(function UserStatusChip({ isActive }: { isActive: boolean }) {
+const UserStatusChip = memo(({ isActive }: { isActive: boolean }) => {
   return (
     <Chip
       label={isActive ? 'Active' : 'Inactive'}
@@ -104,7 +108,7 @@ const UserStatusChip = memo(function UserStatusChip({ isActive }: { isActive: bo
   );
 });
 
-const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { status: string }) {
+const InvitationStatusChip = memo(({ status }: { status: string }) => {
   const color =
     status === 'accepted'
       ? 'success'
@@ -125,11 +129,7 @@ const InvitationStatusChip = memo(function InvitationStatusChip({ status }: { st
 
 // ─── Create dialog ────────────────────────────────────────────────────────────
 
-const CreateUserDialog = memo(function CreateUserDialog({
-  open,
-  onClose,
-  roleOptions,
-}: CreateUserDialogProps) {
+const CreateUserDialog = memo(({ open, onClose, roleOptions }: CreateUserDialogProps) => {
   const [createUser, { isLoading }] = useCreateUserMutation();
   const snackbar = useSnackbar();
 
@@ -203,11 +203,7 @@ const CreateUserDialog = memo(function CreateUserDialog({
 
 // ─── Invite dialog ────────────────────────────────────────────────────────────
 
-const InviteUserDialog = memo(function InviteUserDialog({
-  open,
-  onClose,
-  roleOptions,
-}: InviteUserDialogProps) {
+const InviteUserDialog = memo(({ open, onClose, roleOptions }: InviteUserDialogProps) => {
   const [inviteUser, { isLoading }] = useInviteUserMutation();
   const snackbar = useSnackbar();
 
@@ -272,12 +268,7 @@ const InviteUserDialog = memo(function InviteUserDialog({
 
 // ─── Edit dialog ──────────────────────────────────────────────────────────────
 
-const EditUserDialog = memo(function EditUserDialog({
-  open,
-  onClose,
-  user,
-  roleOptions,
-}: EditUserDialogProps) {
+const EditUserDialog = memo(({ open, onClose, user, roleOptions }: EditUserDialogProps) => {
   const [updateUser, { isLoading }] = useUpdateUserMutation();
   const snackbar = useSnackbar();
   const { data: currentUser } = useGetCurrentUserQuery();
@@ -360,7 +351,7 @@ const EditUserDialog = memo(function EditUserDialog({
 
 // ─── View dialog ──────────────────────────────────────────────────────────────
 
-const ViewUserDialog = memo(function ViewUserDialog({ user, onClose }: ViewUserDialogProps) {
+const ViewUserDialog = memo(({ user, onClose }: ViewUserDialogProps) => {
   return (
     <ViewDialog open={!!user} title="User details" onClose={onClose}>
       <Box sx={styles.viewDialogBody}>
@@ -387,86 +378,82 @@ const ViewUserDialog = memo(function ViewUserDialog({ user, onClose }: ViewUserD
 
 // ─── Section sub-components ───────────────────────────────────────────────────
 
-const UsersPageHeader = memo(function UsersPageHeader({
-  canCreate,
-  canInvite,
-  atUserLimit,
-  maxUsers,
-  planName,
-  onCreateOpen,
-  onInviteOpen,
-}: UsersPageHeaderProps) {
-  return (
-    <Box sx={styles.header}>
-      <Box sx={styles.headerTitle}>
-        <Box sx={styles.pageIconBox}>
-          <Icon name="People" sx={styles.pageIconSize} />
+const UsersPageHeader = memo(
+  ({
+    canCreate,
+    canInvite,
+    atUserLimit,
+    maxUsers,
+    planName,
+    onCreateOpen,
+    onInviteOpen,
+  }: UsersPageHeaderProps) => {
+    return (
+      <Box sx={styles.header}>
+        <Box sx={styles.headerTitle}>
+          <Box sx={styles.pageIconBox}>
+            <Icon name="People" sx={styles.pageIconSize} />
+          </Box>
+          <Typography variant="h5" sx={styles.titleText}>
+            Users
+          </Typography>
         </Box>
-        <Typography variant="h5" sx={styles.titleText}>
-          Users
-        </Typography>
+        <Box sx={styles.headerActions}>
+          {canInvite && (
+            <Tooltip
+              title={atUserLimit ? `User limit reached (${maxUsers} on ${planName} plan)` : ''}
+            >
+              <span>
+                <Button
+                  variant="outlined"
+                  startIcon={<Icon name="Send" />}
+                  disabled={atUserLimit}
+                  onClick={onInviteOpen}
+                >
+                  Invite
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+          {canCreate && (
+            <Tooltip
+              title={atUserLimit ? `User limit reached (${maxUsers} on ${planName} plan)` : ''}
+            >
+              <span>
+                <Button
+                  variant="contained"
+                  startIcon={<Icon name="Add" />}
+                  disabled={atUserLimit}
+                  onClick={onCreateOpen}
+                >
+                  Create user
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
-      <Box sx={styles.headerActions}>
-        {canInvite && (
-          <Tooltip
-            title={atUserLimit ? `User limit reached (${maxUsers} on ${planName} plan)` : ''}
-          >
-            <span>
-              <Button
-                variant="outlined"
-                startIcon={<Icon name="Send" />}
-                disabled={atUserLimit}
-                onClick={onInviteOpen}
-              >
-                Invite
-              </Button>
-            </span>
-          </Tooltip>
-        )}
-        {canCreate && (
-          <Tooltip
-            title={atUserLimit ? `User limit reached (${maxUsers} on ${planName} plan)` : ''}
-          >
-            <span>
-              <Button
-                variant="contained"
-                startIcon={<Icon name="Add" />}
-                disabled={atUserLimit}
-                onClick={onCreateOpen}
-              >
-                Create user
-              </Button>
-            </span>
-          </Tooltip>
-        )}
+    );
+  },
+);
+
+const UsersPageFilterBar = memo(
+  ({ userFilterFields, defaultValues, onChange }: UsersPageFilterBarProps) => {
+    return (
+      <Box sx={styles.filterBar}>
+        <FilterForm
+          fields={userFilterFields}
+          defaultValues={defaultValues}
+          onChange={onChange}
+          showReset
+          spacing={2}
+        />
       </Box>
-    </Box>
-  );
-});
+    );
+  },
+);
 
-const UsersPageFilterBar = memo(function UsersPageFilterBar({
-  userFilterFields,
-  defaultValues,
-  onChange,
-}: UsersPageFilterBarProps) {
-  return (
-    <Box sx={styles.filterBar}>
-      <FilterForm
-        fields={userFilterFields}
-        defaultValues={defaultValues}
-        onChange={onChange}
-        showReset
-        spacing={2}
-      />
-    </Box>
-  );
-});
-
-const UsersPageActions = memo(function UsersPageActions({
-  exportLoading,
-  hasItems,
-  onExport,
-}: UsersPageActionsProps) {
+const UsersPageActions = memo(({ exportLoading, hasItems, onExport }: UsersPageActionsProps) => {
   return (
     <Box sx={styles.exportRow}>
       <Tooltip title="Export to CSV">
@@ -486,27 +473,25 @@ const UsersPageActions = memo(function UsersPageActions({
   );
 });
 
-const UsersInvitationsFilterBar = memo(function UsersInvitationsFilterBar({
-  invFilterFields,
-  defaultValues,
-  onChange,
-}: UsersInvitationsFilterBarProps) {
-  return (
-    <Box sx={styles.invitationsFilterBar}>
-      <FilterForm
-        fields={invFilterFields}
-        defaultValues={defaultValues}
-        onChange={onChange}
-        showReset
-        spacing={2}
-      />
-    </Box>
-  );
-});
+const UsersInvitationsFilterBar = memo(
+  ({ invFilterFields, defaultValues, onChange }: UsersInvitationsFilterBarProps) => {
+    return (
+      <Box sx={styles.invitationsFilterBar}>
+        <FilterForm
+          fields={invFilterFields}
+          defaultValues={defaultValues}
+          onChange={onChange}
+          showReset
+          spacing={2}
+        />
+      </Box>
+    );
+  },
+);
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export const UsersPage = memo(function UsersPage() {
+const UsersPage = memo(() => {
   const snackbar = useSnackbar();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(selectCurrentUser);
@@ -1218,3 +1203,4 @@ export const UsersPage = memo(function UsersPage() {
     </TenantContextGuard>
   );
 });
+export default UsersPage;

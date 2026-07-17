@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useMatches } from 'react-router-dom';
 
 const APP_NAME = 'MultiTenant Admin';
 
-export function usePageTitle() {
+const usePageTitle = () => {
   const matches = useMatches();
 
   useEffect(() => {
@@ -11,4 +11,6 @@ export function usePageTitle() {
     const title = (match?.handle as { title?: string })?.title;
     document.title = title ? `${title} | ${APP_NAME}` : APP_NAME;
   }, [matches]);
-}
+};
+
+export { usePageTitle };

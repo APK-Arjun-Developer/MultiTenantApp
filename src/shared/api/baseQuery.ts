@@ -6,7 +6,7 @@ import { axiosInstance } from './axiosInstance';
 import { logout } from '@/features/auth/slices/authSlice';
 import type { ApiError, ApiResponse } from '@/types/api';
 
-export interface AxiosBaseQueryArgs {
+interface AxiosBaseQueryArgs {
   url: string;
   method?: AxiosRequestConfig['method'];
   data?: unknown;
@@ -53,7 +53,7 @@ const rawBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async (
   }
 };
 
-export const baseQueryWithReauth: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async (
+const baseQueryWithReauth: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async (
   args,
   api,
   extraOptions,
@@ -96,3 +96,5 @@ export const baseQueryWithReauth: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiEr
 
   return result;
 };
+
+export { baseQueryWithReauth, type AxiosBaseQueryArgs };
