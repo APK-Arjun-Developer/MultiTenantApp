@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { RootState } from '@/app/store';
-import type { ThemeMode } from '@/shared/theme/theme';
+import type { ThemeMode } from '@/shared/theme';
 
 const SELECTED_TENANT_STORAGE_KEY = 'selectedTenant';
 const THEME_STORAGE_KEY = 'themeMode';

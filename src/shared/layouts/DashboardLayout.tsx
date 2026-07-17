@@ -36,9 +36,9 @@ import { apiSlice } from '@/shared/api/apiSlice';
 import { Icon, PageTransition, TenantPicker } from '@/shared/components';
 import { usePageTitle } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import type { ThemeMode } from '@/shared/theme';
 import type { ApiError } from '@/types/api';
 
-import type { ThemeMode } from '../theme/theme';
 import { navLinkStyle, styles } from './DashboardLayout.styles';
 import type { NavItem } from './DashboardLayout.types';
 
