@@ -69,6 +69,19 @@ const config = defineConfig([
         },
       ],
       'simple-import-sort/exports': 'error',
+      // ── Export discipline ────────────────────────────────────────────────────
+      // Every file must use a single grouped export { } at the bottom.
+      // ExportNamedDeclaration[declaration.type] matches any inline export that
+      // carries a declaration node (export const/interface/type/function/class/enum).
+      // It does NOT match export { }, export type { }, export default, export * from.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ExportNamedDeclaration[declaration.type]',
+          message:
+            'Inline exports are not allowed. Remove the export keyword from the declaration and use a single grouped export { } statement at the bottom of the file.',
+        },
+      ],
       // ── Import discipline ────────────────────────────────────────────────────
       // Multiple import statements from the same path must be merged into one.
       'no-duplicate-imports': 'error',
@@ -99,26 +112,21 @@ const config = defineConfig([
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
-    // Component files: enforce arrow functions and export default only.
+    // Component files: enforce arrow functions, no inline exports, export default only.
+    // This block overrides the global no-restricted-syntax for .tsx files, so all
+    // rules (including the inline-export ban) must be listed here too.
     files: ['src/**/*.tsx'],
     rules: {
       'no-restricted-syntax': [
         'error',
         {
-          // Block: export const X = ... (named value export in component files)
-          selector: 'ExportNamedDeclaration[declaration.type="VariableDeclaration"]',
+          // Shared with .ts files: ban any inline export with a declaration node.
+          selector: 'ExportNamedDeclaration[declaration.type]',
           message:
-            'Component files must use export default only. Remove export from the declaration and keep export default at the bottom.',
-        },
-        {
-          // Block: export function X() {} (named function declaration)
-          selector: 'ExportNamedDeclaration > FunctionDeclaration',
-          message:
-            'Component files must use export default only, and arrow functions instead of function declarations.',
+            'Inline exports are not allowed. Remove the export keyword from the declaration and use a single grouped export { } statement at the bottom of the file.',
         },
         {
           // Block: function expression inside memo() — use arrow instead.
-          // Exception: DataTable uses function DataTable<TData> to preserve TS generics through React.memo.
           selector:
             'CallExpression[callee.name="memo"] > FunctionExpression, CallExpression[callee.object.name="React"][callee.property.name="memo"] > FunctionExpression',
           message:
@@ -128,7 +136,7 @@ const config = defineConfig([
     },
   },
   {
-    // Hook files in .tsx: named exports and function declarations are valid for hooks — override the component block above.
+    // Hook files in .tsx: override component block — hooks use named exports.
     files: ['src/shared/hooks/**/*.tsx'],
     rules: { 'no-restricted-syntax': 'off' },
   },

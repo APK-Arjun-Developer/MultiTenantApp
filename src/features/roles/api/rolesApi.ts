@@ -1,4 +1,5 @@
 import { apiSlice } from '@/shared/api/apiSlice';
+import type { SortOrder } from '@/types';
 import type {
   CreateRoleRequest,
   PaginatedResponse,
@@ -13,7 +14,7 @@ interface GetRolesParams {
   search?: string;
   permissionIds?: string[];
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: SortOrder;
 }
 
 const rolesApi = apiSlice.injectEndpoints({

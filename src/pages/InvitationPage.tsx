@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+﻿import { memo, useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -35,8 +35,6 @@ import {
   type TenantCreationValues,
 } from './InvitationPage.types';
 
-// ─── InvitationInvalid ────────────────────────────────────────────────────────
-
 const InvitationInvalid = memo(({ message }: InvitationInvalidProps) => {
   return (
     <Stack spacing={2} sx={styles.invalidStack}>
@@ -62,8 +60,6 @@ const InvitationInvalid = memo(({ message }: InvitationInvalidProps) => {
     </Stack>
   );
 });
-
-// ─── InvitationSuccess ────────────────────────────────────────────────────────
 
 const InvitationSuccess = memo(({ result }: InvitationSuccessProps) => {
   return (
@@ -105,8 +101,6 @@ const InvitationSuccess = memo(({ result }: InvitationSuccessProps) => {
   );
 });
 
-// ─── InvitationPage ───────────────────────────────────────────────────────────
-
 const InvitationPage = memo(() => {
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
@@ -128,8 +122,6 @@ const InvitationPage = memo(() => {
   const rawInvType: unknown = validation?.invitationType;
   const isAdmin = rawInvType === 'TenantAdmin' || rawInvType === 1;
   const isNewTenant = rawInvType === 'NewTenant' || rawInvType === 3;
-
-  // ── Fields for admin / user flows ────────────────────────────────────────
 
   const phoneSelectOptions = useMemo(
     () => [
@@ -188,8 +180,6 @@ const InvitationPage = memo(() => {
     [],
   );
 
-  // ── Fields for new-tenant flow ────────────────────────────────────────────
-
   const newTenantAccountFields = useMemo<FieldConfig[]>(
     () => [
       {
@@ -244,8 +234,6 @@ const InvitationPage = memo(() => {
     [],
   );
 
-  // ── Wizard step configs ───────────────────────────────────────────────────
-
   const adminUserSteps = useMemo(
     () => [
       {
@@ -282,8 +270,6 @@ const InvitationPage = memo(() => {
     ],
     [newTenantAccountFields, newTenantDetailsFields, newTenantUserAddressFields],
   );
-
-  // ── Submit handlers ───────────────────────────────────────────────────────
 
   const onSubmit = useCallback(
     async (values: FormValues) => {
@@ -344,8 +330,6 @@ const InvitationPage = memo(() => {
     },
     [token, acceptNewTenant, snackbar],
   );
-
-  // ── Wizard renderActions ──────────────────────────────────────────────────
 
   const renderNewTenantActions = useCallback(
     ({
@@ -415,8 +399,6 @@ const InvitationPage = memo(() => {
     [isSubmitting],
   );
 
-  // ── Early returns ─────────────────────────────────────────────────────────
-
   if (!token) return <InvitationInvalid message="No invitation token found in the link." />;
 
   if (isValidating) {
@@ -430,8 +412,6 @@ const InvitationPage = memo(() => {
   if (!validation?.isValid) return <InvitationInvalid message={validation?.errorMessage} />;
 
   if (result) return <InvitationSuccess result={result} />;
-
-  // ── New Tenant invitation UI ──────────────────────────────────────────────
 
   if (isNewTenant) {
     return (
@@ -468,8 +448,6 @@ const InvitationPage = memo(() => {
       </Box>
     );
   }
-
-  // ── Admin / User invitation UI ────────────────────────────────────────────
 
   return (
     <Box sx={styles.adminUserRoot}>

@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "prepare": "husky",
     "typecheck": "tsc --noEmit",
-    "check": "bun run format && bun run lint && bun run typecheck && bun run build"
+    "check": "bun run format && bun run lint --fix && bun run typecheck && bun run build"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

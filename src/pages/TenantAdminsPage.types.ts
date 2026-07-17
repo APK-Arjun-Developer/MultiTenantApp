@@ -8,7 +8,7 @@ import type {
   TenantAdminInvitationDto,
 } from '@/types/api';
 
-// â”€â”€â”€ Zod-inferred value shapes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Zod-inferred value shapes
 // These mirror the schemas defined in TenantAdminsPage.tsx so sub-components
 // can reference them without importing z.infer at every call site.
 
@@ -21,11 +21,7 @@ type InviteValues = {
 
 type EditValues = { fullName: string } & AddressValues & TenantAddressValues;
 
-// â”€â”€â”€ Action type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 type ActionType = 'delete' | 'activate' | 'deactivate';
-
-// â”€â”€â”€ Dialog prop interfaces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface TenantOption {
   value: string;
@@ -55,8 +51,6 @@ interface ViewAdminDialogProps {
   onClose: () => void;
 }
 
-// â”€â”€â”€ Section sub-component prop interfaces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 interface TenantAdminsPageHeaderProps {
   canCreate: boolean;
   canInvite: boolean;
@@ -76,20 +70,20 @@ interface TenantAdminsInvitationsFilterBarProps {
   onChange: (values: FilterValues) => void;
 }
 
-// â”€â”€â”€ Re-export api types used across this page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export type { AddressDto, TenantAdminDto, TenantAdminInvitationDto };
-
-export {
-  type ActionType,
-  type CreateAdminDialogProps,
-  type CreateValues,
-  type EditAdminDialogProps,
-  type EditValues,
-  type InviteAdminDialogProps,
-  type InviteValues,
-  type TenantAdminsFilterBarProps,
-  type TenantAdminsInvitationsFilterBarProps,
-  type TenantAdminsPageHeaderProps,
-  type TenantOption,
-  type ViewAdminDialogProps,
+export type {
+  ActionType,
+  AddressDto,
+  CreateAdminDialogProps,
+  CreateValues,
+  EditAdminDialogProps,
+  EditValues,
+  InviteAdminDialogProps,
+  InviteValues,
+  TenantAdminDto,
+  TenantAdminInvitationDto,
+  TenantAdminsFilterBarProps,
+  TenantAdminsInvitationsFilterBarProps,
+  TenantAdminsPageHeaderProps,
+  TenantOption,
+  ViewAdminDialogProps,
 };

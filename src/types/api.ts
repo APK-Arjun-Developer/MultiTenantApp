@@ -1,23 +1,25 @@
-export type UUID = string;
+﻿type UUID = string;
+
+type SortOrder = 'asc' | 'desc';
 
 /** Shape of values emitted by FilterForm's `onChange` and used as `defaultValues`. */
-export type FilterValues = Record<string, unknown>;
+type FilterValues = Record<string, unknown>;
 
 /** Every API response is wrapped in this envelope (confirmed against the live API). */
-export interface ApiResponse<T> {
+interface ApiResponse<T> {
   data: T;
   message: string;
   errors: ApiErrorPayload | null;
   traceId: string;
 }
 
-export interface ApiErrorPayload {
+interface ApiErrorPayload {
   code: string;
   details?: Record<string, string[]>;
 }
 
 /** Normalized error shape surfaced to the UI by baseQueryWithReauth. */
-export interface ApiError {
+interface ApiError {
   status: number;
   code: string;
   message: string;
@@ -31,7 +33,7 @@ export interface ApiError {
  * is inferred from naming conventions and the confirmed envelope; verify against a live
  * authenticated response and adjust as needed once endpoints are exercised for real.
  */
-export interface PaginatedResponse<T> {
+interface PaginatedResponse<T> {
   items: T[];
   page: number;
   pageSize: number;
@@ -39,17 +41,17 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface PaginationParams {
+interface PaginationParams {
   page?: number;
   pageSize?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: SortOrder;
 }
 
 // ---------- Address (shared across Tenant/User/TenantAdmin) ----------
 
-export interface AddressRequest {
+interface AddressRequest {
   line1?: string | null;
   line2?: string | null;
   city?: string | null;
@@ -58,52 +60,52 @@ export interface AddressRequest {
   country?: string | null;
 }
 
-export type AddressDto = AddressRequest;
+type AddressDto = AddressRequest;
 
 // ---------- Auth ----------
 
-export interface LoginRequest {
+interface LoginRequest {
   email: string;
   password: string;
 }
 
-export interface RefreshTokenRequest {
+interface RefreshTokenRequest {
   refreshToken: string;
 }
 
-export interface RefreshTokenResponse {
+interface RefreshTokenResponse {
   accessToken: string;
   refreshToken: string;
 }
 
-export interface LogoutRequest {
+interface LogoutRequest {
   refreshToken: string;
 }
 
-export interface ForgotPasswordRequest {
+interface ForgotPasswordRequest {
   email: string;
 }
 
-export interface ResetPasswordRequest {
+interface ResetPasswordRequest {
   token: string;
   newPassword: string;
   confirmPassword: string;
 }
 
-export interface VerifyEmailOtpRequest {
+interface VerifyEmailOtpRequest {
   email: string;
   otp: string;
 }
 
-export interface ResendEmailOtpRequest {
+interface ResendEmailOtpRequest {
   email: string;
 }
 
-export type SystemRole = 'SystemAdmin' | 'TenantAdmin' | 'TenantUser';
+type SystemRole = 'SystemAdmin' | 'TenantAdmin' | 'TenantUser';
 
-export type UserCreatedVia = 'Direct' | 'Invitation';
+type UserCreatedVia = 'Direct' | 'Invitation';
 
-export interface AuthUser {
+interface AuthUser {
   id: UUID;
   email: string;
   fullName: string;
@@ -113,7 +115,7 @@ export interface AuthUser {
   impersonatedBy?: ImpersonatedByInfo | null;
 }
 
-export interface LoginResponse {
+interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
@@ -123,7 +125,7 @@ export interface LoginResponse {
   systemRole: SystemRole;
 }
 
-export interface ValidateResetTokenResponse {
+interface ValidateResetTokenResponse {
   isValid: boolean;
   email?: string | null;
   errorMessage?: string | null;
@@ -131,7 +133,7 @@ export interface ValidateResetTokenResponse {
 
 // ---------- Account setup ----------
 
-export interface SetPasswordRequest {
+interface SetPasswordRequest {
   token: string;
   password: string;
   confirmPassword: string;
@@ -141,9 +143,9 @@ export interface SetPasswordRequest {
 
 // ---------- Invitations (generic accept flow) ----------
 
-export type InvitationType = 'TenantAdmin' | 'TenantUser' | 'NewTenant';
+type InvitationType = 'TenantAdmin' | 'TenantUser' | 'NewTenant';
 
-export interface ValidateInvitationResponse {
+interface ValidateInvitationResponse {
   isValid: boolean;
   email?: string | null;
   invitationType?: InvitationType | null;
@@ -151,7 +153,7 @@ export interface ValidateInvitationResponse {
   errorMessage?: string | null;
 }
 
-export interface AcceptInvitationResponse {
+interface AcceptInvitationResponse {
   userId: UUID;
   email: string;
   fullName: string;
@@ -161,7 +163,7 @@ export interface AcceptInvitationResponse {
   isActive: boolean;
 }
 
-export interface ValidateAccountSetupResponse {
+interface ValidateAccountSetupResponse {
   isValid: boolean;
   email?: string | null;
   fullName?: string | null;
@@ -169,19 +171,19 @@ export interface ValidateAccountSetupResponse {
   hasAddress: boolean;
 }
 
-export interface SetPasswordResponse {
+interface SetPasswordResponse {
   userId: UUID;
   email: string;
   isActive: boolean;
 }
 
-export interface CompanyInfo {
+interface CompanyInfo {
   name?: string | null;
   website?: string | null;
   industry?: string | null;
 }
 
-export interface AcceptTenantAdminInvitationRequest {
+interface AcceptTenantAdminInvitationRequest {
   token: string;
   fullName: string;
   phone?: string | null;
@@ -191,7 +193,7 @@ export interface AcceptTenantAdminInvitationRequest {
   address?: AddressRequest;
 }
 
-export interface AcceptTenantCreationInvitationRequest {
+interface AcceptTenantCreationInvitationRequest {
   token: string;
   fullName: string;
   phone?: string | null;
@@ -202,7 +204,7 @@ export interface AcceptTenantCreationInvitationRequest {
   userAddress?: AddressRequest;
 }
 
-export interface AcceptTenantUserInvitationRequest {
+interface AcceptTenantUserInvitationRequest {
   token: string;
   fullName: string;
   phone?: string | null;
@@ -211,9 +213,9 @@ export interface AcceptTenantUserInvitationRequest {
   address?: AddressRequest;
 }
 
-export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
 
-export interface InvitationDto {
+interface InvitationDto {
   id: UUID;
   email: string;
   status: InvitationStatus;
@@ -224,7 +226,7 @@ export interface InvitationDto {
 
 // ---------- Files ----------
 
-export interface FileDto {
+interface FileDto {
   id: UUID;
   fileName: string;
   contentType: string;
@@ -235,7 +237,7 @@ export interface FileDto {
 
 // ---------- Dashboard ----------
 
-export interface DashboardStatsDto {
+interface DashboardStatsDto {
   /** SystemAdmin only — null for tenant callers. */
   totalTenants: number | null;
   /** SystemAdmin only — null for tenant callers. */
@@ -257,7 +259,7 @@ export interface DashboardStatsDto {
 
 // ---------- Permissions ----------
 
-export interface PermissionDto {
+interface PermissionDto {
   id: UUID;
   name: string;
   module: string;
@@ -265,19 +267,19 @@ export interface PermissionDto {
   scope: string;
 }
 
-export interface PermissionModuleGroup {
+interface PermissionModuleGroup {
   module: string;
   permissions: PermissionDto[];
 }
 
-export interface PermissionCatalogResponse {
+interface PermissionCatalogResponse {
   items: PermissionDto[];
   byModule?: PermissionModuleGroup[] | null;
 }
 
 // ---------- Tenants ----------
 
-export interface TenantDto {
+interface TenantDto {
   id: UUID;
   name: string;
   isActive: boolean;
@@ -290,12 +292,12 @@ export interface TenantDto {
   planFeatures?: PlanFeaturesDto;
 }
 
-export interface CreatedRoleSummary {
+interface CreatedRoleSummary {
   id: UUID;
   name: string;
 }
 
-export interface OnboardTenantResponse {
+interface OnboardTenantResponse {
   tenantId: UUID;
   name: string;
   adminUserId: UUID;
@@ -303,30 +305,30 @@ export interface OnboardTenantResponse {
   roles: CreatedRoleSummary[];
 }
 
-export interface OnboardUserDetails {
+interface OnboardUserDetails {
   fullName: string;
   email: string;
   address?: AddressRequest;
 }
 
-export interface OnboardTenantDetails {
+interface OnboardTenantDetails {
   name: string;
   address?: AddressRequest;
 }
 
-export interface OnboardRoleDetails {
+interface OnboardRoleDetails {
   name: string;
   description?: string | null;
   permissions?: UUID[];
 }
 
-export interface OnboardTenantRequest {
+interface OnboardTenantRequest {
   user: OnboardUserDetails;
   tenant: OnboardTenantDetails;
   roles?: OnboardRoleDetails[];
 }
 
-export interface UpdateTenantRequest {
+interface UpdateTenantRequest {
   id: UUID;
   name?: string;
   isActive?: boolean;
@@ -336,26 +338,26 @@ export interface UpdateTenantRequest {
   clearAddress?: boolean;
 }
 
-export interface UpdateCurrentTenantAddressRequest {
+interface UpdateCurrentTenantAddressRequest {
   address?: AddressRequest;
   clearAddress?: boolean;
 }
 
-export interface DeleteTenantRequest {
+interface DeleteTenantRequest {
   id: UUID;
 }
 
-export interface InviteResponse {
+interface InviteResponse {
   invitationId: UUID;
   invitationType: InvitationType;
   expiresAt: string;
 }
 
-export interface InviteTenantRequest {
+interface InviteTenantRequest {
   email: string;
 }
 
-export interface TenantCreationInvitationDto {
+interface TenantCreationInvitationDto {
   id: UUID;
   email: string;
   status: string;
@@ -370,13 +372,13 @@ export interface TenantCreationInvitationDto {
 
 // ---------- Tenant admins (super-admin managing admins across tenants) ----------
 
-export interface TenantAdminTenantDetails {
+interface TenantAdminTenantDetails {
   id: UUID;
   name: string;
   isActive: boolean;
 }
 
-export interface TenantAdminDto {
+interface TenantAdminDto {
   id: UUID;
   fullName: string;
   email: string;
@@ -391,14 +393,14 @@ export interface TenantAdminDto {
   hasPendingSetup: boolean;
 }
 
-export interface CreateTenantAdminRequest {
+interface CreateTenantAdminRequest {
   tenantId: UUID;
   fullName: string;
   email: string;
   address?: AddressRequest;
 }
 
-export interface CreateTenantAdminResponse {
+interface CreateTenantAdminResponse {
   userId: UUID;
   fullName: string;
   email: string;
@@ -407,7 +409,7 @@ export interface CreateTenantAdminResponse {
   isActive: boolean;
 }
 
-export interface UpdateTenantAdminRequest {
+interface UpdateTenantAdminRequest {
   userId: UUID;
   fullName: string;
   roleId?: UUID | null;
@@ -417,17 +419,17 @@ export interface UpdateTenantAdminRequest {
   clearAddress?: boolean;
 }
 
-export interface InviteTenantAdminRequest {
+interface InviteTenantAdminRequest {
   tenantId: UUID;
   email: string;
 }
 
-export interface InviteTenantAdminResponse {
+interface InviteTenantAdminResponse {
   id: UUID;
   email: string;
 }
 
-export interface TenantAdminInvitationDto {
+interface TenantAdminInvitationDto {
   id: UUID;
   email: string;
   tenantId: UUID;
@@ -444,7 +446,7 @@ export interface TenantAdminInvitationDto {
 
 // ---------- Users (in-tenant users) ----------
 
-export interface UserTenantDetails {
+interface UserTenantDetails {
   id: UUID;
   name: string;
   isActive: boolean;
@@ -452,7 +454,7 @@ export interface UserTenantDetails {
   address?: AddressDto | null;
 }
 
-export interface UserDto {
+interface UserDto {
   id: UUID;
   fullName: string;
   email: string;
@@ -468,14 +470,14 @@ export interface UserDto {
   hasPendingSetup: boolean;
 }
 
-export interface CreateTenantUserRequest {
+interface CreateTenantUserRequest {
   fullName: string;
   email: string;
   roleIds?: UUID[];
   address?: AddressRequest;
 }
 
-export interface CreateTenantUserResponse {
+interface CreateTenantUserResponse {
   userId: UUID;
   fullName: string;
   email: string;
@@ -484,18 +486,18 @@ export interface CreateTenantUserResponse {
   isActive: boolean;
 }
 
-export interface InviteTenantUserRequest {
+interface InviteTenantUserRequest {
   email: string;
   roleIds?: UUID[];
 }
 
-export interface InviteUserResponse {
+interface InviteUserResponse {
   invitationId: UUID;
   invitationType: InvitationType;
   expiresAt: string;
 }
 
-export interface UserInvitationDto {
+interface UserInvitationDto {
   id: UUID;
   email: string;
   invitationType: InvitationType;
@@ -513,7 +515,7 @@ export interface UserInvitationDto {
 }
 
 /** PUT /api/v1/users has no {id} segment — the user being updated is identified by email. */
-export interface UpdateUserRequest {
+interface UpdateUserRequest {
   email: string;
   fullName: string;
   roleId?: UUID | null;
@@ -524,11 +526,11 @@ export interface UpdateUserRequest {
   clearAddress?: boolean;
 }
 
-export interface DeleteUserRequest {
+interface DeleteUserRequest {
   email: string;
 }
 
-export interface UpdateCurrentUserRequest {
+interface UpdateCurrentUserRequest {
   fullName: string;
   profileFileId?: UUID | null;
   clearProfileImage?: boolean;
@@ -536,7 +538,7 @@ export interface UpdateCurrentUserRequest {
   clearAddress?: boolean;
 }
 
-export interface ChangePasswordRequest {
+interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
@@ -544,27 +546,27 @@ export interface ChangePasswordRequest {
 
 // ---------- Subscriptions ----------
 
-export type PlanType = 'Free' | 'Pro';
+type PlanType = 'Free' | 'Pro';
 
-export interface PlanFeaturesDto {
+interface PlanFeaturesDto {
   maxUsers: number;
   maxStorageMb: number;
   canAccessReports: boolean;
   canAccessAdvancedRoles: boolean;
 }
 
-export interface SubscriptionPlanDto {
+interface SubscriptionPlanDto {
   planType: PlanType;
   name: string;
   features: PlanFeaturesDto;
 }
 
-export interface UpdateTenantPlanRequest {
+interface UpdateTenantPlanRequest {
   tenantId: UUID;
   planType: PlanType;
 }
 
-export interface TenantPlanResponse {
+interface TenantPlanResponse {
   tenantId: UUID;
   tenantName: string;
   planType: PlanType;
@@ -574,7 +576,7 @@ export interface TenantPlanResponse {
 
 // ---------- Activity Logs ----------
 
-export interface ActivityLogDto {
+interface ActivityLogDto {
   id: UUID;
   tenantId: UUID;
   tenantName?: string | null;
@@ -588,7 +590,7 @@ export interface ActivityLogDto {
   createdAt: string;
 }
 
-export interface ActivityLogQueryParams extends PaginationParams {
+interface ActivityLogQueryParams extends PaginationParams {
   userId?: UUID;
   module?: string;
   action?: string;
@@ -598,7 +600,7 @@ export interface ActivityLogQueryParams extends PaginationParams {
 
 // ---------- Tenant Settings ----------
 
-export interface UpdateTenantSettingsRequest {
+interface UpdateTenantSettingsRequest {
   name: string;
   profileFileId?: UUID | null;
   clearProfileImage?: boolean;
@@ -608,11 +610,11 @@ export interface UpdateTenantSettingsRequest {
 
 // ---------- Impersonation ----------
 
-export interface StartImpersonationRequest {
+interface StartImpersonationRequest {
   targetUserId: UUID;
 }
 
-export interface StartImpersonationResponse {
+interface StartImpersonationResponse {
   userId: UUID;
   email: string;
   fullName: string;
@@ -621,7 +623,7 @@ export interface StartImpersonationResponse {
   expiresAt: string;
 }
 
-export interface StopImpersonationResponse {
+interface StopImpersonationResponse {
   userId: UUID;
   email: string;
   fullName: string;
@@ -629,7 +631,7 @@ export interface StopImpersonationResponse {
   expiresAt: string;
 }
 
-export interface ImpersonatedByInfo {
+interface ImpersonatedByInfo {
   id: UUID;
   email: string;
   fullName: string;
@@ -637,7 +639,7 @@ export interface ImpersonatedByInfo {
 
 // ---------- Roles ----------
 
-export interface RoleDto {
+interface RoleDto {
   id: UUID;
   name: string;
   description?: string | null;
@@ -646,15 +648,105 @@ export interface RoleDto {
   permissionNames: string[];
 }
 
-export interface CreateRoleRequest {
+interface CreateRoleRequest {
   name: string;
   description?: string | null;
   permissions?: UUID[];
 }
 
-export interface UpdateRoleRequest {
+interface UpdateRoleRequest {
   name: string;
   newName?: string | null;
   description?: string | null;
   permissions?: UUID[];
 }
+
+export type {
+  AcceptInvitationResponse,
+  AcceptTenantAdminInvitationRequest,
+  AcceptTenantCreationInvitationRequest,
+  AcceptTenantUserInvitationRequest,
+  ActivityLogDto,
+  ActivityLogQueryParams,
+  AddressDto,
+  AddressRequest,
+  ApiError,
+  ApiErrorPayload,
+  ApiResponse,
+  AuthUser,
+  ChangePasswordRequest,
+  CompanyInfo,
+  CreatedRoleSummary,
+  CreateRoleRequest,
+  CreateTenantAdminRequest,
+  CreateTenantAdminResponse,
+  CreateTenantUserRequest,
+  CreateTenantUserResponse,
+  DashboardStatsDto,
+  DeleteTenantRequest,
+  DeleteUserRequest,
+  FileDto,
+  FilterValues,
+  ForgotPasswordRequest,
+  ImpersonatedByInfo,
+  InvitationDto,
+  InvitationStatus,
+  InvitationType,
+  InviteResponse,
+  InviteTenantAdminRequest,
+  InviteTenantAdminResponse,
+  InviteTenantRequest,
+  InviteTenantUserRequest,
+  InviteUserResponse,
+  LoginRequest,
+  LoginResponse,
+  LogoutRequest,
+  OnboardRoleDetails,
+  OnboardTenantDetails,
+  OnboardTenantRequest,
+  OnboardTenantResponse,
+  OnboardUserDetails,
+  PaginatedResponse,
+  PaginationParams,
+  PermissionCatalogResponse,
+  PermissionDto,
+  PermissionModuleGroup,
+  PlanFeaturesDto,
+  PlanType,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  ResendEmailOtpRequest,
+  ResetPasswordRequest,
+  RoleDto,
+  SetPasswordRequest,
+  SetPasswordResponse,
+  SortOrder,
+  StartImpersonationRequest,
+  StartImpersonationResponse,
+  StopImpersonationResponse,
+  SubscriptionPlanDto,
+  SystemRole,
+  TenantAdminDto,
+  TenantAdminInvitationDto,
+  TenantAdminTenantDetails,
+  TenantCreationInvitationDto,
+  TenantDto,
+  TenantPlanResponse,
+  UpdateCurrentTenantAddressRequest,
+  UpdateCurrentUserRequest,
+  UpdateRoleRequest,
+  UpdateTenantAdminRequest,
+  UpdateTenantPlanRequest,
+  UpdateTenantRequest,
+  UpdateTenantSettingsRequest,
+  UpdateUserRequest,
+  UserCreatedVia,
+  UserDto,
+  UserInvitationDto,
+  UserTenantDetails,
+  UUID,
+  ValidateAccountSetupResponse,
+  ValidateInvitationResponse,
+  ValidateResetTokenResponse,
+  VerifyEmailOtpRequest,
+};

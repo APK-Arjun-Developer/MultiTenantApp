@@ -1,5 +1,7 @@
 ﻿import type { ColumnDef } from '@tanstack/react-table';
 
+import type { SortOrder } from '@/types';
+
 interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
@@ -10,9 +12,9 @@ interface DataTableProps<TData> {
   onPageChange?: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: SortOrder;
   sortableColumns?: string[];
-  onSortChange?: (sortBy: string | undefined, sortOrder: 'asc' | 'desc' | undefined) => void;
+  onSortChange?: (sortBy: string | undefined, sortOrder: SortOrder | undefined) => void;
 }
 
 export { type DataTableProps };

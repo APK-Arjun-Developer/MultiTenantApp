@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from 'react';
+﻿import { memo, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,8 +15,6 @@ import type { ApiError } from '@/types/api';
 import { styles } from './ForgotPasswordPage.styles';
 import { type ForgotPasswordFormValues, forgotPasswordSchema } from './ForgotPasswordPage.types';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const fields: FieldConfig[] = [
   {
     name: 'email',
@@ -32,8 +30,6 @@ const variants = {
   center: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -12 },
 };
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const ForgotPasswordPage = memo(() => {
   const snackbar = useSnackbar();

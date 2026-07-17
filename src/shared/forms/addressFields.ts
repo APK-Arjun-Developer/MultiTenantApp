@@ -1,4 +1,4 @@
-import { FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+﻿import { FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
 import { z } from 'zod';
 
 import type { AddressDto, AddressRequest } from '@/types/api';
@@ -122,8 +122,6 @@ const buildAddressPayload = (
     ? { address: { line1, line2, city, state, postalCode, country } }
     : { clearAddress: true };
 };
-
-// ─── Tenant address (separate field names, used when both user + company sections are shown) ───
 
 const tenantAddressZodShape = {
   tenantAddressLine1: optStr(200),

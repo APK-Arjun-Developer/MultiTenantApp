@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+﻿import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -24,8 +24,6 @@ import {
   type TokenInvalidProps,
 } from './ResetPasswordPage.types';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const resetFields: FieldConfig[] = [
   {
     name: 'password',
@@ -42,8 +40,6 @@ const resetFields: FieldConfig[] = [
     muiProps: { autoComplete: 'new-password' },
   },
 ];
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const TokenInvalid = memo(({ message }: TokenInvalidProps) => {
   return (
@@ -99,8 +95,6 @@ const ResetSuccess = memo(() => {
     </Stack>
   );
 });
-
-// ─── Page ────────────────────────────────────────────────────────────────────
 
 const ResetPasswordPage = memo(() => {
   const formRef = useRef<FormBuilderHandle>(null);

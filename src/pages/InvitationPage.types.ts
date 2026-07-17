@@ -6,8 +6,6 @@ import {
 } from '@/shared/forms/addressFields';
 import type { AcceptInvitationResponse } from '@/types/api';
 
-// â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const passwordRule = z
   .string()
   .min(8, 'At least 8 characters')
@@ -48,8 +46,6 @@ const tenantCreationSchema = z
   });
 
 type TenantCreationValues = z.infer<typeof tenantCreationSchema>;
-
-// â”€â”€â”€ Component prop types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface InvitationInvalidProps {
   message?: string | null;

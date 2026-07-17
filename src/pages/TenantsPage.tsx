@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+﻿import { memo, useCallback, useMemo } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -68,7 +68,7 @@ import {
   useUrlTabs,
 } from '@/shared/hooks';
 import { formatAddress } from '@/shared/utils/format';
-import type { ApiError, PlanType } from '@/types/api';
+import type { ApiError, PlanType, UserCreatedVia } from '@/types/api';
 
 import { styles } from './TenantsPage.styles';
 import type {
@@ -83,8 +83,6 @@ import type {
   TenantsPageHeaderProps,
   ViewTenantDialogProps,
 } from './TenantsPage.types';
-
-// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const onboardSchema = z.object({
   tenantName: z.string().min(1, 'Tenant name is required').max(200),
@@ -112,13 +110,9 @@ const planSchema = z.object({
 });
 type PlanValues = z.infer<typeof planSchema>;
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const TENANTS_TABS = ['tenants', 'invitations'] as const;
 const TENANT_FILTER_DEFAULT = { search: '', status: '', createdVia: '' };
 const INV_FILTER_DEFAULT = { status: '' };
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const TenantsPageHeader = memo(
   ({ canCreate, onInviteClick, onOnboardClick }: TenantsPageHeaderProps) => {
@@ -228,8 +222,6 @@ const TenantsInvitationsFilterBar = memo(({ onChange }: TenantsInvitationsFilter
     </Box>
   );
 });
-
-// ─── Onboard dialog ───────────────────────────────────────────────────────────
 
 const OnboardTenantDialog = memo(({ open, onClose }: OnboardDialogProps) => {
   const [onboardTenant, { isLoading }] = useOnboardTenantMutation();
@@ -362,8 +354,6 @@ const OnboardTenantDialog = memo(({ open, onClose }: OnboardDialogProps) => {
   );
 });
 
-// ─── Invite dialog ────────────────────────────────────────────────────────────
-
 const InviteTenantDialog = memo(({ open, onClose }: InviteDialogProps) => {
   const [inviteTenant, { isLoading }] = useInviteTenantMutation();
   const snackbar = useSnackbar();
@@ -416,8 +406,6 @@ const InviteTenantDialog = memo(({ open, onClose }: InviteDialogProps) => {
     </Dialog>
   );
 });
-
-// ─── Edit dialog ──────────────────────────────────────────────────────────────
 
 const EditTenantDialog = memo(({ tenant, onClose }: EditDialogProps) => {
   const [updateTenant, { isLoading }] = useUpdateTenantMutation();
@@ -483,8 +471,6 @@ const EditTenantDialog = memo(({ tenant, onClose }: EditDialogProps) => {
   );
 });
 
-// ─── View dialog ──────────────────────────────────────────────────────────────
-
 const ViewTenantDialog = memo(({ tenant, onClose }: ViewTenantDialogProps) => {
   return (
     <ViewDialog open={!!tenant} title="Tenant details" onClose={onClose}>
@@ -514,8 +500,6 @@ const ViewTenantDialog = memo(({ tenant, onClose }: ViewTenantDialogProps) => {
   );
 });
 
-// ─── Plan badge ───────────────────────────────────────────────────────────────
-
 const PlanBadge = memo(({ plan }: { plan?: PlanType | string }) => {
   const isPro = plan === 'Pro';
   return (
@@ -528,8 +512,6 @@ const PlanBadge = memo(({ plan }: { plan?: PlanType | string }) => {
     />
   );
 });
-
-// ─── Change plan dialog ───────────────────────────────────────────────────────
 
 const ChangePlanDialog = memo(({ tenant, onClose }: ChangePlanDialogProps) => {
   const snackbar = useSnackbar();
@@ -586,8 +568,6 @@ const ChangePlanDialog = memo(({ tenant, onClose }: ChangePlanDialogProps) => {
   );
 });
 
-// ─── Invitation status chip ───────────────────────────────────────────────────
-
 const InvitationStatusChip = memo(({ status }: { status: string }) => {
   const lower = status.toLowerCase();
   const color =
@@ -600,8 +580,6 @@ const InvitationStatusChip = memo(({ status }: { status: string }) => {
           : 'error';
   return <Chip label={status} color={color} size="small" variant="filled" />;
 });
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TenantsPage = memo(() => {
   const snackbar = useSnackbar();
@@ -651,7 +629,7 @@ const TenantsPage = memo(() => {
         : tenantFilter.status === 'inactive'
           ? false
           : undefined,
-    createdVia: (tenantFilter.createdVia as 'Direct' | 'Invitation') || undefined,
+    createdVia: (tenantFilter.createdVia as UserCreatedVia) || undefined,
     sortBy: tenantsTable.sortBy,
     sortOrder: tenantsTable.sortBy ? tenantsTable.sortOrder : undefined,
   });
@@ -669,8 +647,6 @@ const TenantsPage = memo(() => {
     useResendTenantInvitationMutation();
   const [uploadTenantLogo, { isLoading: isUploadingLogo }] = useUploadTenantLogoByAdminMutation();
   const [removeTenantLogo, { isLoading: isRemovingLogo }] = useRemoveTenantLogoByAdminMutation();
-
-  // ─── Callbacks ────────────────────────────────────────────────────────────
 
   const handleDelete = useCallback(async () => {
     if (!deleteDialog.item) return;
@@ -731,8 +707,6 @@ const TenantsPage = memo(() => {
       snackbar.error((err as ApiError).message || 'Failed to remove logo.');
     }
   }, [logoDialog, removeTenantLogo, snackbar]);
-
-  // ─── Column defs ──────────────────────────────────────────────────────────
 
   const tenantColumns = useMemo<ColumnDef<TenantDto>[]>(
     () => [
@@ -917,8 +891,6 @@ const TenantsPage = memo(() => {
     ],
     [canCreate, isResendingInvitation, handleResendInvitation, revokeDialog],
   );
-
-  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <Box sx={styles.root}>

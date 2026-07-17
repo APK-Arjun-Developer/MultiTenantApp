@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { addressZodShape, tenantAddressZodShape } from '@/shared/forms/addressFields';
 import type { AddressDto } from '@/types/api';
 
-// â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const profileSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(200),
 });
@@ -35,14 +33,10 @@ const passwordSchema = z
     path: ['confirmPassword'],
   });
 
-// â”€â”€â”€ Value types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 type ProfileValues = z.infer<typeof profileSchema>;
 type AddressValues = z.infer<typeof addressSchema>;
 type CompanyValues = z.infer<typeof companySchema>;
 type PasswordValues = z.infer<typeof passwordSchema>;
-
-// â”€â”€â”€ Component prop types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface ProfileAvatarSectionProps {
   avatarSrc: string | null;

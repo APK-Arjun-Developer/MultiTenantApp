@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+﻿import { memo, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
@@ -19,8 +19,6 @@ import {
   type SettingsValues,
   type TenantSettingsFormProps,
 } from './TenantSettingsPage.types';
-
-// ─── Sub-component ────────────────────────────────────────────────────────────
 
 const TenantSettingsForm = memo(
   ({ tenantId, fields, isSaving, onSubmit }: TenantSettingsFormProps) => {
@@ -45,8 +43,6 @@ const TenantSettingsForm = memo(
     );
   },
 );
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TenantSettingsPage = memo(() => {
   const snackbar = useSnackbar();

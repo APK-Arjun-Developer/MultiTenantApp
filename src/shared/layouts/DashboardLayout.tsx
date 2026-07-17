@@ -38,6 +38,7 @@ import { usePageTitle } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
+import type { ThemeMode } from '../theme/theme';
 import { navLinkStyle, styles } from './DashboardLayout.styles';
 import type { NavItem } from './DashboardLayout.types';
 
@@ -196,7 +197,7 @@ const DashboardSidebar = memo(
 );
 
 interface DashboardAppBarProps {
-  themeMode: 'light' | 'dark';
+  themeMode: ThemeMode;
   showTenantPicker: boolean;
   sidebarCollapsed: boolean;
   onDrawerToggle: () => void;

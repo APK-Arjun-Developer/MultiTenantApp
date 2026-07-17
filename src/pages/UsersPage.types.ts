@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { addressZodShape, requiredAddressZodShape } from '@/shared/forms/addressFields';
 import type { FilterValues, UserDto, UserInvitationDto } from '@/types/api';
 
-// â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const roleOptionSchema = z.union([z.string(), z.object({ value: z.string(), label: z.string() })]);
 
 const createSchema = z.object({
@@ -30,16 +28,12 @@ const editSchema = z.object({
 });
 type EditValues = z.infer<typeof editSchema>;
 
-// â”€â”€â”€ Action types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 type ActionType = 'delete' | 'activate' | 'deactivate';
 
 interface PendingAction {
   type: ActionType;
   user: UserDto;
 }
-
-// â”€â”€â”€ Dialog prop types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface RoleOption {
   value: string;
@@ -70,8 +64,6 @@ interface ViewUserDialogProps {
   onClose: () => void;
 }
 
-// â”€â”€â”€ Section prop types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 interface UsersPageHeaderProps {
   canCreate: boolean;
   canInvite: boolean;
@@ -100,26 +92,23 @@ interface UsersInvitationsFilterBarProps {
   onChange: (values: FilterValues) => void;
 }
 
-// â”€â”€â”€ Re-export consumed types so importers don't need @/types/api â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-export type { UserDto, UserInvitationDto };
-
-export {
-  type ActionType,
-  createSchema,
-  type CreateUserDialogProps,
-  type CreateValues,
-  editSchema,
-  type EditUserDialogProps,
-  type EditValues,
-  inviteSchema,
-  type InviteUserDialogProps,
-  type InviteValues,
-  type PendingAction,
-  type RoleOption,
-  type UsersInvitationsFilterBarProps,
-  type UsersPageActionsProps,
-  type UsersPageFilterBarProps,
-  type UsersPageHeaderProps,
-  type ViewUserDialogProps,
+export type {
+  ActionType,
+  CreateUserDialogProps,
+  CreateValues,
+  EditUserDialogProps,
+  EditValues,
+  InviteUserDialogProps,
+  InviteValues,
+  PendingAction,
+  RoleOption,
+  UserDto,
+  UserInvitationDto,
+  UsersInvitationsFilterBarProps,
+  UsersPageActionsProps,
+  UsersPageFilterBarProps,
+  UsersPageHeaderProps,
+  ViewUserDialogProps,
 };
+
+export { createSchema, editSchema, inviteSchema };

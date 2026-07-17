@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+﻿import { memo, useCallback, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
@@ -24,8 +24,6 @@ import type {
   ModuleColor,
 } from './AuditLogsPage.types';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const MODULE_OPTIONS = [
   'Auth',
   'Users',
@@ -47,8 +45,6 @@ const MODULE_COLORS: Record<string, ModuleColor> = {
 };
 
 const AUDIT_FILTER_DEFAULT: AuditFilter = { module: '', dateFrom: '', dateTo: '' };
-
-// ─── Header sub-component ─────────────────────────────────────────────────────
 
 const AuditLogsPageHeader = memo(
   ({ exportLoading, disableExport, onExport }: AuditLogsPageHeaderProps) => {
@@ -80,8 +76,6 @@ const AuditLogsPageHeader = memo(
   },
 );
 
-// ─── FilterBar sub-component ──────────────────────────────────────────────────
-
 const AuditLogsFilterBar = memo(({ fields, onFilterChange }: AuditLogsFilterBarProps) => {
   return (
     <Box sx={styles.filterBar}>
@@ -95,8 +89,6 @@ const AuditLogsFilterBar = memo(({ fields, onFilterChange }: AuditLogsFilterBarP
     </Box>
   );
 });
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const AuditLogsPage = memo(() => {
   const dispatch = useAppDispatch();

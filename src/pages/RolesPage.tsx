@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+﻿import { memo, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -51,17 +51,11 @@ import {
   type ViewRoleDialogProps,
 } from './RolesPage.types';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const extractPermissionIds = (raw: unknown[]): string[] => {
   return raw.map((r) => (typeof r === 'string' ? r : (r as { value: string }).value));
 };
 
-// ─── Module-level filter default (stable reference) ───────────────────────────
-
 const ROLES_FILTER_DEFAULT: RolesFilter = { search: '', permissions: [] };
-
-// ─── Header sub-component ─────────────────────────────────────────────────────
 
 const RolesPageHeader = memo(({ canCreate, onCreateClick }: RolesPageHeaderProps) => {
   return (
@@ -83,8 +77,6 @@ const RolesPageHeader = memo(({ canCreate, onCreateClick }: RolesPageHeaderProps
   );
 });
 
-// ─── FilterBar sub-component ──────────────────────────────────────────────────
-
 const RolesFilterBar = memo(({ fields, onFilterChange }: RolesFilterBarProps) => {
   return (
     <Box sx={styles.filterBar}>
@@ -98,8 +90,6 @@ const RolesFilterBar = memo(({ fields, onFilterChange }: RolesFilterBarProps) =>
     </Box>
   );
 });
-
-// ─── Create dialog ────────────────────────────────────────────────────────────
 
 const CreateRoleDialog = memo(({ open, onClose, permissionOptions }: CreateRoleDialogProps) => {
   const [createRole, { isLoading }] = useCreateRoleMutation();
@@ -166,8 +156,6 @@ const CreateRoleDialog = memo(({ open, onClose, permissionOptions }: CreateRoleD
     </Dialog>
   );
 });
-
-// ─── Edit dialog ──────────────────────────────────────────────────────────────
 
 const EditRoleDialog = memo(({ open, onClose, role, permissionOptions }: EditRoleDialogProps) => {
   const [updateRole, { isLoading }] = useUpdateRoleMutation();
@@ -245,8 +233,6 @@ const EditRoleDialog = memo(({ open, onClose, role, permissionOptions }: EditRol
   );
 });
 
-// ─── View dialog ──────────────────────────────────────────────────────────────
-
 const ViewRoleDialog = memo(({ role, onClose }: ViewRoleDialogProps) => {
   return (
     <ViewDialog open={!!role} title="Role details" onClose={onClose}>
@@ -273,8 +259,6 @@ const ViewRoleDialog = memo(({ role, onClose }: ViewRoleDialogProps) => {
     </ViewDialog>
   );
 });
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const RolesPage = memo(() => {
   const snackbar = useSnackbar();

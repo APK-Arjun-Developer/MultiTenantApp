@@ -1,4 +1,5 @@
 import { apiSlice } from '@/shared/api/apiSlice';
+import type { SortOrder, UserCreatedVia } from '@/types';
 import type {
   CreateTenantAdminRequest,
   CreateTenantAdminResponse,
@@ -16,9 +17,9 @@ interface GetTenantAdminsParams {
   search?: string;
   tenantId?: string;
   isActive?: boolean;
-  createdVia?: 'Direct' | 'Invitation';
+  createdVia?: UserCreatedVia;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: SortOrder;
 }
 
 interface GetTenantAdminInvitationsParams {

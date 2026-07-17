@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+﻿import { memo, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -55,8 +55,6 @@ import {
   type ProfileValues,
 } from './ProfilePage.types';
 
-// ─── Static field configs ──────────────────────────────────────────────────────
-
 const passwordFields: FieldConfig[] = [
   {
     name: 'currentPassword',
@@ -82,8 +80,6 @@ const passwordFields: FieldConfig[] = [
 ];
 
 const PROFILE_TABS = ['profile', 'address', 'security', 'company'] as const;
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const ProfileAvatarSection = memo(
   ({
@@ -241,8 +237,6 @@ const ProfileCompanySection = memo(
     );
   },
 );
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const ProfilePage = memo(() => {
   const snackbar = useSnackbar();

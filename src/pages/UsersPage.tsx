@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+﻿import { memo, useCallback, useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -67,7 +67,7 @@ import {
 } from '@/shared/hooks';
 import { exportToCsv } from '@/shared/utils/exportCsv';
 import { formatAddress } from '@/shared/utils/format';
-import type { ApiError } from '@/types/api';
+import type { ApiError, UserCreatedVia } from '@/types/api';
 
 import { styles } from './UsersPage.styles';
 import {
@@ -91,13 +91,9 @@ import {
   type ViewUserDialogProps,
 } from './UsersPage.types';
 
-// ─── Filter defaults (module-level stable references) ─────────────────────────
-
 const USER_FILTER_DEFAULT = { search: '', status: '', createdVia: '' };
 const INV_FILTER_DEFAULT = { status: '' };
 const USERS_TABS = ['users', 'invitations'] as const;
-
-// ─── Status chip ──────────────────────────────────────────────────────────────
 
 const UserStatusChip = memo(({ isActive }: { isActive: boolean }) => {
   return (
@@ -128,8 +124,6 @@ const InvitationStatusChip = memo(({ status }: { status: string }) => {
     />
   );
 });
-
-// ─── Create dialog ────────────────────────────────────────────────────────────
 
 const CreateUserDialog = memo(({ open, onClose, roleOptions }: CreateUserDialogProps) => {
   const [createUser, { isLoading }] = useCreateUserMutation();
@@ -203,8 +197,6 @@ const CreateUserDialog = memo(({ open, onClose, roleOptions }: CreateUserDialogP
   );
 });
 
-// ─── Invite dialog ────────────────────────────────────────────────────────────
-
 const InviteUserDialog = memo(({ open, onClose, roleOptions }: InviteUserDialogProps) => {
   const [inviteUser, { isLoading }] = useInviteUserMutation();
   const snackbar = useSnackbar();
@@ -267,8 +259,6 @@ const InviteUserDialog = memo(({ open, onClose, roleOptions }: InviteUserDialogP
     </Dialog>
   );
 });
-
-// ─── Edit dialog ──────────────────────────────────────────────────────────────
 
 const EditUserDialog = memo(({ open, onClose, user, roleOptions }: EditUserDialogProps) => {
   const [updateUser, { isLoading }] = useUpdateUserMutation();
@@ -351,8 +341,6 @@ const EditUserDialog = memo(({ open, onClose, user, roleOptions }: EditUserDialo
   );
 });
 
-// ─── View dialog ──────────────────────────────────────────────────────────────
-
 const ViewUserDialog = memo(({ user, onClose }: ViewUserDialogProps) => {
   return (
     <ViewDialog open={!!user} title="User details" onClose={onClose}>
@@ -377,8 +365,6 @@ const ViewUserDialog = memo(({ user, onClose }: ViewUserDialogProps) => {
     </ViewDialog>
   );
 });
-
-// ─── Section sub-components ───────────────────────────────────────────────────
 
 const UsersPageHeader = memo(
   ({
@@ -491,8 +477,6 @@ const UsersInvitationsFilterBar = memo(
   },
 );
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 const UsersPage = memo(() => {
   const snackbar = useSnackbar();
   const dispatch = useAppDispatch();
@@ -511,10 +495,8 @@ const UsersPage = memo(() => {
   const canResend = usePermission('Onboarding.Resend');
   const canRevoke = usePermission('Onboarding.Revoke');
 
-  // ── Tabs ─────────────────────────────────────────────────────────────────────
   const { tab, handleTabChange } = useUrlTabs(USERS_TABS);
 
-  // ── Users tab state ───────────────────────────────────────────────────────────
   const usersTable = useTableState();
   const {
     filter: userFilter,
@@ -522,14 +504,12 @@ const UsersPage = memo(() => {
     handleFilterChange: handleUserFilterChange,
   } = useFilterState(USER_FILTER_DEFAULT, usersTable.setPage);
 
-  // ── Invitations tab state ─────────────────────────────────────────────────────
   const invTable = useTableState();
   const { filter: invFilter, handleFilterChange: handleInvFilterChange } = useFilterState(
     INV_FILTER_DEFAULT,
     invTable.setPage,
   );
 
-  // ── Dialogs ───────────────────────────────────────────────────────────────────
   const createDialog = useBooleanDialog();
   const inviteDialog = useBooleanDialog();
   const editDialog = useItemDialog<UserDto>();
@@ -538,14 +518,13 @@ const UsersPage = memo(() => {
   const pendingActionDialog = useItemDialog<PendingAction>();
   const revokeDialog = useItemDialog<UserInvitationDto>();
 
-  // ── Queries & mutations ───────────────────────────────────────────────────────
   const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
     page: usersTable.page + 1,
     pageSize: usersTable.pageSize,
     search: debouncedSearch || undefined,
     isActive:
       userFilter.status === 'active' ? true : userFilter.status === 'inactive' ? false : undefined,
-    createdVia: (userFilter.createdVia as 'Direct' | 'Invitation') || undefined,
+    createdVia: (userFilter.createdVia as UserCreatedVia) || undefined,
     sortBy: usersTable.sortBy,
     sortOrder: usersTable.sortBy ? usersTable.sortOrder : undefined,
   });
@@ -582,8 +561,6 @@ const UsersPage = memo(() => {
     () => maxUsers !== -1 && totalUsers >= maxUsers,
     [maxUsers, totalUsers],
   );
-
-  // ── Handlers ─────────────────────────────────────────────────────────────────
 
   const handleResend = useCallback(
     async (user: UserDto) => {
@@ -705,8 +682,6 @@ const UsersPage = memo(() => {
     }
   }, [dispatch, usersData?.items]);
 
-  // ── Field configs ─────────────────────────────────────────────────────────────
-
   const userFilterFields = useMemo<FieldConfig[]>(
     () => [
       {
@@ -761,8 +736,6 @@ const UsersPage = memo(() => {
     [],
   );
 
-  // ── Confirm dialog copy ───────────────────────────────────────────────────────
-
   const confirmTitle = useMemo(
     () =>
       pendingActionDialog.item?.type === 'delete'
@@ -783,8 +756,6 @@ const UsersPage = memo(() => {
     [pendingActionDialog.item],
   );
 
-  // ── Avatar modal helpers ──────────────────────────────────────────────────────
-
   const avatarSrc = useMemo(
     () => (avatarDialog.item?.profileFileId ? getUserAvatarUrl(avatarDialog.item.id) : null),
     [avatarDialog.item],
@@ -802,8 +773,6 @@ const UsersPage = memo(() => {
         : '',
     [avatarDialog.item],
   );
-
-  // ── Table columns ─────────────────────────────────────────────────────────────
 
   const userColumns = useMemo<ColumnDef<UserDto>[]>(
     () => [

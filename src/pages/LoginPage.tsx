@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -27,8 +27,6 @@ import type { ApiError } from '@/types/api';
 import { otpInputStyle, styles } from './LoginPage.styles';
 import { loginSchema, type LoginValues, type OtpInputProps, type Step } from './LoginPage.types';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const OTP_LENGTH = 6;
 
 const loginFields: FieldConfig[] = [
@@ -53,8 +51,6 @@ const stepVariants = {
   center: { opacity: 1, x: 0 },
   exit: (dir: number) => ({ opacity: 0, x: dir * -40 }),
 };
-
-// ─── OTP Input ───────────────────────────────────────────────────────────────
 
 const OtpInput = memo(({ value, onChange, disabled }: OtpInputProps) => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -138,8 +134,6 @@ const OtpInput = memo(({ value, onChange, disabled }: OtpInputProps) => {
     </Box>
   );
 });
-
-// ─── Page ────────────────────────────────────────────────────────────────────
 
 const LoginPage = memo(() => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);

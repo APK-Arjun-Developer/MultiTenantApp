@@ -1,4 +1,5 @@
 import { apiSlice } from '@/shared/api/apiSlice';
+import type { SortOrder, UserCreatedVia } from '@/types';
 import type {
   ChangePasswordRequest,
   CreateTenantUserRequest,
@@ -18,9 +19,9 @@ interface GetUsersParams {
   pageSize?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: SortOrder;
   isActive?: boolean;
-  createdVia?: 'Direct' | 'Invitation';
+  createdVia?: UserCreatedVia;
 }
 
 interface GetUserInvitationsParams {

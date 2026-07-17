@@ -1,6 +1,6 @@
 ﻿import { alpha, createTheme } from '@mui/material/styles';
 
-// ─── Raw design tokens ────────────────────────────────────────────────────────
+type ThemeMode = 'light' | 'dark';
 
 const violet = {
   50: '#F5F3FF',
@@ -37,9 +37,7 @@ const zinc = {
   950: '#09090B',
 } as const;
 
-// ─── Theme builder ────────────────────────────────────────────────────────────
-
-const buildTheme = (mode: 'light' | 'dark') => {
+const buildTheme = (mode: ThemeMode) => {
   const isDark = mode === 'dark';
 
   return createTheme({
@@ -125,7 +123,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
     shape: { borderRadius: 8 },
 
     components: {
-      // ── Global baseline ──────────────────────────────────────────────────────
       MuiCssBaseline: {
         styleOverrides: {
           '*': {
@@ -144,7 +141,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Layout surfaces ──────────────────────────────────────────────────────
       MuiAppBar: {
         styleOverrides: {
           root: {
@@ -167,7 +163,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Cards & surfaces ─────────────────────────────────────────────────────
       MuiPaper: {
         styleOverrides: {
           root: {
@@ -235,7 +230,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Buttons ──────────────────────────────────────────────────────────────
       MuiButton: {
         defaultProps: { disableElevation: true },
         styleOverrides: {
@@ -276,7 +270,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         ],
       },
 
-      // ── Inputs ───────────────────────────────────────────────────────────────
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
@@ -367,7 +360,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Lists & nav ──────────────────────────────────────────────────────────
       MuiListItemButton: {
         styleOverrides: {
           root: {
@@ -404,7 +396,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Tables ───────────────────────────────────────────────────────────────
       MuiTableHead: {
         styleOverrides: {
           root: {
@@ -454,7 +445,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Chips ────────────────────────────────────────────────────────────────
       MuiChip: {
         styleOverrides: {
           root: {
@@ -468,7 +458,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Tabs ─────────────────────────────────────────────────────────────────
       MuiTabs: {
         styleOverrides: {
           indicator: {
@@ -495,7 +484,6 @@ const buildTheme = (mode: 'light' | 'dark') => {
         },
       },
 
-      // ── Feedback ─────────────────────────────────────────────────────────────
       MuiAlert: {
         styleOverrides: {
           root: { borderRadius: 8 },
@@ -542,4 +530,4 @@ const buildTheme = (mode: 'light' | 'dark') => {
   });
 };
 
-export { buildTheme };
+export { buildTheme, type ThemeMode };

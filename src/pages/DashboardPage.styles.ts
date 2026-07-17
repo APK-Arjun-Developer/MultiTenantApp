@@ -3,12 +3,10 @@
 import type { StyleSheet, Sx } from '@/types';
 
 const styles = {
-  // ── Page root ──────────────────────────────────────────────────────────────
   pageRoot: {
     pb: 4,
   },
 
-  // ── Welcome header ─────────────────────────────────────────────────────────
   welcomeHeader: {
     display: 'flex',
     alignItems: 'center',
@@ -39,7 +37,6 @@ const styles = {
     mb: 3,
   },
 
-  // ── StatCard ───────────────────────────────────────────────────────────────
   statCardPaper: {
     p: 2.5,
     display: 'flex',
@@ -71,7 +68,6 @@ const styles = {
     letterSpacing: '-0.02em',
   },
 
-  // ── SystemAdminDashboard ───────────────────────────────────────────────────
   systemAdminStatsGrid: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -101,7 +97,6 @@ const styles = {
     mx: 'auto',
   },
 
-  // ── TenantAdminDashboard ───────────────────────────────────────────────────
   tenantAdminStatsGrid: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -123,7 +118,6 @@ const styles = {
     mb: 2,
   },
 
-  // ── TenantUserDashboard ────────────────────────────────────────────────────
   tenantUserProfilePaper: {
     mt: 3,
     p: 3,

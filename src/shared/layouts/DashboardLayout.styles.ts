@@ -1,4 +1,4 @@
-import type { StyleSheet } from '@/types';
+﻿import type { StyleSheet } from '@/types';
 
 const DRAWER_WIDTH = 240;
 const DRAWER_COLLAPSED_WIDTH = 64;
@@ -19,7 +19,6 @@ const styles = {
     minHeight: '100vh',
   },
 
-  // ── AppBar ──────────────────────────────────────────────────────────────────
   appBar: {
     transition: APPBAR_TRANSITION,
   },
@@ -40,7 +39,6 @@ const styles = {
     '&:hover': { color: 'text.primary' },
   },
 
-  // ── User avatar in AppBar ───────────────────────────────────────────────────
   userAvatar: {
     width: 34,
     height: 34,
@@ -54,7 +52,6 @@ const styles = {
     p: 0.5,
   },
 
-  // ── Drawer / sidebar ────────────────────────────────────────────────────────
   nav: {
     flexShrink: { md: 0 },
     transition: SIDEBAR_TRANSITION,
@@ -81,7 +78,6 @@ const styles = {
     overflowX: 'hidden',
   },
 
-  // ── Brand ───────────────────────────────────────────────────────────────────
   sidebarToolbar: {
     px: '18px !important',
   },
@@ -150,7 +146,6 @@ const styles = {
     transition: 'opacity 0.15s ease, max-width 0.2s ease',
   },
 
-  // ── Nav lists ────────────────────────────────────────────────────────────────
   navList: {
     flex: 1,
     pt: 1,
@@ -197,7 +192,6 @@ const styles = {
     '& svg': { fontSize: '1.25rem' },
   },
 
-  // ── Nav text animation ───────────────────────────────────────────────────────
   navItemText: {
     overflow: 'hidden',
     whiteSpace: 'nowrap',
@@ -225,7 +219,6 @@ const styles = {
     fontWeight: 600,
   },
 
-  // ── Collapsed / expanded width variants ─────────────────────────────────────
   appBarExpanded: {
     width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
     ml: { md: `${DRAWER_WIDTH}px` },
@@ -252,7 +245,6 @@ const styles = {
     '& .MuiDrawer-paper': { width: DRAWER_COLLAPSED_WIDTH },
   },
 
-  // ── Main content area ────────────────────────────────────────────────────────
   mainContent: {
     flex: 1,
     display: 'flex',
@@ -262,7 +254,6 @@ const styles = {
     mt: '64px',
   },
 
-  // ── Impersonation alert ──────────────────────────────────────────────────────
   impersonationAlert: {
     mb: 2,
     borderRadius: 2,
@@ -272,7 +263,6 @@ const styles = {
     mr: 0.5,
   },
 
-  // ── Page loader ──────────────────────────────────────────────────────────────
   pageLoader: {
     display: 'flex',
     justifyContent: 'center',

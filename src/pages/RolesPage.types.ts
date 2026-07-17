@@ -3,8 +3,6 @@ import { z } from 'zod';
 
 import type { FilterValues, RoleDto } from '@/types/api';
 
-// â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
 const permissionOptionSchema = z.union([
   z.string(),
   z.object({ value: z.string(), label: z.string() }),
@@ -23,8 +21,6 @@ const editSchema = z.object({
   permissions: z.array(permissionOptionSchema).min(1, 'At least one permission is required'),
 });
 type EditValues = z.infer<typeof editSchema>;
-
-// â”€â”€â”€ Props â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface PermissionOption {
   value: string;
@@ -58,8 +54,6 @@ interface RolesFilterBarProps {
   fields: FieldConfig[];
   onFilterChange: (values: FilterValues) => void;
 }
-
-// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface RolesFilter extends FilterValues {
   search: string;

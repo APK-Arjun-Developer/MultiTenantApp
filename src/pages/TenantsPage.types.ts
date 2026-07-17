@@ -39,15 +39,15 @@ interface TenantsInvitationsFilterBarProps {
   onChange: (values: FilterValues) => void;
 }
 
-export type { TenantCreationInvitationDto, TenantDto };
-
-export {
-  type ChangePlanDialogProps,
-  type EditDialogProps,
-  type InviteDialogProps,
-  type OnboardDialogProps,
-  type TenantsInvitationsFilterBarProps,
-  type TenantsPageFilterBarProps,
-  type TenantsPageHeaderProps,
-  type ViewTenantDialogProps,
+export type {
+  ChangePlanDialogProps,
+  EditDialogProps,
+  InviteDialogProps,
+  OnboardDialogProps,
+  TenantCreationInvitationDto,
+  TenantDto,
+  TenantsInvitationsFilterBarProps,
+  TenantsPageFilterBarProps,
+  TenantsPageHeaderProps,
+  ViewTenantDialogProps,
 };

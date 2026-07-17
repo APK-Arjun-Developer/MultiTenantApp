@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+﻿import { memo, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
@@ -27,8 +27,6 @@ import type { DashboardStatsDto } from '@/types/api';
 
 import { statCardIconBoxColor, styles } from './DashboardPage.styles';
 import type { StatCardColor, StatCardProps } from './DashboardPage.types';
-
-// ─── StatCard ─────────────────────────────────────────────────────────────────
 
 const resolveHex = (theme: Theme, color: StatCardColor): string => {
   const map: Record<StatCardColor, string> = {
@@ -60,8 +58,6 @@ const StatCard = memo(({ label, value, icon, color, isLoading }: StatCardProps) 
     </Paper>
   );
 });
-
-// ─── SystemAdminDashboard ─────────────────────────────────────────────────────
 
 const SystemAdminStatsGrid = memo(
   ({ stats, isLoading }: { stats: DashboardStatsDto | undefined; isLoading: boolean }) => {
@@ -158,8 +154,6 @@ const SystemAdminDashboard = memo(() => {
     </Box>
   );
 });
-
-// ─── TenantAdminDashboard ─────────────────────────────────────────────────────
 
 const TenantAdminStatsGrid = memo(
   ({ stats, isLoading }: { stats: DashboardStatsDto | undefined; isLoading: boolean }) => {
@@ -285,8 +279,6 @@ const TenantAdminDashboard = memo(() => {
   );
 });
 
-// ─── TenantUserDashboard ──────────────────────────────────────────────────────
-
 const TenantUserDashboard = memo(() => {
   const user = useAppSelector(selectCurrentUser);
 
@@ -334,8 +326,6 @@ const TenantUserDashboard = memo(() => {
     </Paper>
   );
 });
-
-// ─── DashboardPage ────────────────────────────────────────────────────────────
 
 const WelcomeHeader = memo(({ fullName }: { fullName?: string | null }) => {
   return (

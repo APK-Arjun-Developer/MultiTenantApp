@@ -1,18 +1,19 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { RootState } from '@/app/store';
+import type { ThemeMode } from '@/shared/theme/theme';
 
 const SELECTED_TENANT_STORAGE_KEY = 'selectedTenant';
 const THEME_STORAGE_KEY = 'themeMode';
 
 interface UiState {
-  themeMode: 'light' | 'dark';
+  themeMode: ThemeMode;
   sidebarOpen: boolean;
   selectedTenantId: string | null;
   selectedTenantName: string | null;
 }
 
-const loadThemeFromStorage = (): 'light' | 'dark' => {
+const loadThemeFromStorage = (): ThemeMode => {
   try {
     const raw = localStorage.getItem(THEME_STORAGE_KEY);
     if (raw === 'light' || raw === 'dark') return raw;
@@ -52,7 +53,7 @@ const uiSlice = createSlice({
     toggleTheme: (state) => {
       state.themeMode = state.themeMode === 'light' ? 'dark' : 'light';
     },
-    setThemeMode: (state, action: PayloadAction<'light' | 'dark'>) => {
+    setThemeMode: (state, action: PayloadAction<ThemeMode>) => {
       state.themeMode = action.payload;
     },
     toggleSidebar: (state) => {

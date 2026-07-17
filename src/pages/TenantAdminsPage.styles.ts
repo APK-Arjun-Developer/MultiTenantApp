@@ -1,12 +1,8 @@
 ﻿import type { StyleSheet } from '@/types';
 
 const styles = {
-  // ─── Page root ──────────────────────────────────────────────────────────────
-
   /** Outermost wrapper Box for the entire page */
   pageRoot: {},
-
-  // ─── Header section ──────────────────────────────────────────────────────────
 
   /** Row that holds the page title icon+text on the left and action buttons on the right */
   headerRow: {
@@ -48,8 +44,6 @@ const styles = {
     gap: 1,
   },
 
-  // ─── Tabs ────────────────────────────────────────────────────────────────────
-
   /** Tabs bar with bottom divider */
   tabs: {
     mb: 2,
@@ -57,14 +51,10 @@ const styles = {
     borderColor: 'divider',
   },
 
-  // ─── Filter bar wrapper ───────────────────────────────────────────────────────
-
   /** Wrapper Box above each DataTable that holds a FilterForm */
   filterBarWrapper: {
     mb: 2,
   },
-
-  // ─── Empty / permission-denied state ─────────────────────────────────────────
 
   /** Centered placeholder shown when the user lacks list permission */
   permissionDenied: {
@@ -76,8 +66,6 @@ const styles = {
     textAlign: 'center',
     color: 'text.disabled',
   },
-
-  // ─── Admin column cells ───────────────────────────────────────────────────────
 
   adminAvatar: {
     width: 34,
@@ -100,8 +88,6 @@ const styles = {
     fontWeight: 500,
   },
 
-  // ─── Action cells ─────────────────────────────────────────────────────────────
-
   /** Flex row that holds the icon-button actions at the end of each admin row */
   adminRowActions: {
     display: 'flex',
@@ -116,8 +102,6 @@ const styles = {
     justifyContent: 'flex-end',
   },
 
-  // ─── View dialog ──────────────────────────────────────────────────────────────
-
   /** Column stack inside ViewAdminDialog */
   viewDialogContent: {
     display: 'flex',
@@ -125,14 +109,10 @@ const styles = {
     gap: 2,
   },
 
-  // ─── Edit dialog ──────────────────────────────────────────────────────────────
-
   /** Email LabelValue spacing inside EditAdminDialog */
   editDialogEmailLabel: {
     mb: 2,
   },
-
-  // ─── FormBuilder (shared across all dialogs) ──────────────────────────────────
 
   /** Remove default Paper shadow / padding / bg when FormBuilder sits inside a Dialog */
   formBuilderInDialog: {

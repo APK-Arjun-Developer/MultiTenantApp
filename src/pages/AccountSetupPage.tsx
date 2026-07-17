@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+﻿import { memo, useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -22,8 +22,6 @@ import {
   type SetupInvalidProps,
   type SetupSuccessProps,
 } from './AccountSetupPage.types';
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const SetupInvalid = memo(({ message }: SetupInvalidProps) => {
   return (
@@ -81,8 +79,6 @@ const SetupSuccess = memo(({ result }: SetupSuccessProps) => {
     </Stack>
   );
 });
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const AccountSetupPage = memo(() => {
   const snackbar = useSnackbar();
