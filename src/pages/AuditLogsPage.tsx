@@ -12,6 +12,7 @@ import {
   useGetActivityLogsQuery,
 } from '@/features/activityLogs/api/activityLogsApi';
 import { DataTable, Icon, LoadingButton, TenantContextGuard } from '@/shared/components';
+import { DATE_DEBOUNCE_MS, EXPORT_PAGE_SIZE } from '@/shared/constants/list';
 import { useDebounce, useTableState } from '@/shared/hooks';
 import { exportToCsv } from '@/shared/utils/exportCsv';
 import type { ActivityLogDto } from '@/types/api';
@@ -96,9 +97,8 @@ const AuditLogsPage = memo(() => {
   const [auditFilter, setAuditFilter] = useState<AuditFilter>(AUDIT_FILTER_DEFAULT);
   const [exportLoading, setExportLoading] = useState(false);
 
-  // Date fields debounced at 500ms — intentionally not SEARCH_DEBOUNCE_MS
-  const debouncedDateFrom = useDebounce(auditFilter.dateFrom, 500);
-  const debouncedDateTo = useDebounce(auditFilter.dateTo, 500);
+  const debouncedDateFrom = useDebounce(auditFilter.dateFrom, DATE_DEBOUNCE_MS);
+  const debouncedDateTo = useDebounce(auditFilter.dateTo, DATE_DEBOUNCE_MS);
 
   const auditFilterFields = useMemo(
     () => [
@@ -152,7 +152,7 @@ const AuditLogsPage = memo(() => {
       const result = await dispatch(
         activityLogsApi.endpoints.getActivityLogs.initiate({
           page: 1,
-          pageSize: 5000,
+          pageSize: EXPORT_PAGE_SIZE,
           module: auditFilter.module || undefined,
           dateFrom: debouncedDateFrom || undefined,
           dateTo: debouncedDateTo ? `${debouncedDateTo}T23:59:59Z` : undefined,

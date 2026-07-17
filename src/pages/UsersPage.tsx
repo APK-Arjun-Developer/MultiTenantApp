@@ -36,6 +36,7 @@ import {
   useResendUserInvitationMutation,
   useResendUserSetupMutation,
   useRevokeUserInvitationMutation,
+  usersApi,
   useUpdateUserMutation,
   useUploadUserAvatarByAdminMutation,
 } from '@/features/users/api/usersApi';
@@ -46,11 +47,18 @@ import {
   CreatedViaChip,
   DataTable,
   Icon,
+  InvitationStatusChip,
   LabelValue,
   LoadingButton,
   TenantContextGuard,
   ViewDialog,
 } from '@/shared/components';
+import {
+  ACTIVE_STATUS_OPTIONS,
+  CREATED_VIA_OPTIONS,
+  INVITATION_STATUS_OPTIONS,
+} from '@/shared/constants/filterOptions';
+import { EXPORT_PAGE_SIZE } from '@/shared/constants/list';
 import {
   buildAddressPayload,
   getAddressFields,
@@ -102,25 +110,6 @@ const UserStatusChip = memo(({ isActive }: { isActive: boolean }) => {
       size="small"
       color={isActive ? 'success' : 'default'}
       variant={isActive ? 'filled' : 'outlined'}
-    />
-  );
-});
-
-const InvitationStatusChip = memo(({ status }: { status: string }) => {
-  const color =
-    status === 'accepted'
-      ? 'success'
-      : status === 'pending'
-        ? 'primary'
-        : status === 'expired'
-          ? 'warning'
-          : 'error';
-  return (
-    <Chip
-      label={status.charAt(0).toUpperCase() + status.slice(1)}
-      size="small"
-      color={color}
-      variant="filled"
     />
   );
 });
@@ -661,9 +650,8 @@ const UsersPage = memo(() => {
   const handleExportUsers = useCallback(async () => {
     setExportLoading(true);
     try {
-      const { usersApi } = await import('@/features/users/api/usersApi');
       const result = await dispatch(
-        usersApi.endpoints.getUsers.initiate({ page: 1, pageSize: 5000 }),
+        usersApi.endpoints.getUsers.initiate({ page: 1, pageSize: EXPORT_PAGE_SIZE }),
       );
       const items = ('data' in result ? result.data?.items : null) ?? usersData?.items ?? [];
       exportToCsv(
@@ -695,22 +683,14 @@ const UsersPage = memo(() => {
         name: 'status',
         label: 'Status',
         type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All', value: '' },
-          { label: 'Active', value: 'active' },
-          { label: 'Inactive', value: 'inactive' },
-        ],
+        options: ACTIVE_STATUS_OPTIONS,
         grid: { xs: 6, sm: 3 },
       },
       {
         name: 'createdVia',
         label: 'Created via',
         type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All', value: '' },
-          { label: 'Direct', value: 'Direct' },
-          { label: 'Invitation', value: 'Invitation' },
-        ],
+        options: CREATED_VIA_OPTIONS,
         grid: { xs: 6, sm: 4 },
       },
     ],
@@ -723,13 +703,7 @@ const UsersPage = memo(() => {
         name: 'status',
         label: 'Status',
         type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All', value: '' },
-          { label: 'Pending', value: 'pending' },
-          { label: 'Accepted', value: 'accepted' },
-          { label: 'Expired', value: 'expired' },
-          { label: 'Revoked', value: 'revoked' },
-        ],
+        options: INVITATION_STATUS_OPTIONS,
         grid: { xs: 12, sm: 4 },
       },
     ],

@@ -7,6 +7,7 @@ export { default as DataTable } from './DataTable';
 export { default as ErrorPage } from './ErrorPage';
 export type { IconName, IconProps } from './Icon';
 export { default as Icon } from './Icon';
+export { default as InvitationStatusChip } from './InvitationStatusChip';
 export { default as LabelValue } from './LabelValue';
 export { default as LoadingButton } from './LoadingButton';
 export { default as PageTransition } from './PageTransition';

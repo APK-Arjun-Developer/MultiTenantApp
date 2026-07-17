@@ -46,9 +46,15 @@ import {
   CreatedViaChip,
   DataTable,
   Icon,
+  InvitationStatusChip,
   LabelValue,
   ViewDialog,
 } from '@/shared/components';
+import {
+  ACTIVE_STATUS_OPTIONS,
+  CREATED_VIA_OPTIONS,
+  INVITATION_STATUS_OPTIONS,
+} from '@/shared/constants/filterOptions';
 import {
   addressZodShape,
   buildAddressPayload,
@@ -393,19 +399,6 @@ const ViewAdminDialog = memo(({ admin, onClose }: ViewAdminDialogProps) => {
   );
 });
 
-const InvitationStatusChip = memo(({ status }: { status: string }) => {
-  const lower = status.toLowerCase();
-  const color =
-    lower === 'accepted'
-      ? 'success'
-      : lower === 'pending'
-        ? 'primary'
-        : lower === 'expired'
-          ? 'warning'
-          : 'error';
-  return <Chip label={status} color={color} size="small" variant="outlined" />;
-});
-
 const TenantAdminsPage = memo(() => {
   const snackbar = useSnackbar();
   const dispatch = useAppDispatch();
@@ -474,22 +467,14 @@ const TenantAdminsPage = memo(() => {
         name: 'status',
         label: 'Status',
         type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All', value: '' },
-          { label: 'Active', value: 'active' },
-          { label: 'Inactive', value: 'inactive' },
-        ],
+        options: ACTIVE_STATUS_OPTIONS,
         grid: { xs: 6, sm: 2 },
       },
       {
         name: 'createdVia',
         label: 'Created via',
         type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All', value: '' },
-          { label: 'Direct', value: 'Direct' },
-          { label: 'Invitation', value: 'Invitation' },
-        ],
+        options: CREATED_VIA_OPTIONS,
         grid: { xs: 6, sm: 2 },
       },
     ],
@@ -518,13 +503,7 @@ const TenantAdminsPage = memo(() => {
         name: 'status',
         label: 'Status',
         type: FIELD_TYPE.SELECT,
-        options: [
-          { label: 'All statuses', value: '' },
-          { label: 'Pending', value: 'Pending' },
-          { label: 'Accepted', value: 'Accepted' },
-          { label: 'Expired', value: 'Expired' },
-          { label: 'Revoked', value: 'Revoked' },
-        ],
+        options: INVITATION_STATUS_OPTIONS,
         grid: { xs: 12, sm: 4 },
       },
     ],
