@@ -1,24 +1,5 @@
-import { memo, useState, useCallback, useMemo, Suspense } from 'react';
-import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
-import { usePageTitle } from '@/shared/hooks';
-import { AnimatePresence } from 'framer-motion';
-import { PageTransition, TenantPicker, Icon } from '@/shared/components';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import {
-  selectCurrentUser,
-  selectPermissions,
-  selectPermissionsLoaded,
-  selectIsImpersonating,
-  selectImpersonatedBy,
-} from '@/features/auth/slices/authSlice';
-import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
-import { useGetCurrentUserQuery, getUserAvatarUrl } from '@/features/users/api/usersApi';
-import { useStopImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
-import { authApi } from '@/features/auth/api/authApi';
-import { apiSlice } from '@/shared/api/apiSlice';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import type { ApiError } from '@/types/api';
-import type { NavItem } from './DashboardLayout.types';
+import { memo, Suspense, useCallback, useMemo, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
@@ -37,7 +18,28 @@ import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { styles, navLinkStyle } from './DashboardLayout.styles';
+import { AnimatePresence } from 'framer-motion';
+
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { authApi } from '@/features/auth/api/authApi';
+import {
+  selectCurrentUser,
+  selectImpersonatedBy,
+  selectIsImpersonating,
+  selectPermissions,
+  selectPermissionsLoaded,
+} from '@/features/auth/slices/authSlice';
+import { useStopImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
+import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
+import { getUserAvatarUrl, useGetCurrentUserQuery } from '@/features/users/api/usersApi';
+import { apiSlice } from '@/shared/api/apiSlice';
+import { Icon, PageTransition, TenantPicker } from '@/shared/components';
+import { usePageTitle } from '@/shared/hooks';
+import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import type { ApiError } from '@/types/api';
+
+import { navLinkStyle, styles } from './DashboardLayout.styles';
+import type { NavItem } from './DashboardLayout.types';
 
 const NAV_ITEMS: NavItem[] = [
   {

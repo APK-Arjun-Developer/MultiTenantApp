@@ -6,19 +6,21 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import {
-  FormBuilder,
   FIELD_TYPE,
   type FieldConfig,
+  FormBuilder,
   type FormBuilderHandle,
 } from 'mui-schema-form-builder';
-import { useValidateResetTokenQuery, useResetPasswordMutation } from '@/features/auth/api/authApi';
-import { LoadingButton, Icon } from '@/shared/components';
+
+import { useResetPasswordMutation, useValidateResetTokenQuery } from '@/features/auth/api/authApi';
+import { Icon, LoadingButton } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
+
 import { styles } from './ResetPasswordPage.styles';
 import {
-  resetPasswordSchema,
   type ResetPasswordFormValues,
+  resetPasswordSchema,
   type TokenInvalidProps,
 } from './ResetPasswordPage.types';
 

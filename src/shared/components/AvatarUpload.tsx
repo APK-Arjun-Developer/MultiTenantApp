@@ -9,8 +9,9 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Slider from '@mui/material/Slider';
+
+import { hiddenInputStyle, styles } from './AvatarUpload.styles';
 import type { AvatarUploadProps } from './AvatarUpload.types';
-import { styles, hiddenInputStyle } from './AvatarUpload.styles';
 import Icon from './Icon';
 
 const OUTPUT_SIZE = 512;

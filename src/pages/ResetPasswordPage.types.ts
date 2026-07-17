@@ -23,4 +23,4 @@ interface TokenInvalidProps {
   message?: string | null;
 }
 
-export { passwordRule, resetPasswordSchema, type ResetPasswordFormValues, type TokenInvalidProps };
+export { passwordRule, type ResetPasswordFormValues, resetPasswordSchema, type TokenInvalidProps };

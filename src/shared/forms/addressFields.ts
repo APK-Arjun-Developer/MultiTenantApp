@@ -1,5 +1,6 @@
-import { z } from 'zod';
 import { FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { z } from 'zod';
+
 import type { AddressDto, AddressRequest } from '@/types/api';
 
 const optStr = (max: number) => z.string().max(max).optional().or(z.literal(''));
@@ -226,15 +227,15 @@ const buildTenantAddressPayload = (
 };
 
 export {
+  type AddressValues,
   addressZodShape,
-  requiredAddressZodShape,
-  tenantAddressZodShape,
-  requiredTenantAddressZodShape,
+  buildAddressPayload,
+  buildTenantAddressPayload,
   getAddressFields,
   getSameAsCompanyField,
   getTenantAddressFields,
-  buildAddressPayload,
-  buildTenantAddressPayload,
-  type AddressValues,
+  requiredAddressZodShape,
+  requiredTenantAddressZodShape,
   type TenantAddressValues,
+  tenantAddressZodShape,
 };

@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { PageTransitionProps } from './PageTransition.types';
+
 import { motionDivStyle } from './PageTransition.styles';
+import type { PageTransitionProps } from './PageTransition.types';
 
 const PageTransition = React.memo(({ children, motionKey }: PageTransitionProps) => {
   return (

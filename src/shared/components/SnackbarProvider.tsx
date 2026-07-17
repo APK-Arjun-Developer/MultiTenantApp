@@ -1,13 +1,15 @@
-import React, { useCallback, useState, type ReactNode, type SyntheticEvent } from 'react';
+import React, { type ReactNode, type SyntheticEvent, useCallback, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
+
 import {
-  SnackbarContext,
   DEFAULT_SNACKBAR_DURATION,
   type Severity,
+  SnackbarContext,
 } from '@/shared/hooks/snackbarContext';
-import type { SnackbarState } from './SnackbarProvider.types';
+
 import { styles } from './SnackbarProvider.styles';
+import type { SnackbarState } from './SnackbarProvider.types';
 
 const SnackbarProvider = React.memo(({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<SnackbarState>({

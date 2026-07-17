@@ -1,12 +1,14 @@
 import React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+
 import { useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { selectSelectedTenantId } from '@/features/ui/uiSlice';
-import type { TenantContextGuardProps } from './TenantContextGuard.types';
-import { styles } from './TenantContextGuard.styles';
+
 import Icon from './Icon';
+import { styles } from './TenantContextGuard.styles';
+import type { TenantContextGuardProps } from './TenantContextGuard.types';
 
 const TenantContextGuard = React.memo(({ children }: TenantContextGuardProps) => {
   const user = useAppSelector(selectCurrentUser);

@@ -1,4 +1,5 @@
 import { useContext } from 'react';
+
 import { SnackbarContext, type SnackbarContextValue } from './snackbarContext';
 
 const useSnackbar = (): SnackbarContextValue => {

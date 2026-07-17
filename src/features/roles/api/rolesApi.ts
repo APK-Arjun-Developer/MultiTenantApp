@@ -1,10 +1,10 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type {
-  PaginatedResponse,
-  RoleDto,
   CreateRoleRequest,
-  UpdateRoleRequest,
+  PaginatedResponse,
   PermissionCatalogResponse,
+  RoleDto,
+  UpdateRoleRequest,
 } from '@/types/api';
 
 interface GetRolesParams {
@@ -80,11 +80,11 @@ const {
 } = rolesApi;
 
 export {
+  type GetRolesParams,
   rolesApi,
-  useGetRolesQuery,
   useCreateRoleMutation,
-  useUpdateRoleMutation,
   useDeleteRoleMutation,
   useGetPermissionsQuery,
-  type GetRolesParams,
+  useGetRolesQuery,
+  useUpdateRoleMutation,
 };

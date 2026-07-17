@@ -1,10 +1,12 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAppSelector } from '@/app/hooks';
-import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
-import { useGetMeQuery } from '@/features/auth/api/authApi';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+
+import { useAppSelector } from '@/app/hooks';
+import { useGetMeQuery } from '@/features/auth/api/authApi';
+import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
+
 import { styles } from './AuthGuard.styles';
 
 const AuthGuard = React.memo(() => {

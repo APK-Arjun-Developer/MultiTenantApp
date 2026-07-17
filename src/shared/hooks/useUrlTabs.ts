@@ -1,4 +1,4 @@
-﻿import { useMemo, useCallback, type SyntheticEvent } from 'react';
+﻿import { type SyntheticEvent, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 const useUrlTabs = <T extends readonly string[]>(tabs: T) => {

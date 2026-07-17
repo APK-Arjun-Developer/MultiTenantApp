@@ -1,6 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
-import { z } from 'zod';
-import type { ColumnDef } from '@tanstack/react-table';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -13,78 +12,81 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import Avatar from '@mui/material/Avatar';
+import type { ColumnDef } from '@tanstack/react-table';
+import { FIELD_TYPE, type FieldConfig, FilterForm, FormBuilder } from 'mui-schema-form-builder';
+import { z } from 'zod';
+
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { authApi } from '@/features/auth/api/authApi';
+import { selectCurrentUser } from '@/features/auth/slices/authSlice';
+import { useStartImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
 import {
-  DataTable,
+  useActivateTenantAdminMutation,
+  useCreateTenantAdminMutation,
+  useDeactivateTenantAdminMutation,
+  useDeleteTenantAdminMutation,
+  useGetTenantAdminInvitationsQuery,
+  useGetTenantAdminsQuery,
+  useInviteTenantAdminMutation,
+  useResendInvitationMutation,
+  useResendTenantAdminSetupMutation,
+  useRevokeInvitationMutation,
+  useUpdateTenantAdminMutation,
+} from '@/features/tenantAdmins/api/tenantAdminsApi';
+import { useGetTenantsQuery, useUpdateTenantMutation } from '@/features/tenants/api/tenantsApi';
+import {
+  getUserAvatarUrl,
+  useRemoveUserAvatarByAdminMutation,
+  useUploadUserAvatarByAdminMutation,
+} from '@/features/users/api/usersApi';
+import { apiSlice } from '@/shared/api/apiSlice';
+import {
   AvatarManageModal,
   ConfirmDialog,
   CreatedViaChip,
+  DataTable,
+  Icon,
   LabelValue,
   ViewDialog,
-  Icon,
 } from '@/shared/components';
-import { formatAddress } from '@/shared/utils/format';
-import {
-  useTableState,
-  useFilterState,
-  useBooleanDialog,
-  useItemDialog,
-  useUrlTabs,
-  useSnackbar,
-  usePermission,
-} from '@/shared/hooks';
 import {
   addressZodShape,
-  requiredAddressZodShape,
-  getAddressFields,
   buildAddressPayload,
-  tenantAddressZodShape,
-  getTenantAddressFields,
   buildTenantAddressPayload,
+  getAddressFields,
+  getTenantAddressFields,
+  requiredAddressZodShape,
+  tenantAddressZodShape,
 } from '@/shared/forms/addressFields';
-import { useGetTenantsQuery, useUpdateTenantMutation } from '@/features/tenants/api/tenantsApi';
 import {
-  useGetTenantAdminsQuery,
-  useCreateTenantAdminMutation,
-  useInviteTenantAdminMutation,
-  useUpdateTenantAdminMutation,
-  useDeleteTenantAdminMutation,
-  useResendTenantAdminSetupMutation,
-  useActivateTenantAdminMutation,
-  useDeactivateTenantAdminMutation,
-  useGetTenantAdminInvitationsQuery,
-  useRevokeInvitationMutation,
-  useResendInvitationMutation,
-} from '@/features/tenantAdmins/api/tenantAdminsApi';
-import { useStartImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
-import {
-  useUploadUserAvatarByAdminMutation,
-  useRemoveUserAvatarByAdminMutation,
-  getUserAvatarUrl,
-} from '@/features/users/api/usersApi';
-import { selectCurrentUser } from '@/features/auth/slices/authSlice';
-import { apiSlice } from '@/shared/api/apiSlice';
-import { authApi } from '@/features/auth/api/authApi';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
+  useBooleanDialog,
+  useFilterState,
+  useItemDialog,
+  usePermission,
+  useSnackbar,
+  useTableState,
+  useUrlTabs,
+} from '@/shared/hooks';
+import { formatAddress } from '@/shared/utils/format';
 import type { ApiError } from '@/types/api';
+
 import { styles } from './TenantAdminsPage.styles';
 import type {
-  CreateValues,
-  InviteValues,
-  EditValues,
   ActionType,
-  TenantOption,
+  AddressDto,
   CreateAdminDialogProps,
-  InviteAdminDialogProps,
+  CreateValues,
   EditAdminDialogProps,
-  ViewAdminDialogProps,
-  TenantAdminsPageHeaderProps,
-  TenantAdminsFilterBarProps,
-  TenantAdminsInvitationsFilterBarProps,
+  EditValues,
+  InviteAdminDialogProps,
+  InviteValues,
   TenantAdminDto,
   TenantAdminInvitationDto,
-  AddressDto,
+  TenantAdminsFilterBarProps,
+  TenantAdminsInvitationsFilterBarProps,
+  TenantAdminsPageHeaderProps,
+  TenantOption,
+  ViewAdminDialogProps,
 } from './TenantAdminsPage.types';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
@@ -10,6 +11,7 @@ const config = defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
+    plugins: { 'simple-import-sort': simpleImportSort },
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
@@ -50,6 +52,23 @@ const config = defineConfig([
       'no-console': 'warn',
       'prefer-const': 'error',
       'object-shorthand': 'error',
+      // ── Import / export ordering ─────────────────────────────────────────────
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [
+            // Side-effect imports first (e.g. import './polyfill')
+            ['^\\u0000'],
+            // External packages: react, @mui, @tanstack, axios, zod, etc.
+            ['^react', '^@?\\w'],
+            // Internal aliases: @/app, @/features, @/shared, @/pages, @/types
+            ['^@/'],
+            // Relative imports: ./foo, ../bar
+            ['^\\.'],
+          ],
+        },
+      ],
+      'simple-import-sort/exports': 'error',
       // ── Import discipline ────────────────────────────────────────────────────
       // Multiple import statements from the same path must be merged into one.
       'no-duplicate-imports': 'error',

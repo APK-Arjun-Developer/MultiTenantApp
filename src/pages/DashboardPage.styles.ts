@@ -1,5 +1,6 @@
 ﻿import { alpha } from '@mui/material/styles';
-import type { Sx, StyleSheet } from '@/types';
+
+import type { StyleSheet, Sx } from '@/types';
 
 const styles = {
   // ── Page root ──────────────────────────────────────────────────────────────
@@ -180,4 +181,4 @@ const statCardIconBoxColor = (hex: string): Sx => {
   };
 };
 
-export { styles, statCardIconBoxColor };
+export { statCardIconBoxColor, styles };

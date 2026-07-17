@@ -1,10 +1,12 @@
-import type { BaseQueryFn } from '@reduxjs/toolkit/query';
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-import { Mutex } from 'async-mutex';
 import toast from 'react-hot-toast';
-import { axiosInstance } from './axiosInstance';
+import type { BaseQueryFn } from '@reduxjs/toolkit/query';
+import { Mutex } from 'async-mutex';
+import type { AxiosError, AxiosRequestConfig } from 'axios';
+
 import { logout } from '@/features/auth/slices/authSlice';
 import type { ApiError, ApiResponse } from '@/types/api';
+
+import { axiosInstance } from './axiosInstance';
 
 interface AxiosBaseQueryArgs {
   url: string;
@@ -97,4 +99,4 @@ const baseQueryWithReauth: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = 
   return result;
 };
 
-export { baseQueryWithReauth, type AxiosBaseQueryArgs };
+export { type AxiosBaseQueryArgs, baseQueryWithReauth };

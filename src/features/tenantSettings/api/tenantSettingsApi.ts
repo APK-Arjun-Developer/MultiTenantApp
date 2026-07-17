@@ -48,7 +48,7 @@ export {
   getTenantLogoUrl,
   tenantSettingsApi,
   useGetTenantSettingsQuery,
+  useRemoveTenantLogoMutation,
   useUpdateTenantSettingsMutation,
   useUploadTenantLogoMutation,
-  useRemoveTenantLogoMutation,
 };

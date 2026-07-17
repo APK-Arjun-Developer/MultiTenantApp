@@ -1,4 +1,5 @@
 ﻿import SvgIcon, { type SvgIconProps } from '@mui/material/SvgIcon';
+
 import { ICON_PATHS } from './Icon.paths';
 
 type IconName = keyof typeof ICON_PATHS;

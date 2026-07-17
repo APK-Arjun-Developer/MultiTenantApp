@@ -5,17 +5,19 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { FormBuilder, FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import { useValidateAccountSetupQuery, useSetPasswordMutation } from '@/features/auth/api/authApi';
-import { LoadingButton, Icon } from '@/shared/components';
+import { FIELD_TYPE, type FieldConfig, FormBuilder, FormWizard } from 'mui-schema-form-builder';
+
+import { useSetPasswordMutation, useValidateAccountSetupQuery } from '@/features/auth/api/authApi';
+import { Icon, LoadingButton } from '@/shared/components';
+import { buildAddressPayload, getAddressFields } from '@/shared/forms/addressFields';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import { getAddressFields, buildAddressPayload } from '@/shared/forms/addressFields';
 import type { ApiError, SetPasswordResponse } from '@/types/api';
+
 import { styles } from './AccountSetupPage.styles';
 import {
   directPasswordSchema,
-  fullSetupSchema,
   type DirectPasswordValues,
+  fullSetupSchema,
   type FullSetupValues,
   type SetupInvalidProps,
   type SetupSuccessProps,

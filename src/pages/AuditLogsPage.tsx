@@ -1,25 +1,27 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { FilterForm, FIELD_TYPE } from 'mui-schema-form-builder';
-import { LoadingButton, TenantContextGuard, DataTable, Icon } from '@/shared/components';
-import { exportToCsv } from '@/shared/utils/exportCsv';
-import { useDebounce, useTableState } from '@/shared/hooks';
+import type { ColumnDef } from '@tanstack/react-table';
+import { FIELD_TYPE, FilterForm } from 'mui-schema-form-builder';
+
 import { useAppDispatch } from '@/app/hooks';
 import {
   activityLogsApi,
   useGetActivityLogsQuery,
 } from '@/features/activityLogs/api/activityLogsApi';
+import { DataTable, Icon, LoadingButton, TenantContextGuard } from '@/shared/components';
+import { useDebounce, useTableState } from '@/shared/hooks';
+import { exportToCsv } from '@/shared/utils/exportCsv';
 import type { ActivityLogDto } from '@/types/api';
+
 import { styles } from './AuditLogsPage.styles';
 import type {
-  ModuleColor,
   AuditFilter,
-  AuditLogsPageHeaderProps,
   AuditLogsFilterBarProps,
+  AuditLogsPageHeaderProps,
+  ModuleColor,
 } from './AuditLogsPage.types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

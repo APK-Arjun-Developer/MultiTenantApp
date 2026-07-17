@@ -15,4 +15,4 @@ const PERMISSIONS = {
 
 type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
-export { PERMISSIONS, type Permission };
+export { type Permission, PERMISSIONS };

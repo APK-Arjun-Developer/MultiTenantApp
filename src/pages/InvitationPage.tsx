@@ -7,30 +7,32 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { FormWizard, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { FIELD_TYPE, type FieldConfig, FormWizard } from 'mui-schema-form-builder';
+
 import {
-  useValidateInvitationQuery,
   useAcceptTenantAdminInvitationMutation,
-  useAcceptTenantUserInvitationMutation,
   useAcceptTenantCreationInvitationMutation,
+  useAcceptTenantUserInvitationMutation,
+  useValidateInvitationQuery,
 } from '@/features/auth/api/authApi';
-import { LoadingButton, Icon } from '@/shared/components';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { Icon, LoadingButton } from '@/shared/components';
 import {
-  getAddressFields,
   buildAddressPayload,
-  getTenantAddressFields,
   buildTenantAddressPayload,
+  getAddressFields,
+  getTenantAddressFields,
 } from '@/shared/forms/addressFields';
+import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { AcceptInvitationResponse, ApiError } from '@/types/api';
+
 import { styles } from './InvitationPage.styles';
 import {
-  inviteSchema,
-  tenantCreationSchema,
   type FormValues,
-  type TenantCreationValues,
   type InvitationInvalidProps,
   type InvitationSuccessProps,
+  inviteSchema,
+  tenantCreationSchema,
+  type TenantCreationValues,
 } from './InvitationPage.types';
 
 // ─── InvitationInvalid ────────────────────────────────────────────────────────

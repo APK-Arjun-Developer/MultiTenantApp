@@ -1,19 +1,21 @@
 import React, { useCallback, useMemo } from 'react';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import {
-  selectSelectedTenantId,
-  selectSelectedTenantName,
-  setSelectedTenant,
-  clearSelectedTenant,
-} from '@/features/ui/uiSlice';
-import { apiSlice } from '@/shared/api/apiSlice';
-import { useGetTenantsQuery } from '@/features/tenants/api/tenantsApi';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Typography from '@mui/material/Typography';
+
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { useGetTenantsQuery } from '@/features/tenants/api/tenantsApi';
+import {
+  clearSelectedTenant,
+  selectSelectedTenantId,
+  selectSelectedTenantName,
+  setSelectedTenant,
+} from '@/features/ui/uiSlice';
+import { apiSlice } from '@/shared/api/apiSlice';
+
 import { styles } from './TenantPicker.styles';
 
 const PLATFORM_VALUE = '__platform__';

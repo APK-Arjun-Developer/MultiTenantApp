@@ -1,4 +1,5 @@
 ﻿import { z } from 'zod';
+
 import { requiredAddressZodShape } from '@/shared/forms/addressFields';
 import type { SetPasswordResponse } from '@/types/api';
 
@@ -43,11 +44,11 @@ interface SetupSuccessProps {
 }
 
 export {
-  passwordRule,
   directPasswordSchema,
-  fullSetupSchema,
   type DirectPasswordValues,
+  fullSetupSchema,
   type FullSetupValues,
+  passwordRule,
   type SetupInvalidProps,
   type SetupSuccessProps,
 };

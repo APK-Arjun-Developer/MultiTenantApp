@@ -14,4 +14,4 @@ interface OtpInputProps {
   disabled?: boolean;
 }
 
-export { loginSchema, type LoginValues, type Step, type OtpInputProps };
+export { loginSchema, type LoginValues, type OtpInputProps, type Step };

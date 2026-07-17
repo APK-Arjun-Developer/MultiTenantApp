@@ -282,4 +282,4 @@ const styles = {
   },
 } as const satisfies StyleSheet;
 
-export { DRAWER_WIDTH, DRAWER_COLLAPSED_WIDTH, navLinkStyle, styles };
+export { DRAWER_COLLAPSED_WIDTH, DRAWER_WIDTH, navLinkStyle, styles };

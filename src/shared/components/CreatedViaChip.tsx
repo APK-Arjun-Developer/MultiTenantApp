@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import Chip from '@mui/material/Chip';
+
 import type { CreatedViaChipProps } from './CreatedViaChip.types';
 import Icon from './Icon';
 

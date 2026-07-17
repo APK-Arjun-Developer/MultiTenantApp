@@ -1,8 +1,9 @@
 import { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { AuthLayout, DashboardLayout } from '@/shared/layouts';
-import { AuthGuard, SystemAdminGuard, TenantAdminGuard, ErrorPage } from '@/shared/components';
+
 import NotFoundPage from '@/pages/NotFoundPage';
+import { AuthGuard, ErrorPage, SystemAdminGuard, TenantAdminGuard } from '@/shared/components';
+import { AuthLayout, DashboardLayout } from '@/shared/layouts';
 
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));

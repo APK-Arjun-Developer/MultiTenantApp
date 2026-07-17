@@ -1,5 +1,4 @@
 import { memo, useCallback, useMemo } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -9,44 +8,47 @@ import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { FormBuilder, FilterForm, FIELD_TYPE } from 'mui-schema-form-builder';
+import type { ColumnDef } from '@tanstack/react-table';
+import { FIELD_TYPE, FilterForm, FormBuilder } from 'mui-schema-form-builder';
+
 import {
-  DataTable,
+  useCreateRoleMutation,
+  useDeleteRoleMutation,
+  useGetPermissionsQuery,
+  useGetRolesQuery,
+  useUpdateRoleMutation,
+} from '@/features/roles/api/rolesApi';
+import {
   ConfirmDialog,
+  DataTable,
+  Icon,
   LabelValue,
   TenantContextGuard,
   ViewDialog,
-  Icon,
 } from '@/shared/components';
 import {
-  useTableState,
-  useFilterState,
   useBooleanDialog,
+  useFilterState,
   useItemDialog,
-  useSnackbar,
   usePermission,
+  useSnackbar,
+  useTableState,
 } from '@/shared/hooks';
-import {
-  useGetRolesQuery,
-  useCreateRoleMutation,
-  useUpdateRoleMutation,
-  useDeleteRoleMutation,
-  useGetPermissionsQuery,
-} from '@/features/roles/api/rolesApi';
-import type { RoleDto, ApiError } from '@/types/api';
+import type { ApiError, RoleDto } from '@/types/api';
+
 import { styles } from './RolesPage.styles';
 import {
+  type CreateRoleDialogProps,
   createSchema,
-  editSchema,
   type CreateValues,
+  type EditRoleDialogProps,
+  editSchema,
   type EditValues,
   type PermissionOption,
-  type CreateRoleDialogProps,
-  type EditRoleDialogProps,
-  type ViewRoleDialogProps,
-  type RolesPageHeaderProps,
-  type RolesFilterBarProps,
   type RolesFilter,
+  type RolesFilterBarProps,
+  type RolesPageHeaderProps,
+  type ViewRoleDialogProps,
 } from './RolesPage.types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

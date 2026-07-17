@@ -55,4 +55,4 @@ const styles = {
 
 const hiddenInputStyle = { display: 'none' } as const;
 
-export { styles, hiddenInputStyle };
+export { hiddenInputStyle, styles };

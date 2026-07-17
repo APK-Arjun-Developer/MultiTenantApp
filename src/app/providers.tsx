@@ -1,12 +1,14 @@
-import { useMemo, type ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { Provider } from 'react-redux';
-import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { store } from './store';
-import { useAppSelector } from './hooks';
-import { buildTheme } from '@/shared/theme';
+import { ThemeProvider } from '@mui/material/styles';
+
 import { selectThemeMode } from '@/features/ui/uiSlice';
 import { SnackbarProvider } from '@/shared/components';
+import { buildTheme } from '@/shared/theme';
+
+import { useAppSelector } from './hooks';
+import { store } from './store';
 
 const ThemedApp = ({ children }: { children: ReactNode }) => {
   const themeMode = useAppSelector(selectThemeMode);

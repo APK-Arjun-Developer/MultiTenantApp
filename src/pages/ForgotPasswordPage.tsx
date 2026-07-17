@@ -1,17 +1,19 @@
 import { memo, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import { AnimatePresence, motion } from 'framer-motion';
+import { FIELD_TYPE, type FieldConfig, FormBuilder } from 'mui-schema-form-builder';
+
 import { useForgotPasswordMutation } from '@/features/auth/api/authApi';
-import { LoadingButton, Icon } from '@/shared/components';
+import { Icon, LoadingButton } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
+
 import { styles } from './ForgotPasswordPage.styles';
-import { forgotPasswordSchema, type ForgotPasswordFormValues } from './ForgotPasswordPage.types';
+import { type ForgotPasswordFormValues, forgotPasswordSchema } from './ForgotPasswordPage.types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

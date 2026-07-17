@@ -2,15 +2,17 @@ import { memo, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
-import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import { getAddressFields, buildAddressPayload } from '@/shared/forms/addressFields';
-import { LoadingButton, Icon } from '@/shared/components';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { FIELD_TYPE, type FieldConfig, FormBuilder } from 'mui-schema-form-builder';
+
 import {
   useGetTenantSettingsQuery,
   useUpdateTenantSettingsMutation,
 } from '@/features/tenantSettings/api/tenantSettingsApi';
+import { Icon, LoadingButton } from '@/shared/components';
+import { buildAddressPayload, getAddressFields } from '@/shared/forms/addressFields';
+import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
+
 import { styles } from './TenantSettingsPage.styles';
 import {
   settingsSchema,

@@ -1,29 +1,31 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
 import InputBase from '@mui/material/InputBase';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  FormBuilder,
   FIELD_TYPE,
   type FieldConfig,
+  FormBuilder,
   type FormBuilderHandle,
 } from 'mui-schema-form-builder';
+
 import { useAppSelector } from '@/app/hooks';
-import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
 import {
   useLoginMutation,
-  useVerifyEmailMutation,
   useResendVerificationMutation,
+  useVerifyEmailMutation,
 } from '@/features/auth/api/authApi';
-import { LoadingButton, Icon } from '@/shared/components';
+import { selectIsAuthenticated } from '@/features/auth/slices/authSlice';
+import { Icon, LoadingButton } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
-import { styles, otpInputStyle } from './LoginPage.styles';
-import { loginSchema, type LoginValues, type Step, type OtpInputProps } from './LoginPage.types';
+
+import { otpInputStyle, styles } from './LoginPage.styles';
+import { loginSchema, type LoginValues, type OtpInputProps, type Step } from './LoginPage.types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

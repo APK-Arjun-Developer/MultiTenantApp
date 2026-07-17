@@ -35,4 +35,4 @@ const formatAddress = (
   return parts.length ? parts.join(', ') : '—';
 };
 
-export { formatDate, formatDateTime, formatCurrency, formatAddress };
+export { formatAddress, formatCurrency, formatDate, formatDateTime };

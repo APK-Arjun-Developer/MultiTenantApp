@@ -19,4 +19,4 @@ const DEFAULT_SNACKBAR_DURATION: Record<Severity, number> = {
   info: 4000,
 };
 
-export { SnackbarContext, DEFAULT_SNACKBAR_DURATION, type Severity, type SnackbarContextValue };
+export { DEFAULT_SNACKBAR_DURATION, type Severity, SnackbarContext, type SnackbarContextValue };

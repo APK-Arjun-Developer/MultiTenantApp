@@ -110,4 +110,4 @@ const otpInputStyle = {
   padding: 0,
 } as const;
 
-export { styles, otpInputStyle };
+export { otpInputStyle, styles };

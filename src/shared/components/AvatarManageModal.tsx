@@ -8,10 +8,11 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+
+import { styles } from './AvatarManageModal.styles';
+import type { AvatarManageModalProps } from './AvatarManageModal.types';
 import AvatarUpload from './AvatarUpload';
 import ConfirmDialog from './ConfirmDialog';
-import type { AvatarManageModalProps } from './AvatarManageModal.types';
-import { styles } from './AvatarManageModal.styles';
 import Icon from './Icon';
 
 const AvatarManageModal = React.memo(

@@ -1,12 +1,12 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type {
-  PaginatedResponse,
-  TenantAdminDto,
-  TenantAdminInvitationDto,
   CreateTenantAdminRequest,
   CreateTenantAdminResponse,
   InviteTenantAdminRequest,
   InviteTenantAdminResponse,
+  PaginatedResponse,
+  TenantAdminDto,
+  TenantAdminInvitationDto,
   UpdateTenantAdminRequest,
 } from '@/types/api';
 
@@ -165,18 +165,18 @@ const {
 } = tenantAdminsApi;
 
 export {
-  tenantAdminsApi,
-  useGetTenantAdminsQuery,
-  useCreateTenantAdminMutation,
-  useInviteTenantAdminMutation,
-  useUpdateTenantAdminMutation,
-  useDeleteTenantAdminMutation,
-  useResendTenantAdminSetupMutation,
-  useActivateTenantAdminMutation,
-  useDeactivateTenantAdminMutation,
-  useGetTenantAdminInvitationsQuery,
-  useRevokeInvitationMutation,
-  useResendInvitationMutation,
-  type GetTenantAdminsParams,
   type GetTenantAdminInvitationsParams,
+  type GetTenantAdminsParams,
+  tenantAdminsApi,
+  useActivateTenantAdminMutation,
+  useCreateTenantAdminMutation,
+  useDeactivateTenantAdminMutation,
+  useDeleteTenantAdminMutation,
+  useGetTenantAdminInvitationsQuery,
+  useGetTenantAdminsQuery,
+  useInviteTenantAdminMutation,
+  useResendInvitationMutation,
+  useResendTenantAdminSetupMutation,
+  useRevokeInvitationMutation,
+  useUpdateTenantAdminMutation,
 };

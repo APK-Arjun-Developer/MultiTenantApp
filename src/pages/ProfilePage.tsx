@@ -9,48 +9,50 @@ import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import { FormBuilder, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
-import { AvatarManageModal, ConfirmDialog, LabelValue, Icon } from '@/shared/components';
-import { useSnackbar } from '@/shared/hooks/useSnackbar';
-import { useUrlTabs, useBooleanDialog } from '@/shared/hooks';
+import { FIELD_TYPE, type FieldConfig, FormBuilder } from 'mui-schema-form-builder';
+
 import { useLogoutMutation } from '@/features/auth/api/authApi';
 import {
-  getAddressFields,
-  buildAddressPayload,
-  getTenantAddressFields,
-  buildTenantAddressPayload,
-} from '@/shared/forms/addressFields';
-import {
-  useGetCurrentUserQuery,
-  useUpdateCurrentUserMutation,
-  useChangePasswordMutation,
-  useUploadCurrentUserAvatarMutation,
-  useRemoveCurrentUserAvatarMutation,
-  getUserAvatarUrl,
-} from '@/features/users/api/usersApi';
-import {
+  getTenantLogoUrl,
   useGetTenantSettingsQuery,
+  useRemoveTenantLogoMutation,
   useUpdateTenantSettingsMutation,
   useUploadTenantLogoMutation,
-  useRemoveTenantLogoMutation,
-  getTenantLogoUrl,
 } from '@/features/tenantSettings/api/tenantSettingsApi';
+import {
+  getUserAvatarUrl,
+  useChangePasswordMutation,
+  useGetCurrentUserQuery,
+  useRemoveCurrentUserAvatarMutation,
+  useUpdateCurrentUserMutation,
+  useUploadCurrentUserAvatarMutation,
+} from '@/features/users/api/usersApi';
+import { AvatarManageModal, ConfirmDialog, Icon, LabelValue } from '@/shared/components';
+import {
+  buildAddressPayload,
+  buildTenantAddressPayload,
+  getAddressFields,
+  getTenantAddressFields,
+} from '@/shared/forms/addressFields';
+import { useBooleanDialog, useUrlTabs } from '@/shared/hooks';
+import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
+
 import { styles } from './ProfilePage.styles';
 import {
-  profileSchema,
   addressSchema,
-  companySchema,
-  passwordSchema,
-  type ProfileValues,
   type AddressValues,
-  type PasswordValues,
+  companySchema,
   type CompanyValues,
-  type ProfileAvatarSectionProps,
-  type ProfileInfoSectionProps,
+  passwordSchema,
+  type PasswordValues,
   type ProfileAddressSectionProps,
-  type ProfilePasswordSectionProps,
+  type ProfileAvatarSectionProps,
   type ProfileCompanySectionProps,
+  type ProfileInfoSectionProps,
+  type ProfilePasswordSectionProps,
+  profileSchema,
+  type ProfileValues,
 } from './ProfilePage.types';
 
 // ─── Static field configs ──────────────────────────────────────────────────────

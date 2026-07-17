@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
 import type { RootState } from '@/app/store';
 import type { AuthUser, ImpersonatedByInfo } from '@/types/api';
 
@@ -89,16 +90,16 @@ const selectIsImpersonating = (state: RootState) => state.auth.isImpersonating;
 const selectImpersonatedBy = (state: RootState) => state.auth.impersonatedBy;
 
 export {
+  clearImpersonation,
   login,
   logout,
-  setPermissions,
-  setImpersonation,
-  clearImpersonation,
   selectCurrentUser,
+  selectImpersonatedBy,
   selectIsAuthenticated,
+  selectIsImpersonating,
   selectPermissions,
   selectPermissionsLoaded,
-  selectIsImpersonating,
-  selectImpersonatedBy,
+  setImpersonation,
+  setPermissions,
 };
 export default authSlice.reducer;

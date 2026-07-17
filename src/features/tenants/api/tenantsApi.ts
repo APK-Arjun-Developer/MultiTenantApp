@@ -1,15 +1,15 @@
 import { apiSlice } from '@/shared/api/apiSlice';
 import type {
-  PaginatedResponse,
-  TenantDto,
+  DeleteTenantRequest,
+  InviteResponse,
+  InviteTenantRequest,
   OnboardTenantRequest,
   OnboardTenantResponse,
-  UpdateTenantRequest,
-  UpdateCurrentTenantAddressRequest,
-  DeleteTenantRequest,
-  InviteTenantRequest,
+  PaginatedResponse,
   TenantCreationInvitationDto,
-  InviteResponse,
+  TenantDto,
+  UpdateCurrentTenantAddressRequest,
+  UpdateTenantRequest,
 } from '@/types/api';
 
 interface GetTenantsParams {
@@ -163,17 +163,17 @@ const {
 } = tenantsApi;
 
 export {
+  type GetTenantsParams,
   tenantsApi,
-  useGetTenantsQuery,
-  useOnboardTenantMutation,
-  useUpdateTenantMutation,
-  useUpdateCurrentTenantAddressMutation,
   useDeleteTenantMutation,
   useGetTenantCreationInvitationsQuery,
+  useGetTenantsQuery,
   useInviteTenantMutation,
-  useRevokeTenantInvitationMutation,
-  useResendTenantInvitationMutation,
-  useUploadTenantLogoByAdminMutation,
+  useOnboardTenantMutation,
   useRemoveTenantLogoByAdminMutation,
-  type GetTenantsParams,
+  useResendTenantInvitationMutation,
+  useRevokeTenantInvitationMutation,
+  useUpdateCurrentTenantAddressMutation,
+  useUpdateTenantMutation,
+  useUploadTenantLogoByAdminMutation,
 };

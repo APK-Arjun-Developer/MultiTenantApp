@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
 import type { RootState } from '@/app/store';
 
 const SELECTED_TENANT_STORAGE_KEY = 'selectedTenant';
@@ -86,17 +87,17 @@ const selectSelectedTenantId = (state: RootState) => state.ui.selectedTenantId;
 const selectSelectedTenantName = (state: RootState) => state.ui.selectedTenantName;
 
 export {
-  SELECTED_TENANT_STORAGE_KEY,
-  THEME_STORAGE_KEY,
-  toggleTheme,
-  setThemeMode,
-  toggleSidebar,
-  setSidebarOpen,
-  setSelectedTenant,
   clearSelectedTenant,
-  selectThemeMode,
-  selectSidebarOpen,
+  SELECTED_TENANT_STORAGE_KEY,
   selectSelectedTenantId,
   selectSelectedTenantName,
+  selectSidebarOpen,
+  selectThemeMode,
+  setSelectedTenant,
+  setSidebarOpen,
+  setThemeMode,
+  THEME_STORAGE_KEY,
+  toggleSidebar,
+  toggleTheme,
 };
 export default uiSlice.reducer;

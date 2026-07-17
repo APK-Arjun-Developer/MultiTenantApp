@@ -1,5 +1,4 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -14,79 +13,82 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { FormBuilder, FilterForm, FIELD_TYPE, type FieldConfig } from 'mui-schema-form-builder';
+import type { ColumnDef } from '@tanstack/react-table';
+import { FIELD_TYPE, type FieldConfig, FilterForm, FormBuilder } from 'mui-schema-form-builder';
+
+import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { authApi } from '@/features/auth/api/authApi';
+import { selectCurrentUser } from '@/features/auth/slices/authSlice';
+import { useStartImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
+import { useGetRolesQuery } from '@/features/roles/api/rolesApi';
+import { useGetTenantSettingsQuery } from '@/features/tenantSettings/api/tenantSettingsApi';
 import {
-  DataTable,
+  getUserAvatarUrl,
+  useActivateUserMutation,
+  useCreateUserMutation,
+  useDeactivateUserMutation,
+  useDeleteUserMutation,
+  useGetCurrentUserQuery,
+  useGetUserInvitationsQuery,
+  useGetUsersQuery,
+  useInviteUserMutation,
+  useRemoveUserAvatarByAdminMutation,
+  useResendUserInvitationMutation,
+  useResendUserSetupMutation,
+  useRevokeUserInvitationMutation,
+  useUpdateUserMutation,
+  useUploadUserAvatarByAdminMutation,
+} from '@/features/users/api/usersApi';
+import { apiSlice } from '@/shared/api/apiSlice';
+import {
   AvatarManageModal,
   ConfirmDialog,
-  LoadingButton,
   CreatedViaChip,
+  DataTable,
+  Icon,
   LabelValue,
+  LoadingButton,
   TenantContextGuard,
   ViewDialog,
-  Icon,
 } from '@/shared/components';
-import { formatAddress } from '@/shared/utils/format';
-import { exportToCsv } from '@/shared/utils/exportCsv';
 import {
-  useUrlTabs,
-  useTableState,
-  useFilterState,
-  useBooleanDialog,
-  useItemDialog,
-  useSnackbar,
-  usePermission,
-} from '@/shared/hooks';
-import {
+  buildAddressPayload,
   getAddressFields,
   getSameAsCompanyField,
-  buildAddressPayload,
 } from '@/shared/forms/addressFields';
-import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { selectCurrentUser } from '@/features/auth/slices/authSlice';
-import { useGetTenantSettingsQuery } from '@/features/tenantSettings/api/tenantSettingsApi';
-import { useStartImpersonationMutation } from '@/features/impersonation/api/impersonationApi';
-import { authApi } from '@/features/auth/api/authApi';
-import { apiSlice } from '@/shared/api/apiSlice';
-import { useGetRolesQuery } from '@/features/roles/api/rolesApi';
 import {
-  useGetCurrentUserQuery,
-  useGetUsersQuery,
-  useCreateUserMutation,
-  useInviteUserMutation,
-  useUpdateUserMutation,
-  useDeleteUserMutation,
-  useResendUserSetupMutation,
-  useActivateUserMutation,
-  useDeactivateUserMutation,
-  useGetUserInvitationsQuery,
-  useRevokeUserInvitationMutation,
-  useResendUserInvitationMutation,
-  useUploadUserAvatarByAdminMutation,
-  useRemoveUserAvatarByAdminMutation,
-  getUserAvatarUrl,
-} from '@/features/users/api/usersApi';
+  useBooleanDialog,
+  useFilterState,
+  useItemDialog,
+  usePermission,
+  useSnackbar,
+  useTableState,
+  useUrlTabs,
+} from '@/shared/hooks';
+import { exportToCsv } from '@/shared/utils/exportCsv';
+import { formatAddress } from '@/shared/utils/format';
 import type { ApiError } from '@/types/api';
+
 import { styles } from './UsersPage.styles';
 import {
   createSchema,
-  inviteSchema,
-  editSchema,
+  type CreateUserDialogProps,
   type CreateValues,
-  type InviteValues,
+  editSchema,
+  type EditUserDialogProps,
   type EditValues,
+  inviteSchema,
+  type InviteUserDialogProps,
+  type InviteValues,
   type PendingAction,
   type RoleOption,
-  type CreateUserDialogProps,
-  type InviteUserDialogProps,
-  type EditUserDialogProps,
-  type ViewUserDialogProps,
-  type UsersPageHeaderProps,
-  type UsersPageFilterBarProps,
-  type UsersPageActionsProps,
-  type UsersInvitationsFilterBarProps,
   type UserDto,
   type UserInvitationDto,
+  type UsersInvitationsFilterBarProps,
+  type UsersPageActionsProps,
+  type UsersPageFilterBarProps,
+  type UsersPageHeaderProps,
+  type ViewUserDialogProps,
 } from './UsersPage.types';
 
 // ─── Filter defaults (module-level stable references) ─────────────────────────

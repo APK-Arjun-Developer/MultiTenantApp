@@ -4,4 +4,4 @@ type Sx = SxProps<Theme>;
 
 type StyleSheet = Record<string, Sx>;
 
-export type { Sx, StyleSheet };
+export type { StyleSheet, Sx };

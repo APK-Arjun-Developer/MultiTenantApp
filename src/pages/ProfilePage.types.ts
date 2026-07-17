@@ -1,7 +1,8 @@
-﻿import { z } from 'zod';
+﻿import type { FieldConfig } from 'mui-schema-form-builder';
+import { z } from 'zod';
+
 import { addressZodShape, tenantAddressZodShape } from '@/shared/forms/addressFields';
 import type { AddressDto } from '@/types/api';
-import type { FieldConfig } from 'mui-schema-form-builder';
 
 // â”€â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -86,17 +87,17 @@ interface ProfileCompanySectionProps {
 }
 
 export {
-  profileSchema,
   addressSchema,
-  companySchema,
-  passwordSchema,
-  type ProfileValues,
   type AddressValues,
+  companySchema,
   type CompanyValues,
+  passwordSchema,
   type PasswordValues,
-  type ProfileAvatarSectionProps,
-  type ProfileInfoSectionProps,
   type ProfileAddressSectionProps,
-  type ProfilePasswordSectionProps,
+  type ProfileAvatarSectionProps,
   type ProfileCompanySectionProps,
+  type ProfileInfoSectionProps,
+  type ProfilePasswordSectionProps,
+  profileSchema,
+  type ProfileValues,
 };

@@ -1,4 +1,4 @@
-﻿import type { TenantDto, TenantCreationInvitationDto, FilterValues } from '@/types/api';
+﻿import type { FilterValues, TenantCreationInvitationDto, TenantDto } from '@/types/api';
 
 interface OnboardDialogProps {
   open: boolean;
@@ -39,15 +39,15 @@ interface TenantsInvitationsFilterBarProps {
   onChange: (values: FilterValues) => void;
 }
 
-export type { TenantDto, TenantCreationInvitationDto };
+export type { TenantCreationInvitationDto, TenantDto };
 
 export {
-  type OnboardDialogProps,
-  type InviteDialogProps,
-  type EditDialogProps,
-  type ViewTenantDialogProps,
   type ChangePlanDialogProps,
-  type TenantsPageHeaderProps,
-  type TenantsPageFilterBarProps,
+  type EditDialogProps,
+  type InviteDialogProps,
+  type OnboardDialogProps,
   type TenantsInvitationsFilterBarProps,
+  type TenantsPageFilterBarProps,
+  type TenantsPageHeaderProps,
+  type ViewTenantDialogProps,
 };

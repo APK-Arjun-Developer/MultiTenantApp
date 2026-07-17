@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import type { LabelValueProps } from './LabelValue.types';
+
 import { styles } from './LabelValue.styles';
+import type { LabelValueProps } from './LabelValue.types';
 
 const LabelValue = React.memo(({ label, value, emptyText = '—', sx }: LabelValueProps) => {
   const isEmpty = useMemo(() => value === undefined || value === null || value === '', [value]);

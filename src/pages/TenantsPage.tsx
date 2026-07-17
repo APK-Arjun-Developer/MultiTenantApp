@@ -1,6 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
-import { z } from 'zod';
-import type { ColumnDef } from '@tanstack/react-table';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -13,73 +12,76 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
-  FormBuilder,
-  FormWizard,
-  FilterForm,
   FIELD_TYPE,
   type FieldConfig,
+  FilterForm,
+  FormBuilder,
+  FormWizard,
 } from 'mui-schema-form-builder';
-import Avatar from '@mui/material/Avatar';
-import {
-  DataTable,
-  AvatarManageModal,
-  ConfirmDialog,
-  CreatedViaChip,
-  LoadingButton,
-  LabelValue,
-  ViewDialog,
-  Icon,
-} from '@/shared/components';
-import { formatAddress } from '@/shared/utils/format';
-import {
-  useTableState,
-  useFilterState,
-  useBooleanDialog,
-  useItemDialog,
-  useUrlTabs,
-  useSnackbar,
-  usePermission,
-} from '@/shared/hooks';
-import {
-  addressZodShape,
-  requiredAddressZodShape,
-  getAddressFields,
-  buildAddressPayload,
-  requiredTenantAddressZodShape,
-  getTenantAddressFields,
-  buildTenantAddressPayload,
-} from '@/shared/forms/addressFields';
-import {
-  useGetTenantsQuery,
-  useOnboardTenantMutation,
-  useUpdateTenantMutation,
-  useDeleteTenantMutation,
-  useGetTenantCreationInvitationsQuery,
-  useInviteTenantMutation,
-  useRevokeTenantInvitationMutation,
-  useResendTenantInvitationMutation,
-  useUploadTenantLogoByAdminMutation,
-  useRemoveTenantLogoByAdminMutation,
-} from '@/features/tenants/api/tenantsApi';
+import { z } from 'zod';
+
 import {
   useGetSubscriptionPlansQuery,
   useUpdateTenantPlanMutation,
 } from '@/features/subscriptions/api/subscriptionsApi';
+import {
+  useDeleteTenantMutation,
+  useGetTenantCreationInvitationsQuery,
+  useGetTenantsQuery,
+  useInviteTenantMutation,
+  useOnboardTenantMutation,
+  useRemoveTenantLogoByAdminMutation,
+  useResendTenantInvitationMutation,
+  useRevokeTenantInvitationMutation,
+  useUpdateTenantMutation,
+  useUploadTenantLogoByAdminMutation,
+} from '@/features/tenants/api/tenantsApi';
 import { getTenantLogoUrl } from '@/features/tenantSettings/api/tenantSettingsApi';
+import {
+  AvatarManageModal,
+  ConfirmDialog,
+  CreatedViaChip,
+  DataTable,
+  Icon,
+  LabelValue,
+  LoadingButton,
+  ViewDialog,
+} from '@/shared/components';
+import {
+  addressZodShape,
+  buildAddressPayload,
+  buildTenantAddressPayload,
+  getAddressFields,
+  getTenantAddressFields,
+  requiredAddressZodShape,
+  requiredTenantAddressZodShape,
+} from '@/shared/forms/addressFields';
+import {
+  useBooleanDialog,
+  useFilterState,
+  useItemDialog,
+  usePermission,
+  useSnackbar,
+  useTableState,
+  useUrlTabs,
+} from '@/shared/hooks';
+import { formatAddress } from '@/shared/utils/format';
 import type { ApiError, PlanType } from '@/types/api';
+
 import { styles } from './TenantsPage.styles';
 import type {
-  OnboardDialogProps,
-  InviteDialogProps,
-  EditDialogProps,
-  ViewTenantDialogProps,
   ChangePlanDialogProps,
-  TenantsPageHeaderProps,
-  TenantsPageFilterBarProps,
-  TenantsInvitationsFilterBarProps,
-  TenantDto,
+  EditDialogProps,
+  InviteDialogProps,
+  OnboardDialogProps,
   TenantCreationInvitationDto,
+  TenantDto,
+  TenantsInvitationsFilterBarProps,
+  TenantsPageFilterBarProps,
+  TenantsPageHeaderProps,
+  ViewTenantDialogProps,
 } from './TenantsPage.types';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────

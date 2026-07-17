@@ -1,4 +1,5 @@
-import { configureStore, combineReducers, type UnknownAction } from '@reduxjs/toolkit';
+import { combineReducers, configureStore, type UnknownAction } from '@reduxjs/toolkit';
+
 import authReducer, { logout } from '@/features/auth/slices/authSlice';
 import uiReducer, { SELECTED_TENANT_STORAGE_KEY, THEME_STORAGE_KEY } from '@/features/ui/uiSlice';
 import { apiSlice } from '@/shared/api/apiSlice';
@@ -51,4 +52,4 @@ store.subscribe(() => {
 type RootState = ReturnType<typeof store.getState>;
 type AppDispatch = typeof store.dispatch;
 
-export { store, type RootState, type AppDispatch };
+export { type AppDispatch, type RootState, store };

@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react';
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
@@ -12,8 +11,10 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
-import type { DataTableProps } from './DataTable.types';
+import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+
 import { styles } from './DataTable.styles';
+import type { DataTableProps } from './DataTable.types';
 import Icon from './Icon';
 
 const DataTable = React.memo(

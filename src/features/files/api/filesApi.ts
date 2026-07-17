@@ -43,9 +43,9 @@ const getFileDownloadUrl = (id: string): string => {
 
 export {
   filesApi,
-  useGetFilesQuery,
-  useGetFileQuery,
-  useUploadFileMutation,
-  useDeleteFileMutation,
   getFileDownloadUrl,
+  useDeleteFileMutation,
+  useGetFileQuery,
+  useGetFilesQuery,
+  useUploadFileMutation,
 };

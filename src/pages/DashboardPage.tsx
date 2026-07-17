@@ -4,27 +4,29 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
+import { alpha, type SxProps, type Theme, useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import { useTheme, alpha, type SxProps, type Theme } from '@mui/material/styles';
 import {
-  PieChart,
-  Pie,
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
+
 import { useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
 import { useGetDashboardStatsQuery } from '@/features/dashboard/api/dashboardApi';
-import { styles, statCardIconBoxColor } from './DashboardPage.styles';
-import type { StatCardProps, StatCardColor } from './DashboardPage.types';
-import type { DashboardStatsDto } from '@/types/api';
 import { Icon } from '@/shared/components';
+import type { DashboardStatsDto } from '@/types/api';
+
+import { statCardIconBoxColor, styles } from './DashboardPage.styles';
+import type { StatCardColor, StatCardProps } from './DashboardPage.types';
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 

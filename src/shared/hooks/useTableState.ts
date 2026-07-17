@@ -1,4 +1,5 @@
-﻿import { useState, useCallback } from 'react';
+﻿import { useCallback, useState } from 'react';
+
 import { DEFAULT_PAGE_SIZE } from '@/shared/constants/list';
 
 interface UseTableStateOptions {
