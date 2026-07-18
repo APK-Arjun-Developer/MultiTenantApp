@@ -110,4 +110,6 @@ const otpInputStyle = {
   padding: 0,
 } as const;
 
-export { otpInputStyle, styles };
+const stepTransition = { duration: 0.2, ease: 'easeOut' } as const;
+
+export { otpInputStyle, stepTransition, styles };

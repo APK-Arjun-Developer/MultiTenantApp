@@ -75,7 +75,7 @@ const styles = {
   exportRow: {
     display: 'flex',
     justifyContent: 'flex-end',
-    mt: 1,
+    my: 1,
   },
 
   /** Wrapper around the invitations filter bar */

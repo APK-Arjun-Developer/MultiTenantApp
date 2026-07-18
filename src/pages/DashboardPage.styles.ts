@@ -1,4 +1,4 @@
-﻿import { alpha } from '@mui/material/styles';
+﻿import { alpha, type Theme } from '@mui/material/styles';
 
 import type { StyleSheet, Sx } from '@/types';
 
@@ -175,4 +175,11 @@ const statCardIconBoxColor = (hex: string): Sx => {
   };
 };
 
-export { statCardIconBoxColor, styles };
+const buildChartStyles = (theme: Theme) => ({
+  legendWrapper: { fontSize: 12, color: theme.palette.text.secondary },
+  axisTick: { fontSize: 12, fill: theme.palette.text.secondary },
+  xAxisLine: { stroke: theme.palette.divider },
+  tooltipCursor: { fill: alpha(theme.palette.primary.main, 0.06) },
+});
+
+export { buildChartStyles, statCardIconBoxColor, styles };

@@ -135,6 +135,7 @@ const usersApi = apiSlice.injectEndpoints({
         url: `/api/v1/users/invitations/${invitationId}/resend`,
         method: 'POST',
       }),
+      invalidatesTags: ['Invitation'],
     }),
 
     getCurrentUser: builder.query<UserDto, void>({

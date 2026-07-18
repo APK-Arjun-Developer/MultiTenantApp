@@ -86,4 +86,6 @@ const styles = {
   },
 } as const satisfies StyleSheet;
 
-export { styles };
+const stepTransition = { duration: 0.2 } as const;
+
+export { stepTransition, styles };

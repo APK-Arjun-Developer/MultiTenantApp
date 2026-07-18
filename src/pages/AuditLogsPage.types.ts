@@ -18,7 +18,7 @@ interface AuditLogsPageHeaderProps {
 
 interface AuditLogsFilterBarProps {
   fields: FieldConfig[];
-  onFilterChange: (values: AuditFilter) => void;
+  onFilterChange: (values: FilterValues) => void;
 }
 
 export {

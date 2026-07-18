@@ -13,6 +13,8 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
+import { DEFAULT_PAGE_SIZE } from '@/shared/constants/list';
+
 import Icon from '../Icon';
 import { styles } from './styles';
 import type { DataTableProps } from './types';
@@ -24,7 +26,7 @@ const DataTable = React.memo(
     isLoading = false,
     totalCount,
     page = 0,
-    pageSize = 10,
+    pageSize = DEFAULT_PAGE_SIZE,
     onPageChange,
     onPageSizeChange,
     sortBy,

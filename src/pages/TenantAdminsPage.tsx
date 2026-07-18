@@ -2,7 +2,6 @@
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
@@ -41,6 +40,7 @@ import {
 } from '@/features/users/api/usersApi';
 import { apiSlice } from '@/shared/api/apiSlice';
 import {
+  ActiveStatusChip,
   AvatarManageModal,
   ConfirmDialog,
   CreatedViaChip,
@@ -73,7 +73,7 @@ import {
   useTableState,
   useUrlTabs,
 } from '@/shared/hooks';
-import { formatAddress } from '@/shared/utils/format';
+import { formatAddress, formatDate, getInitials, statusToIsActive } from '@/shared/utils/format';
 import type { ApiError, UserCreatedVia } from '@/types/api';
 
 import { styles } from './TenantAdminsPage.styles';
@@ -381,16 +381,7 @@ const ViewAdminDialog = memo(({ admin, onClose }: ViewAdminDialogProps) => {
         <LabelValue label="Roles" value={admin?.roles.join(', ') || '—'} />
         <LabelValue
           label="Status"
-          value={
-            admin && (
-              <Chip
-                label={admin.isActive ? 'Active' : 'Inactive'}
-                color={admin.isActive ? 'success' : 'default'}
-                size="small"
-                variant="outlined"
-              />
-            )
-          }
+          value={admin && <ActiveStatusChip isActive={admin.isActive} />}
         />
         <LabelValue label="Created via" value={admin?.createdVia} />
         <LabelValue label="Address" value={formatAddress(admin?.address)} />
@@ -486,15 +477,10 @@ const TenantAdminsPage = memo(() => {
     pageSize: adminsTable.pageSize,
     search: debouncedSearch || undefined,
     tenantId: adminsFilter.tenant || undefined,
-    isActive:
-      adminsFilter.status === 'active'
-        ? true
-        : adminsFilter.status === 'inactive'
-          ? false
-          : undefined,
+    isActive: statusToIsActive(adminsFilter.status),
     createdVia: (adminsFilter.createdVia as UserCreatedVia) || undefined,
     sortBy: adminsTable.sortBy,
-    sortOrder: adminsTable.sortBy ? adminsTable.sortOrder : undefined,
+    sortOrder: adminsTable.activeSortOrder,
   });
 
   const adminsInvFilterFields = useMemo<FieldConfig[]>(
@@ -543,16 +529,8 @@ const TenantAdminsPage = memo(() => {
   }, [editDialog.item, tenantsData]);
 
   const avatarInitials = useMemo(
-    () =>
-      avatarDialog.item
-        ? avatarDialog.item.fullName
-            .split(' ')
-            .map((n: string) => n[0])
-            .join('')
-            .slice(0, 2)
-            .toUpperCase()
-        : '',
-    [avatarDialog.item],
+    () => getInitials(avatarDialog.item?.fullName),
+    [avatarDialog.item?.fullName],
   );
 
   const confirmTitle = useMemo(
@@ -692,12 +670,7 @@ const TenantAdminsPage = memo(() => {
         header: '',
         cell: ({ row }) => {
           const admin = row.original;
-          const initials = admin.fullName
-            .split(' ')
-            .map((n: string) => n[0])
-            .join('')
-            .slice(0, 2)
-            .toUpperCase();
+          const initials = getInitials(admin.fullName);
           return (
             <Tooltip title="Manage profile photo">
               <Avatar
@@ -747,14 +720,7 @@ const TenantAdminsPage = memo(() => {
       {
         accessorKey: 'isActive',
         header: 'Status',
-        cell: ({ row }) => (
-          <Chip
-            label={row.original.isActive ? 'Active' : 'Inactive'}
-            color={row.original.isActive ? 'success' : 'default'}
-            size="small"
-            variant="outlined"
-          />
-        ),
+        cell: ({ row }) => <ActiveStatusChip isActive={row.original.isActive} />,
       },
       {
         id: 'actions',
@@ -887,7 +853,7 @@ const TenantAdminsPage = memo(() => {
         header: 'Expires',
         cell: ({ row }) => (
           <Typography variant="body2" color="text.secondary">
-            {new Date(row.original.expiresAt).toLocaleDateString()}
+            {formatDate(row.original.expiresAt)}
           </Typography>
         ),
       },

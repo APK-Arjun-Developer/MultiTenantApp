@@ -1,4 +1,4 @@
-﻿import { memo, useCallback, useMemo, useState } from 'react';
+﻿import { memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -28,14 +28,16 @@ import {
   useUploadCurrentUserAvatarMutation,
 } from '@/features/users/api/usersApi';
 import { AvatarManageModal, ConfirmDialog, Icon, LabelValue } from '@/shared/components';
+import { AVATAR_IMG_SLOT_PROPS } from '@/shared/constants/avatarProps';
 import {
   buildAddressPayload,
   buildTenantAddressPayload,
   getAddressFields,
   getTenantAddressFields,
 } from '@/shared/forms/addressFields';
-import { useBooleanDialog, useUrlTabs } from '@/shared/hooks';
+import { useBooleanDialog, useHover, useUrlTabs } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { getInitials } from '@/shared/utils/format';
 import type { ApiError } from '@/types/api';
 
 import { styles } from './ProfilePage.styles';
@@ -90,19 +92,19 @@ const ProfileAvatarSection = memo(
     systemRole,
     onOpenModal,
   }: ProfileAvatarSectionProps) => {
-    const [hover, setHover] = useState(false);
+    const { hover, onMouseEnter, onMouseLeave } = useHover();
 
     return (
       <Box sx={styles.avatarContainer}>
         <Box
           sx={styles.avatarClickable}
           onClick={onOpenModal}
-          onMouseEnter={() => setHover(true)}
-          onMouseLeave={() => setHover(false)}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
         >
           <Avatar
             src={avatarSrc ?? undefined}
-            slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+            slotProps={AVATAR_IMG_SLOT_PROPS}
             sx={styles.avatarMedium}
           >
             {!avatarSrc && initials}
@@ -190,7 +192,7 @@ const ProfileCompanySection = memo(
     onOpenLogoModal,
     onCompanySubmit,
   }: ProfileCompanySectionProps) => {
-    const [hover, setHover] = useState(false);
+    const { hover, onMouseEnter, onMouseLeave } = useHover();
     const logoInitial = tenantSettings?.name?.[0]?.toUpperCase() ?? '?';
 
     return (
@@ -199,12 +201,12 @@ const ProfileCompanySection = memo(
           <Box
             sx={styles.avatarClickable}
             onClick={onOpenLogoModal}
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
           >
             <Avatar
               src={tenantLogoSrc ?? undefined}
-              slotProps={{ img: { crossOrigin: 'use-credentials' } }}
+              slotProps={AVATAR_IMG_SLOT_PROPS}
               sx={styles.avatarMedium}
             >
               {!tenantLogoSrc && logoInitial}
@@ -261,15 +263,7 @@ const ProfilePage = memo(() => {
   const [uploadTenantLogo, { isLoading: logoUploading }] = useUploadTenantLogoMutation();
   const [removeTenantLogo, { isLoading: logoRemoving }] = useRemoveTenantLogoMutation();
 
-  const initials = useMemo(() => {
-    if (!profile?.fullName) return '?';
-    return profile.fullName
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  }, [profile?.fullName]);
+  const initials = useMemo(() => getInitials(profile?.fullName), [profile?.fullName]);
 
   const profileFields = useMemo<FieldConfig[]>(
     () => [

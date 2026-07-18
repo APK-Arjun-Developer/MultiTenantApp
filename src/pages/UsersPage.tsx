@@ -42,6 +42,7 @@ import {
 } from '@/features/users/api/usersApi';
 import { apiSlice } from '@/shared/api/apiSlice';
 import {
+  ActiveStatusChip,
   AvatarManageModal,
   ConfirmDialog,
   CreatedViaChip,
@@ -74,7 +75,13 @@ import {
   useUrlTabs,
 } from '@/shared/hooks';
 import { exportToCsv } from '@/shared/utils/exportCsv';
-import { formatAddress } from '@/shared/utils/format';
+import {
+  formatAddress,
+  formatDate,
+  formatDateTime,
+  getInitials,
+  statusToIsActive,
+} from '@/shared/utils/format';
 import type { ApiError, UserCreatedVia } from '@/types/api';
 
 import { styles } from './UsersPage.styles';
@@ -102,17 +109,6 @@ import {
 const USER_FILTER_DEFAULT = { search: '', status: '', createdVia: '' };
 const INV_FILTER_DEFAULT = { status: '' };
 const USERS_TABS = ['users', 'invitations'] as const;
-
-const UserStatusChip = memo(({ isActive }: { isActive: boolean }) => {
-  return (
-    <Chip
-      label={isActive ? 'Active' : 'Inactive'}
-      size="small"
-      color={isActive ? 'success' : 'default'}
-      variant={isActive ? 'filled' : 'outlined'}
-    />
-  );
-});
 
 const CreateUserDialog = memo(({ open, onClose, roleOptions }: CreateUserDialogProps) => {
   const [createUser, { isLoading }] = useCreateUserMutation();
@@ -344,7 +340,10 @@ const ViewUserDialog = memo(({ user, onClose }: ViewUserDialogProps) => {
               : undefined
           }
         />
-        <LabelValue label="Status" value={<UserStatusChip isActive={user?.isActive ?? false} />} />
+        <LabelValue
+          label="Status"
+          value={<ActiveStatusChip isActive={user?.isActive ?? false} />}
+        />
         <LabelValue
           label="Created via"
           value={<CreatedViaChip createdVia={user?.createdVia ?? 'Direct'} />}
@@ -511,11 +510,10 @@ const UsersPage = memo(() => {
     page: usersTable.page + 1,
     pageSize: usersTable.pageSize,
     search: debouncedSearch || undefined,
-    isActive:
-      userFilter.status === 'active' ? true : userFilter.status === 'inactive' ? false : undefined,
+    isActive: statusToIsActive(userFilter.status),
     createdVia: (userFilter.createdVia as UserCreatedVia) || undefined,
     sortBy: usersTable.sortBy,
-    sortOrder: usersTable.sortBy ? usersTable.sortOrder : undefined,
+    sortOrder: usersTable.activeSortOrder,
   });
 
   const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
@@ -661,7 +659,7 @@ const UsersPage = memo(() => {
           Email: u.email,
           Roles: u.roles.join('; '),
           Status: u.isActive ? 'Active' : 'Inactive',
-          'Last Login': u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '',
+          'Last Login': u.lastLoginAt ? formatDateTime(u.lastLoginAt) : '',
           'Created Via': u.createdVia,
         })),
       );
@@ -736,16 +734,8 @@ const UsersPage = memo(() => {
   );
 
   const avatarInitials = useMemo(
-    () =>
-      avatarDialog.item
-        ? avatarDialog.item.fullName
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .slice(0, 2)
-            .toUpperCase()
-        : '',
-    [avatarDialog.item],
+    () => getInitials(avatarDialog.item?.fullName),
+    [avatarDialog.item?.fullName],
   );
 
   const userColumns = useMemo<ColumnDef<UserDto>[]>(
@@ -755,12 +745,7 @@ const UsersPage = memo(() => {
         header: '',
         cell: ({ row }) => {
           const user = row.original;
-          const initials = user.fullName
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .slice(0, 2)
-            .toUpperCase();
+          const initials = getInitials(user.fullName);
           return canEdit ? (
             <Tooltip title="Manage profile photo">
               <Avatar
@@ -814,14 +799,14 @@ const UsersPage = memo(() => {
         accessorKey: 'lastLoginAt',
         cell: ({ row }) => (
           <Typography variant="body2" color="text.secondary" sx={styles.lastLoginCell}>
-            {row.original.lastLoginAt ? new Date(row.original.lastLoginAt).toLocaleString() : '—'}
+            {row.original.lastLoginAt ? formatDateTime(row.original.lastLoginAt) : '—'}
           </Typography>
         ),
       },
       {
         header: 'Status',
         accessorKey: 'isActive',
-        cell: ({ row }) => <UserStatusChip isActive={row.original.isActive} />,
+        cell: ({ row }) => <ActiveStatusChip isActive={row.original.isActive} />,
       },
       {
         header: 'Actions',
@@ -945,9 +930,7 @@ const UsersPage = memo(() => {
         header: 'Expires',
         accessorKey: 'expiresAt',
         cell: ({ row }) => (
-          <Typography variant="body2">
-            {new Date(row.original.expiresAt).toLocaleDateString()}
-          </Typography>
+          <Typography variant="body2">{formatDate(row.original.expiresAt)}</Typography>
         ),
       },
       ...(canRevoke || canResend

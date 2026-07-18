@@ -147,6 +147,7 @@ const tenantAdminsApi = apiSlice.injectEndpoints({
         method: 'POST',
         skipTenantHeader: true,
       }),
+      invalidatesTags: ['Invitation'],
     }),
   }),
 });

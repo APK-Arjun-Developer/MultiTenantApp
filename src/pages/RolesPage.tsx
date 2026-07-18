@@ -315,7 +315,7 @@ const RolesPage = memo(() => {
     search: debouncedSearch || undefined,
     permissionIds: rolesFilter.permissions.length > 0 ? rolesFilter.permissions : undefined,
     sortBy: table.sortBy,
-    sortOrder: table.sortBy ? table.sortOrder : undefined,
+    sortOrder: table.activeSortOrder,
   });
 
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();

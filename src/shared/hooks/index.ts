@@ -1,6 +1,7 @@
 export * from './useBooleanDialog';
 export * from './useDebounce';
 export * from './useFilterState';
+export * from './useHover';
 export * from './useItemDialog';
 export * from './usePageTitle';
 export * from './usePermission';

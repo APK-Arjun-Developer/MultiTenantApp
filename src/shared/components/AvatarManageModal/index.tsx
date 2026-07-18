@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -8,6 +8,8 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+
+import { useBooleanDialog } from '@/shared/hooks';
 
 import AvatarUpload from '../AvatarUpload';
 import ConfirmDialog from '../ConfirmDialog';
@@ -26,24 +28,16 @@ const AvatarManageModal = React.memo(
     onUpload,
     onRemove,
   }: AvatarManageModalProps) => {
-    const [confirmOpen, setConfirmOpen] = useState(false);
+    const confirmDialog = useBooleanDialog();
 
     const handleClose = useCallback(() => {
       if (!uploading) onClose();
     }, [uploading, onClose]);
 
-    const handleRemoveClick = useCallback(() => {
-      setConfirmOpen(true);
-    }, []);
-
     const handleConfirmRemove = useCallback(() => {
-      setConfirmOpen(false);
+      confirmDialog.onClose();
       onRemove?.();
-    }, [onRemove]);
-
-    const handleCancelRemove = useCallback(() => {
-      setConfirmOpen(false);
-    }, []);
+    }, [confirmDialog, onRemove]);
 
     return (
       <>
@@ -79,7 +73,7 @@ const AvatarManageModal = React.memo(
                     startIcon={<Icon name="Delete" />}
                     fullWidth
                     disabled={uploading}
-                    onClick={handleRemoveClick}
+                    onClick={confirmDialog.onOpen}
                   >
                     Remove photo
                   </Button>
@@ -90,13 +84,13 @@ const AvatarManageModal = React.memo(
         </Dialog>
 
         <ConfirmDialog
-          open={confirmOpen}
+          open={confirmDialog.open}
           title="Remove photo"
           description="Are you sure you want to remove this photo?"
           confirmLabel="Remove"
           danger
           onConfirm={handleConfirmRemove}
-          onCancel={handleCancelRemove}
+          onCancel={confirmDialog.onClose}
         />
       </>
     );

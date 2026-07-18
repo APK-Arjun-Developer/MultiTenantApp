@@ -35,4 +35,20 @@ const formatAddress = (
   return parts.length ? parts.join(', ') : '—';
 };
 
-export { formatAddress, formatCurrency, formatDate, formatDateTime };
+const statusToIsActive = (status: string): boolean | undefined => {
+  if (status === 'active') return true;
+  if (status === 'inactive') return false;
+  return undefined;
+};
+
+const getInitials = (fullName: string | null | undefined): string => {
+  if (!fullName?.trim()) return '?';
+  return fullName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+export { formatAddress, formatCurrency, formatDate, formatDateTime, getInitials, statusToIsActive };

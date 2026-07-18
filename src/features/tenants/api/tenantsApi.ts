@@ -1,4 +1,5 @@
 import { apiSlice } from '@/shared/api/apiSlice';
+import { TENANTS_DROPDOWN_PAGE_SIZE } from '@/shared/constants/list';
 import type { SortOrder, UserCreatedVia } from '@/types';
 import type {
   DeleteTenantRequest,
@@ -30,7 +31,7 @@ const tenantsApi = apiSlice.injectEndpoints({
         url: '/api/v1/tenants',
         params: {
           page: params?.page ?? 1,
-          pageSize: params?.pageSize ?? 200,
+          pageSize: params?.pageSize ?? TENANTS_DROPDOWN_PAGE_SIZE,
           search: params?.search,
           sortBy: params?.sortBy,
           sortOrder: params?.sortOrder,
@@ -122,6 +123,7 @@ const tenantsApi = apiSlice.injectEndpoints({
         method: 'POST',
         skipTenantHeader: true,
       }),
+      invalidatesTags: ['Invitation'],
     }),
 
     uploadTenantLogoByAdmin: builder.mutation<TenantDto, { tenantId: string; file: File }>({

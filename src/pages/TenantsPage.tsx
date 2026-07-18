@@ -40,6 +40,7 @@ import {
 } from '@/features/tenants/api/tenantsApi';
 import { getTenantLogoUrl } from '@/features/tenantSettings/api/tenantSettingsApi';
 import {
+  ActiveStatusChip,
   AvatarManageModal,
   ConfirmDialog,
   CreatedViaChip,
@@ -73,7 +74,7 @@ import {
   useTableState,
   useUrlTabs,
 } from '@/shared/hooks';
-import { formatAddress } from '@/shared/utils/format';
+import { formatAddress, formatDate, statusToIsActive } from '@/shared/utils/format';
 import type { ApiError, PlanType, UserCreatedVia } from '@/types/api';
 
 import { styles } from './TenantsPage.styles';
@@ -471,16 +472,7 @@ const ViewTenantDialog = memo(({ tenant, onClose }: ViewTenantDialogProps) => {
         <LabelValue label="Admin email" value={tenant?.adminEmail} />
         <LabelValue
           label="Status"
-          value={
-            tenant && (
-              <Chip
-                label={tenant.isActive ? 'Active' : 'Inactive'}
-                color={tenant.isActive ? 'success' : 'default'}
-                size="small"
-                variant="outlined"
-              />
-            )
-          }
+          value={tenant && <ActiveStatusChip isActive={tenant.isActive} />}
         />
         <LabelValue
           label="Created via"
@@ -602,15 +594,10 @@ const TenantsPage = memo(() => {
     page: tenantsTable.page + 1,
     pageSize: tenantsTable.pageSize,
     search: debouncedSearch || undefined,
-    isActive:
-      tenantFilter.status === 'active'
-        ? true
-        : tenantFilter.status === 'inactive'
-          ? false
-          : undefined,
+    isActive: statusToIsActive(tenantFilter.status),
     createdVia: (tenantFilter.createdVia as UserCreatedVia) || undefined,
     sortBy: tenantsTable.sortBy,
-    sortOrder: tenantsTable.sortBy ? tenantsTable.sortOrder : undefined,
+    sortOrder: tenantsTable.activeSortOrder,
   });
 
   const { data: invitationsData, isLoading: isLoadingInvitations } =
@@ -737,14 +724,7 @@ const TenantsPage = memo(() => {
       {
         accessorKey: 'isActive',
         header: 'Status',
-        cell: ({ row }) => (
-          <Chip
-            label={row.original.isActive ? 'Active' : 'Inactive'}
-            color={row.original.isActive ? 'success' : 'default'}
-            size="small"
-            variant={row.original.isActive ? 'filled' : 'outlined'}
-          />
-        ),
+        cell: ({ row }) => <ActiveStatusChip isActive={row.original.isActive} />,
       },
       {
         id: 'actions',
@@ -821,7 +801,7 @@ const TenantsPage = memo(() => {
         header: 'Expires',
         cell: ({ row }) => (
           <Typography variant="body2" color="text.secondary">
-            {new Date(row.original.expiresAt).toLocaleDateString()}
+            {formatDate(row.original.expiresAt)}
           </Typography>
         ),
       },

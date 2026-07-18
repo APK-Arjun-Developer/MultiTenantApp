@@ -13,8 +13,9 @@ import {
 } from '@/features/activityLogs/api/activityLogsApi';
 import { DataTable, Icon, LoadingButton, TenantContextGuard } from '@/shared/components';
 import { DATE_DEBOUNCE_MS, EXPORT_PAGE_SIZE } from '@/shared/constants/list';
-import { useDebounce, useTableState } from '@/shared/hooks';
+import { useDebounce, useFilterState, useTableState } from '@/shared/hooks';
 import { exportToCsv } from '@/shared/utils/exportCsv';
+import { formatDateTime } from '@/shared/utils/format';
 import type { ActivityLogDto } from '@/types/api';
 
 import { styles } from './AuditLogsPage.styles';
@@ -83,7 +84,7 @@ const AuditLogsFilterBar = memo(({ fields, onFilterChange }: AuditLogsFilterBarP
       <FilterForm
         fields={fields}
         defaultValues={AUDIT_FILTER_DEFAULT}
-        onChange={(values) => onFilterChange(values as AuditFilter)}
+        onChange={onFilterChange}
         showReset
         spacing={2}
       />
@@ -94,7 +95,10 @@ const AuditLogsFilterBar = memo(({ fields, onFilterChange }: AuditLogsFilterBarP
 const AuditLogsPage = memo(() => {
   const dispatch = useAppDispatch();
   const table = useTableState();
-  const [auditFilter, setAuditFilter] = useState<AuditFilter>(AUDIT_FILTER_DEFAULT);
+  const { filter: auditFilter, handleFilterChange } = useFilterState<AuditFilter>(
+    AUDIT_FILTER_DEFAULT,
+    table.setPage,
+  );
   const [exportLoading, setExportLoading] = useState(false);
 
   const debouncedDateFrom = useDebounce(auditFilter.dateFrom, DATE_DEBOUNCE_MS);
@@ -135,16 +139,8 @@ const AuditLogsPage = memo(() => {
     dateFrom: debouncedDateFrom || undefined,
     dateTo: debouncedDateTo ? `${debouncedDateTo}T23:59:59Z` : undefined,
     sortBy: table.sortBy,
-    sortOrder: table.sortBy ? table.sortOrder : undefined,
+    sortOrder: table.activeSortOrder,
   });
-
-  const handleFilterChange = useCallback(
-    (values: AuditFilter) => {
-      setAuditFilter(values);
-      table.setPage(0);
-    },
-    [table],
-  );
 
   const handleExport = useCallback(async () => {
     setExportLoading(true);
@@ -162,7 +158,7 @@ const AuditLogsPage = memo(() => {
       exportToCsv(
         'audit-logs',
         items.map((log) => ({
-          Time: new Date(log.createdAt).toLocaleString(),
+          Time: formatDateTime(log.createdAt),
           Module: log.module,
           Action: log.action,
           User: log.userDisplayName,
@@ -183,7 +179,7 @@ const AuditLogsPage = memo(() => {
         header: 'Time',
         cell: ({ row }) => (
           <Typography variant="body2" color="text.secondary" sx={styles.timeCell}>
-            {new Date(row.original.createdAt).toLocaleString()}
+            {formatDateTime(row.original.createdAt)}
           </Typography>
         ),
       },

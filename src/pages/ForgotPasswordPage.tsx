@@ -12,7 +12,7 @@ import { Icon, LoadingButton } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
-import { styles } from './ForgotPasswordPage.styles';
+import { stepTransition, styles } from './ForgotPasswordPage.styles';
 import { type ForgotPasswordFormValues, forgotPasswordSchema } from './ForgotPasswordPage.types';
 
 const fields: FieldConfig[] = [
@@ -79,7 +79,7 @@ const ForgotPasswordPage = memo(() => {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.2 }}
+            transition={stepTransition}
           >
             <Box sx={styles.titleRow}>
               <Box sx={styles.titleIconBox}>
@@ -120,7 +120,7 @@ const ForgotPasswordPage = memo(() => {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.2 }}
+            transition={stepTransition}
           >
             <Stack spacing={2} sx={styles.sentStack}>
               <Box sx={styles.sentIconBox}>

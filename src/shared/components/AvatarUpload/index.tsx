@@ -10,6 +10,9 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Slider from '@mui/material/Slider';
 
+import { AVATAR_IMG_SLOT_PROPS } from '@/shared/constants/avatarProps';
+import { useHover } from '@/shared/hooks';
+
 import Icon from '../Icon';
 import { hiddenInputStyle, styles } from './styles';
 import type { AvatarUploadProps } from './types';
@@ -67,15 +70,12 @@ const getCroppedBlob = async (imageSrc: string, pixelCrop: Area | null): Promise
 const AvatarUpload = React.memo(
   ({ src, initials, size = 72, uploading = false, onFileSelect }: AvatarUploadProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
-    const [hover, setHover] = useState(false);
+    const { hover, onMouseEnter, onMouseLeave } = useHover();
 
     const [cropSrc, setCropSrc] = useState<string | null>(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-
-    const handleMouseEnter = useCallback(() => setHover(true), []);
-    const handleMouseLeave = useCallback(() => setHover(false), []);
 
     const handleClick = useCallback(() => {
       if (!uploading) inputRef.current?.click();
@@ -125,16 +125,12 @@ const AvatarUpload = React.memo(
       <>
         <Box sx={styles.outerBox}>
           <Box
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             onClick={handleClick}
             sx={clickableSx}
           >
-            <Avatar
-              src={src ?? undefined}
-              slotProps={{ img: { crossOrigin: 'use-credentials' } }}
-              sx={avatarSx}
-            >
+            <Avatar src={src ?? undefined} slotProps={AVATAR_IMG_SLOT_PROPS} sx={avatarSx}>
               {!src && initials}
             </Avatar>
 

@@ -34,9 +34,11 @@ import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
 import { getUserAvatarUrl, useGetCurrentUserQuery } from '@/features/users/api/usersApi';
 import { apiSlice } from '@/shared/api/apiSlice';
 import { Icon, PageTransition, TenantPicker } from '@/shared/components';
+import { AVATAR_IMG_SLOT_PROPS } from '@/shared/constants/avatarProps';
 import { usePageTitle } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ThemeMode } from '@/shared/theme';
+import { getInitials } from '@/shared/utils/format';
 import type { ApiError } from '@/types/api';
 
 import { navLinkStyle, styles } from './DashboardLayout.styles';
@@ -257,11 +259,7 @@ const DashboardUserSection = memo(({ avatarSrc, initials }: DashboardUserSection
   return (
     <Tooltip title="Profile">
       <IconButton component={Link} to="/profile" sx={styles.profileButton}>
-        <Avatar
-          src={avatarSrc}
-          slotProps={{ img: { crossOrigin: 'use-credentials' } }}
-          sx={styles.userAvatar}
-        >
+        <Avatar src={avatarSrc} slotProps={AVATAR_IMG_SLOT_PROPS} sx={styles.userAvatar}>
           {!avatarSrc && initials}
         </Avatar>
       </IconButton>
@@ -330,18 +328,7 @@ const DashboardLayout = memo(() => {
     [isSystemAdmin, location.pathname],
   );
 
-  const initials = useMemo(
-    () =>
-      user?.fullName
-        ? user.fullName
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2)
-        : '?',
-    [user?.fullName],
-  );
+  const initials = useMemo(() => getInitials(user?.fullName), [user?.fullName]);
 
   const handleThemeToggle = useCallback(() => dispatch(toggleTheme()), [dispatch]);
   const handleDrawerToggle = useCallback(() => setMobileOpen((prev) => !prev), []);

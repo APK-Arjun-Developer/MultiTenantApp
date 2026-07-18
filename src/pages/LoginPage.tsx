@@ -24,7 +24,7 @@ import { Icon, LoadingButton } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
-import { otpInputStyle, styles } from './LoginPage.styles';
+import { otpInputStyle, stepTransition, styles } from './LoginPage.styles';
 import { loginSchema, type LoginValues, type OtpInputProps, type Step } from './LoginPage.types';
 
 const OTP_LENGTH = 6;
@@ -252,7 +252,7 @@ const LoginPage = memo(() => {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={stepTransition}
           >
             <Typography variant="h6" sx={styles.loginTitle}>
               Sign in to your account
@@ -289,7 +289,7 @@ const LoginPage = memo(() => {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={stepTransition}
           >
             <Box>
               <IconButton onClick={goToLogin} size="small" sx={styles.verifyBackButton}>

@@ -27,7 +27,18 @@ const useTableState = (options?: UseTableStateOptions) => {
     setPage(0);
   }, []);
 
-  return { page, pageSize, sortBy, sortOrder, setPage, handleSortChange, handlePageSizeChange };
+  const activeSortOrder = sortBy ? sortOrder : undefined;
+
+  return {
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+    activeSortOrder,
+    setPage,
+    handleSortChange,
+    handlePageSizeChange,
+  };
 };
 
 export { useTableState };

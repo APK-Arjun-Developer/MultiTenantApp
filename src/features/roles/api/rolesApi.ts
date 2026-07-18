@@ -1,4 +1,5 @@
 import { apiSlice } from '@/shared/api/apiSlice';
+import { ROLES_DROPDOWN_PAGE_SIZE } from '@/shared/constants/list';
 import type { SortOrder } from '@/types';
 import type {
   CreateRoleRequest,
@@ -24,7 +25,7 @@ const rolesApi = apiSlice.injectEndpoints({
         url: '/api/v1/roles',
         params: {
           page: params?.page ?? 1,
-          pageSize: params?.pageSize ?? 100,
+          pageSize: params?.pageSize ?? ROLES_DROPDOWN_PAGE_SIZE,
           search: params?.search,
           permissionIds: params?.permissionIds,
           sortBy: params?.sortBy,

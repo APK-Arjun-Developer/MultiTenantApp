@@ -4,7 +4,7 @@ import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
-import { alpha, type SxProps, type Theme, useTheme } from '@mui/material/styles';
+import { type SxProps, type Theme, useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import {
   Bar,
@@ -25,8 +25,22 @@ import { useGetDashboardStatsQuery } from '@/features/dashboard/api/dashboardApi
 import { Icon } from '@/shared/components';
 import type { DashboardStatsDto } from '@/types/api';
 
-import { statCardIconBoxColor, styles } from './DashboardPage.styles';
+import { buildChartStyles, statCardIconBoxColor, styles } from './DashboardPage.styles';
 import type { StatCardColor, StatCardProps } from './DashboardPage.types';
+
+const useChartTooltipStyle = () => {
+  const { palette } = useTheme();
+  return useMemo(
+    () => ({
+      backgroundColor: palette.background.paper,
+      border: `1px solid ${palette.divider}`,
+      borderRadius: 8,
+      fontSize: 12,
+      color: palette.text.primary,
+    }),
+    [palette.background.paper, palette.divider, palette.text.primary],
+  );
+};
 
 const resolveHex = (theme: Theme, color: StatCardColor): string => {
   const map: Record<StatCardColor, string> = {
@@ -89,6 +103,8 @@ const SystemAdminStatsGrid = memo(
 const SystemAdminDashboard = memo(() => {
   const theme = useTheme();
   const { data: stats, isLoading } = useGetDashboardStatsQuery(undefined);
+  const tooltipStyle = useChartTooltipStyle();
+  const chartStyles = useMemo(() => buildChartStyles(theme), [theme]);
 
   const planData = useMemo(
     () => [
@@ -101,17 +117,6 @@ const SystemAdminDashboard = memo(() => {
       theme.palette.text.disabled,
       theme.palette.primary.main,
     ],
-  );
-
-  const tooltipStyle = useMemo(
-    () => ({
-      backgroundColor: theme.palette.background.paper,
-      border: `1px solid ${theme.palette.divider}`,
-      borderRadius: 8,
-      fontSize: 12,
-      color: theme.palette.text.primary,
-    }),
-    [theme.palette.background.paper, theme.palette.divider, theme.palette.text.primary],
   );
 
   return (
@@ -145,7 +150,7 @@ const SystemAdminDashboard = memo(() => {
                   labelLine={false}
                 />
                 <RechartsTooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: 12, color: theme.palette.text.secondary }} />
+                <Legend wrapperStyle={chartStyles.legendWrapper} />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -187,6 +192,8 @@ const TenantAdminStatsGrid = memo(
 const TenantAdminDashboard = memo(() => {
   const theme = useTheme();
   const { data: stats, isLoading } = useGetDashboardStatsQuery(undefined);
+  const tooltipStyle = useChartTooltipStyle();
+  const chartStyles = useMemo(() => buildChartStyles(theme), [theme]);
 
   const invitationData = useMemo(
     () => [
@@ -223,17 +230,6 @@ const TenantAdminDashboard = memo(() => {
     ],
   );
 
-  const tooltipStyle = useMemo(
-    () => ({
-      backgroundColor: theme.palette.background.paper,
-      border: `1px solid ${theme.palette.divider}`,
-      borderRadius: 8,
-      fontSize: 12,
-      color: theme.palette.text.primary,
-    }),
-    [theme.palette.background.paper, theme.palette.divider, theme.palette.text.primary],
-  );
-
   return (
     <Box>
       <TenantAdminStatsGrid stats={stats} isLoading={isLoading} />
@@ -255,20 +251,17 @@ const TenantAdminDashboard = memo(() => {
                 />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
-                  axisLine={{ stroke: theme.palette.divider }}
+                  tick={chartStyles.axisTick}
+                  axisLine={chartStyles.xAxisLine}
                   tickLine={false}
                 />
                 <YAxis
                   allowDecimals={false}
-                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                  tick={chartStyles.axisTick}
                   axisLine={false}
                   tickLine={false}
                 />
-                <RechartsTooltip
-                  contentStyle={tooltipStyle}
-                  cursor={{ fill: alpha(theme.palette.primary.main, 0.06) }}
-                />
+                <RechartsTooltip contentStyle={tooltipStyle} cursor={chartStyles.tooltipCursor} />
                 <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

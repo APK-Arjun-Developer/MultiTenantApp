@@ -1,3 +1,4 @@
+export { default as ActiveStatusChip } from './ActiveStatusChip';
 export { default as AuthGuard } from './AuthGuard';
 export { default as AvatarManageModal } from './AvatarManageModal';
 export { default as AvatarUpload } from './AvatarUpload';
