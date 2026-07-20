@@ -13,12 +13,9 @@ const passwordRule = z
   .regex(/[0-9]/, 'Must include a number')
   .regex(/[^A-Za-z0-9]/, 'Must include a special character');
 
-const phoneZodShape = z.object({ select: z.string(), input: z.string() }).optional();
-
 const inviteSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-    phone: phoneZodShape,
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     ...requiredAddressZodShape,
@@ -33,7 +30,6 @@ type FormValues = z.infer<typeof inviteSchema>;
 const tenantCreationSchema = z
   .object({
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-    phone: phoneZodShape,
     password: passwordRule,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     tenantName: z.string().min(1, 'Tenant name is required').max(200),
@@ -61,7 +57,6 @@ export {
   type InvitationSuccessProps,
   inviteSchema,
   passwordRule,
-  phoneZodShape,
   tenantCreationSchema,
   type TenantCreationValues,
 };

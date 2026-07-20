@@ -55,7 +55,6 @@ const styles = {
   },
   newTenantTitle: { fontWeight: 700 },
   newTenantSubtitle: { mb: 2 },
-  newTenantEmailField: { mb: 2 },
 
   // Admin/user flow wrapper
   adminUserRoot: {},
@@ -64,7 +63,48 @@ const styles = {
   adminUserSubtitle: { mb: 1 },
   adminUserTenantRow: { display: 'flex', alignItems: 'center', gap: 1, mb: 2 },
   adminUserTenantName: { fontWeight: 700 },
-  adminUserEmailField: { mb: 2 },
+
+  // Read-only email display (label + value card)
+  emailCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1.5,
+    mb: 2,
+    p: 1.25,
+    borderRadius: 2,
+    border: '1px solid',
+    borderColor: 'divider',
+    bgcolor: 'action.hover',
+  },
+  emailIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 1.5,
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'primary.main',
+    background: 'linear-gradient(135deg, rgba(25,118,210,0.14) 0%, rgba(25,118,210,0.06) 100%)',
+    border: '1px solid rgba(25,118,210,0.2)',
+  },
+  emailIcon: { fontSize: '1.125rem' },
+  emailTextBox: { minWidth: 0 },
+  emailLabel: {
+    display: 'block',
+    fontSize: '0.7rem',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: 'text.secondary',
+    lineHeight: 1.2,
+  },
+  emailValue: {
+    fontWeight: 600,
+    color: 'text.primary',
+    lineHeight: 1.3,
+    wordBreak: 'break-all',
+  },
 
   // Wizard renderActions
   wizardActions: { display: 'flex', gap: 1, mt: 1 },

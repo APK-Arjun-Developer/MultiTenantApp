@@ -5,7 +5,6 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { FIELD_TYPE, type FieldConfig, FormWizard } from 'mui-schema-form-builder';
 
@@ -34,6 +33,24 @@ import {
   tenantCreationSchema,
   type TenantCreationValues,
 } from './InvitationPage.types';
+
+const EmailDisplay = memo(({ email }: { email: string }) => {
+  return (
+    <Box sx={styles.emailCard}>
+      <Box sx={styles.emailIconBox}>
+        <Icon name="Email" sx={styles.emailIcon} />
+      </Box>
+      <Box sx={styles.emailTextBox}>
+        <Typography component="span" sx={styles.emailLabel}>
+          Email address
+        </Typography>
+        <Typography variant="body2" sx={styles.emailValue}>
+          {email}
+        </Typography>
+      </Box>
+    </Box>
+  );
+});
 
 const InvitationInvalid = memo(({ message }: InvitationInvalidProps) => {
   return (
@@ -123,22 +140,6 @@ const InvitationPage = memo(() => {
   const isAdmin = rawInvType === 'TenantAdmin' || rawInvType === 1;
   const isNewTenant = rawInvType === 'NewTenant' || rawInvType === 3;
 
-  const phoneSelectOptions = useMemo(
-    () => [
-      { label: '+1', value: '+1' },
-      { label: '+44', value: '+44' },
-      { label: '+91', value: '+91' },
-      { label: '+61', value: '+61' },
-      { label: '+49', value: '+49' },
-      { label: '+33', value: '+33' },
-      { label: '+86', value: '+86' },
-      { label: '+81', value: '+81' },
-      { label: '+55', value: '+55' },
-      { label: '+52', value: '+52' },
-    ],
-    [],
-  );
-
   const profileFields = useMemo<FieldConfig[]>(
     () => [
       {
@@ -147,15 +148,6 @@ const InvitationPage = memo(() => {
         type: FIELD_TYPE.TEXT,
         required: true,
         muiProps: { autoComplete: 'name', autoFocus: true },
-      },
-      {
-        name: 'phone',
-        label: 'Phone',
-        type: FIELD_TYPE.COMBO_INPUT,
-        placeholder: 'Phone number',
-        selectOptions: phoneSelectOptions,
-        selectPlaceholder: 'Code',
-        selectWidth: 88,
       },
       {
         name: 'password',
@@ -172,7 +164,7 @@ const InvitationPage = memo(() => {
         muiProps: { autoComplete: 'new-password' },
       },
     ],
-    [phoneSelectOptions],
+    [],
   );
 
   const addressFields = useMemo<FieldConfig[]>(
@@ -190,15 +182,6 @@ const InvitationPage = memo(() => {
         muiProps: { autoComplete: 'name', autoFocus: true },
       },
       {
-        name: 'phone',
-        label: 'Phone',
-        type: FIELD_TYPE.COMBO_INPUT,
-        placeholder: 'Phone number',
-        selectOptions: phoneSelectOptions,
-        selectPlaceholder: 'Code',
-        selectWidth: 88,
-      },
-      {
         name: 'password',
         label: 'Password',
         type: FIELD_TYPE.PASSWORD,
@@ -213,7 +196,7 @@ const InvitationPage = memo(() => {
         muiProps: { autoComplete: 'new-password' },
       },
     ],
-    [phoneSelectOptions],
+    [],
   );
 
   const newTenantDetailsFields = useMemo<FieldConfig[]>(
@@ -281,7 +264,6 @@ const InvitationPage = memo(() => {
         const payload = {
           token,
           fullName: values.fullName,
-          phone: values.phone?.input ? `${values.phone.select}${values.phone.input}` : undefined,
           password: values.password,
           confirmPassword: values.confirmPassword,
           ...addressPayload,
@@ -313,7 +295,6 @@ const InvitationPage = memo(() => {
         const response = await acceptNewTenant({
           token,
           fullName: values.fullName,
-          phone: values.phone?.input ? `${values.phone.select}${values.phone.input}` : undefined,
           password: values.password,
           confirmPassword: values.confirmPassword,
           tenantName: values.tenantName,
@@ -428,14 +409,7 @@ const InvitationPage = memo(() => {
           You've been invited to set up a new tenant on this platform.
         </Typography>
 
-        <TextField
-          label="Email address"
-          value={validation.email ?? ''}
-          fullWidth
-          disabled
-          sx={styles.newTenantEmailField}
-          slotProps={{ input: { readOnly: true } }}
-        />
+        <EmailDisplay email={validation.email ?? ''} />
 
         <FormWizard
           key={token}
@@ -474,14 +448,7 @@ const InvitationPage = memo(() => {
         />
       </Box>
 
-      <TextField
-        label="Email address"
-        value={validation.email ?? ''}
-        fullWidth
-        disabled
-        sx={styles.adminUserEmailField}
-        slotProps={{ input: { readOnly: true } }}
-      />
+      <EmailDisplay email={validation.email ?? ''} />
 
       <FormWizard
         key={token}
