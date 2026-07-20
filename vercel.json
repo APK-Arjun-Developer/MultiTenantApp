@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://multi-tenant-api.runasp.net/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
