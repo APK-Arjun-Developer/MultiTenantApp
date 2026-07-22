@@ -84,6 +84,11 @@ const NAV_ITEMS: NavItem[] = [
     path: '/audit-logs',
     allowedRoles: ['SystemAdmin'],
   },
+  {
+    text: 'Settings',
+    icon: <Icon name="Settings" />,
+    path: '/settings',
+  },
 ];
 
 const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/audit-logs'];

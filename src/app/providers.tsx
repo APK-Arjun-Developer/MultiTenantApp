@@ -3,7 +3,7 @@ import { Provider } from 'react-redux';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider } from '@mui/material/styles';
 
-import { selectThemeMode } from '@/features/ui/uiSlice';
+import { selectThemeColor, selectThemeMode } from '@/features/ui/uiSlice';
 import { SnackbarProvider } from '@/shared/components';
 import { buildTheme } from '@/shared/theme';
 
@@ -12,7 +12,8 @@ import { store } from './store';
 
 const ThemedApp = ({ children }: { children: ReactNode }) => {
   const themeMode = useAppSelector(selectThemeMode);
-  const theme = useMemo(() => buildTheme(themeMode), [themeMode]);
+  const themeColor = useAppSelector(selectThemeColor);
+  const theme = useMemo(() => buildTheme(themeMode, themeColor), [themeMode, themeColor]);
 
   return (
     <ThemeProvider theme={theme}>

@@ -1,4 +1,5 @@
-﻿import type { StyleSheet } from '@/types';
+import { headerTitleSx, pageIconBoxSx } from '@/shared/theme/styleHelpers';
+import type { StyleSheet } from '@/types';
 
 const styles = {
   /** Outer page wrapper */
@@ -13,25 +14,10 @@ const styles = {
   },
 
   /** Left side of header: icon + title */
-  headerTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 1.5,
-  },
+  headerTitle: headerTitleSx,
 
   /** Gradient icon box for page header (matches dashboard brandMark style) */
-  pageIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 1.5,
-    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    flexShrink: 0,
-    boxShadow: '0 0 12px rgba(124,58,237,0.3)',
-  },
+  pageIconBox: pageIconBoxSx,
 
   /** Right side of header: Create / Invite buttons */
   headerActions: {

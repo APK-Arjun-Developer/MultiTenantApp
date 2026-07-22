@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { RootState } from '@/app/store';
+import { storage } from '@/shared/utils/storage';
 import type { AuthUser, ImpersonatedByInfo } from '@/types/api';
 
 interface AuthState {
@@ -14,14 +15,7 @@ interface AuthState {
 
 const USER_KEY = 'auth.user';
 
-const readUser = (): AuthUser | null => {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? (JSON.parse(raw) as AuthUser) : null;
-  } catch {
-    return null;
-  }
-};
+const readUser = (): AuthUser | null => storage.getJson<AuthUser>(USER_KEY);
 
 const storedUser = readUser();
 
@@ -43,7 +37,7 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.isImpersonating = false;
       state.impersonatedBy = null;
-      localStorage.setItem(USER_KEY, JSON.stringify(action.payload));
+      storage.setJson(USER_KEY, action.payload);
     },
     logout: (state) => {
       state.user = null;
@@ -52,7 +46,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.isImpersonating = false;
       state.impersonatedBy = null;
-      localStorage.removeItem(USER_KEY);
+      storage.remove(USER_KEY);
     },
     setPermissions: (state, action: PayloadAction<string[]>) => {
       state.permissions = action.payload;
@@ -67,7 +61,7 @@ const authSlice = createSlice({
       state.impersonatedBy = action.payload.impersonatedBy;
       state.permissions = [];
       state.permissionsLoaded = false;
-      localStorage.setItem(USER_KEY, JSON.stringify(action.payload.user));
+      storage.setJson(USER_KEY, action.payload.user);
     },
     clearImpersonation: (state, action: PayloadAction<AuthUser>) => {
       state.user = action.payload;
@@ -75,7 +69,7 @@ const authSlice = createSlice({
       state.impersonatedBy = null;
       state.permissions = [];
       state.permissionsLoaded = false;
-      localStorage.setItem(USER_KEY, JSON.stringify(action.payload));
+      storage.setJson(USER_KEY, action.payload);
     },
   },
 });

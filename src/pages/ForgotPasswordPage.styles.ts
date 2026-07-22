@@ -1,4 +1,5 @@
-﻿import type { StyleSheet } from '@/types';
+import { pageSmallIconBoxSx } from '@/shared/theme/styleHelpers';
+import type { StyleSheet } from '@/types';
 
 const styles = {
   root: {
@@ -12,18 +13,7 @@ const styles = {
     mb: 0.5,
   },
 
-  titleIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 1.25,
-    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    flexShrink: 0,
-    boxShadow: '0 0 10px rgba(124,58,237,0.28)',
-  },
+  titleIconBox: pageSmallIconBoxSx,
 
   titleText: {
     fontWeight: 700,

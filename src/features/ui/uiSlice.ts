@@ -1,47 +1,49 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import type { RootState } from '@/app/store';
-import type { ThemeMode } from '@/shared/theme';
+import { type ThemeColor, type ThemeMode } from '@/shared/theme';
+import { storage } from '@/shared/utils/storage';
 
 const SELECTED_TENANT_STORAGE_KEY = 'selectedTenant';
 const THEME_STORAGE_KEY = 'themeMode';
+const THEME_COLOR_STORAGE_KEY = 'themeColor';
+
+const VALID_THEME_COLORS: ThemeColor[] = ['violet', 'blue', 'green', 'rose', 'amber', 'teal'];
 
 interface UiState {
   themeMode: ThemeMode;
+  themeColor: ThemeColor;
   sidebarOpen: boolean;
   selectedTenantId: string | null;
   selectedTenantName: string | null;
 }
 
 const loadThemeFromStorage = (): ThemeMode => {
-  try {
-    const raw = localStorage.getItem(THEME_STORAGE_KEY);
-    if (raw === 'light' || raw === 'dark') return raw;
-  } catch {
-    // corrupted storage — ignore
-  }
-  return 'dark';
+  const raw = storage.getString(THEME_STORAGE_KEY);
+  if (raw === 'light' || raw === 'dark') return raw;
+  return 'light';
+};
+
+const loadThemeColorFromStorage = (): ThemeColor => {
+  const raw = storage.getString(THEME_COLOR_STORAGE_KEY);
+  if (raw && VALID_THEME_COLORS.includes(raw as ThemeColor)) return raw as ThemeColor;
+  return 'violet';
 };
 
 const loadTenantFromStorage = (): Pick<UiState, 'selectedTenantId' | 'selectedTenantName'> => {
-  try {
-    const raw = localStorage.getItem(SELECTED_TENANT_STORAGE_KEY);
-    if (!raw) return { selectedTenantId: null, selectedTenantName: null };
-    const parsed: unknown = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && 'id' in parsed && 'name' in parsed) {
-      return {
-        selectedTenantId: typeof parsed.id === 'string' ? parsed.id : null,
-        selectedTenantName: typeof parsed.name === 'string' ? parsed.name : null,
-      };
-    }
-  } catch {
-    // corrupted storage — ignore
+  const raw = storage.getJson<{ id: unknown; name: unknown }>(SELECTED_TENANT_STORAGE_KEY);
+  if (raw && 'id' in raw && 'name' in raw) {
+    return {
+      selectedTenantId: typeof raw.id === 'string' ? raw.id : null,
+      selectedTenantName: typeof raw.name === 'string' ? raw.name : null,
+    };
   }
   return { selectedTenantId: null, selectedTenantName: null };
 };
 
 const initialState: UiState = {
   themeMode: loadThemeFromStorage(),
+  themeColor: loadThemeColorFromStorage(),
   sidebarOpen: true,
   ...loadTenantFromStorage(),
 };
@@ -55,6 +57,9 @@ const uiSlice = createSlice({
     },
     setThemeMode: (state, action: PayloadAction<ThemeMode>) => {
       state.themeMode = action.payload;
+    },
+    setThemeColor: (state, action: PayloadAction<ThemeColor>) => {
+      state.themeColor = action.payload;
     },
     toggleSidebar: (state) => {
       state.sidebarOpen = !state.sidebarOpen;
@@ -76,6 +81,7 @@ const uiSlice = createSlice({
 const {
   toggleTheme,
   setThemeMode,
+  setThemeColor,
   toggleSidebar,
   setSidebarOpen,
   setSelectedTenant,
@@ -83,6 +89,7 @@ const {
 } = uiSlice.actions;
 
 const selectThemeMode = (state: RootState) => state.ui.themeMode;
+const selectThemeColor = (state: RootState) => state.ui.themeColor;
 const selectSidebarOpen = (state: RootState) => state.ui.sidebarOpen;
 const selectSelectedTenantId = (state: RootState) => state.ui.selectedTenantId;
 const selectSelectedTenantName = (state: RootState) => state.ui.selectedTenantName;
@@ -93,10 +100,13 @@ export {
   selectSelectedTenantId,
   selectSelectedTenantName,
   selectSidebarOpen,
+  selectThemeColor,
   selectThemeMode,
   setSelectedTenant,
   setSidebarOpen,
+  setThemeColor,
   setThemeMode,
+  THEME_COLOR_STORAGE_KEY,
   THEME_STORAGE_KEY,
   toggleSidebar,
   toggleTheme,

@@ -1,5 +1,6 @@
-﻿import { alpha, type Theme } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 
+import { pageLargeIconBoxSx } from '@/shared/theme/styleHelpers';
 import type { StyleSheet, Sx } from '@/types';
 
 const styles = {
@@ -14,18 +15,7 @@ const styles = {
     mb: 0.75,
   },
 
-  welcomeIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 2,
-    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    flexShrink: 0,
-    boxShadow: '0 0 16px rgba(124,58,237,0.35)',
-  },
+  welcomeIconBox: pageLargeIconBoxSx,
 
   welcomeTitle: {
     fontWeight: 700,
@@ -37,7 +27,7 @@ const styles = {
     mb: 3,
   },
 
-  statCardPaper: {
+  statCardPaper: (t: Theme) => ({
     p: 2.5,
     display: 'flex',
     alignItems: 'center',
@@ -46,10 +36,10 @@ const styles = {
     maxWidth: 300,
     transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
     '&:hover': {
-      borderColor: '#A78BFA',
-      boxShadow: '0 0 0 1px rgba(124,58,237,0.2), 0 4px 16px rgba(124,58,237,0.08)',
+      borderColor: t.palette.primary.light,
+      boxShadow: `0 0 0 1px ${alpha(t.palette.primary.main, 0.2)}, 0 4px 16px ${alpha(t.palette.primary.main, 0.08)}`,
     },
-  },
+  }),
 
   statCardIconBox: {
     display: 'flex',

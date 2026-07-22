@@ -1,4 +1,7 @@
-﻿import type { StyleSheet } from '@/types';
+﻿import { type Theme } from '@mui/material/styles';
+
+import { themedIconBoxSx } from '@/shared/theme/styleHelpers';
+import type { StyleSheet } from '@/types';
 
 const DRAWER_WIDTH = 240;
 const DRAWER_COLLAPSED_WIDTH = 64;
@@ -104,22 +107,13 @@ const styles = {
     borderRadius: 1.5,
   },
 
-  brandMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 1.5,
-    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
+  brandMark: (t: Theme) => ({
+    ...themedIconBoxSx(28, 1.5, 12, 0.45)(t),
     fontWeight: 800,
     fontSize: '0.8125rem',
     letterSpacing: '-0.02em',
-    flexShrink: 0,
-    boxShadow: '0 0 12px rgba(124,58,237,0.45)',
     pointerEvents: 'none',
-  },
+  }),
 
   drawerTitle: {
     fontWeight: 700,

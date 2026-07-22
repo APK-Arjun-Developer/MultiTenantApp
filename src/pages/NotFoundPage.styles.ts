@@ -1,4 +1,6 @@
-﻿import type { StyleSheet } from '@/types';
+﻿import { type Theme } from '@mui/material/styles';
+
+import type { StyleSheet } from '@/types';
 
 const styles = {
   root: {
@@ -13,16 +15,16 @@ const styles = {
     p: 4,
   },
 
-  heading: {
+  heading: (t: Theme) => ({
     fontWeight: 800,
     fontSize: { xs: '5rem', sm: '8rem' },
     letterSpacing: '-0.04em',
     lineHeight: 1,
-    background: 'linear-gradient(135deg, #7C3AED 0%, #06B6D4 100%)',
+    background: `linear-gradient(135deg, ${t.palette.primary.main} 0%, ${t.palette.secondary.main} 100%)`,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
-  },
+  }),
 
   subtitle: {
     fontWeight: 600,

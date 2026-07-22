@@ -1,26 +1,46 @@
-﻿import { alpha, createTheme } from '@mui/material/styles';
+import { alpha, createTheme } from '@mui/material/styles';
 
 type ThemeMode = 'light' | 'dark';
+type ThemeColor = 'violet' | 'blue' | 'green' | 'rose' | 'amber' | 'teal';
 
-const violet = {
-  50: '#F5F3FF',
-  100: '#EDE9FE',
-  200: '#DDD6FE',
-  300: '#C4B5FD',
-  400: '#A78BFA',
-  500: '#8B5CF6',
-  600: '#7C3AED',
-  700: '#6D28D9',
-  800: '#5B21B6',
-  900: '#2E1065',
-} as const;
+interface ThemePreset {
+  label: string;
+  primary: { main: string; light: string; dark: string };
+  secondary: { main: string; light: string; dark: string };
+}
 
-const cyan = {
-  300: '#67E8F9',
-  400: '#22D3EE',
-  500: '#06B6D4',
-  600: '#0891B2',
-} as const;
+const THEME_PRESETS: Record<ThemeColor, ThemePreset> = {
+  violet: {
+    label: 'Violet',
+    primary: { main: '#7C3AED', light: '#A78BFA', dark: '#5B21B6' },
+    secondary: { main: '#06B6D4', light: '#67E8F9', dark: '#0891B2' },
+  },
+  blue: {
+    label: 'Blue',
+    primary: { main: '#2563EB', light: '#60A5FA', dark: '#1D4ED8' },
+    secondary: { main: '#10B981', light: '#6EE7B7', dark: '#059669' },
+  },
+  green: {
+    label: 'Green',
+    primary: { main: '#16A34A', light: '#4ADE80', dark: '#166534' },
+    secondary: { main: '#0284C7', light: '#38BDF8', dark: '#0369A1' },
+  },
+  rose: {
+    label: 'Rose',
+    primary: { main: '#E11D48', light: '#FB7185', dark: '#9F1239' },
+    secondary: { main: '#7C3AED', light: '#A78BFA', dark: '#5B21B6' },
+  },
+  amber: {
+    label: 'Amber',
+    primary: { main: '#D97706', light: '#FCD34D', dark: '#92400E' },
+    secondary: { main: '#0284C7', light: '#38BDF8', dark: '#0369A1' },
+  },
+  teal: {
+    label: 'Teal',
+    primary: { main: '#0D9488', light: '#2DD4BF', dark: '#115E59' },
+    secondary: { main: '#8B5CF6', light: '#C4B5FD', dark: '#6D28D9' },
+  },
+};
 
 // Zinc — warm dark neutral scale
 const zinc = {
@@ -37,27 +57,29 @@ const zinc = {
   950: '#09090B',
 } as const;
 
-const buildTheme = (mode: ThemeMode) => {
+const buildTheme = (mode: ThemeMode, color: ThemeColor = 'violet') => {
   const isDark = mode === 'dark';
+  const preset = THEME_PRESETS[color];
+  const { primary, secondary } = preset;
 
   return createTheme({
     palette: {
       mode,
       primary: {
-        main: violet[600], // #7C3AED
-        light: violet[400], // #A78BFA
-        dark: violet[800], // #5B21B6
+        main: primary.main,
+        light: primary.light,
+        dark: primary.dark,
         contrastText: '#FFFFFF',
       },
       secondary: {
-        main: cyan[500], // #06B6D4
-        light: cyan[300], // #67E8F9
-        dark: cyan[600], // #0891B2
+        main: secondary.main,
+        light: secondary.light,
+        dark: secondary.dark,
         contrastText: '#FFFFFF',
       },
       background: {
-        default: isDark ? zinc[950] : zinc[100], // #09090B / #F4F4F5
-        paper: isDark ? zinc[900] : '#FFFFFF', // #18181B / #FFFFFF
+        default: isDark ? zinc[950] : zinc[100],
+        paper: isDark ? zinc[900] : '#FFFFFF',
       },
       text: {
         primary: isDark ? zinc[50] : zinc[900],
@@ -81,8 +103,8 @@ const buildTheme = (mode: ThemeMode) => {
         contrastText: '#FFFFFF',
       },
       info: {
-        main: cyan[500],
-        dark: cyan[600],
+        main: '#06B6D4',
+        dark: '#0891B2',
         contrastText: '#FFFFFF',
       },
       grey: {
@@ -99,7 +121,7 @@ const buildTheme = (mode: ThemeMode) => {
       },
       action: {
         hover: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-        selected: alpha(violet[600], isDark ? 0.18 : 0.1),
+        selected: alpha(primary.main, isDark ? 0.18 : 0.1),
         disabledBackground: isDark ? zinc[800] : zinc[200],
         disabled: isDark ? zinc[600] : zinc[400],
       },
@@ -248,8 +270,8 @@ const buildTheme = (mode: ThemeMode) => {
             props: { variant: 'outlined', color: 'primary' },
             style: {
               '&:hover': {
-                borderColor: violet[600],
-                backgroundColor: alpha(violet[600], 0.06),
+                borderColor: primary.main,
+                backgroundColor: alpha(primary.main, 0.06),
               },
             },
           },
@@ -257,13 +279,13 @@ const buildTheme = (mode: ThemeMode) => {
             props: { variant: 'contained', color: 'primary' },
             style: {
               background: isDark
-                ? `linear-gradient(135deg, ${violet[600]} 0%, ${violet[700]} 100%)`
-                : violet[600],
+                ? `linear-gradient(135deg, ${primary.main} 0%, ${primary.dark} 100%)`
+                : primary.main,
               '&:hover': {
                 background: isDark
-                  ? `linear-gradient(135deg, ${violet[500]} 0%, ${violet[600]} 100%)`
-                  : violet[700],
-                boxShadow: isDark ? `0 0 20px ${alpha(violet[600], 0.35)}` : 'none',
+                  ? `linear-gradient(135deg, ${primary.light} 0%, ${primary.main} 100%)`
+                  : primary.dark,
+                boxShadow: isDark ? `0 0 20px ${alpha(primary.main, 0.35)}` : 'none',
               },
             },
           },
@@ -281,7 +303,7 @@ const buildTheme = (mode: ThemeMode) => {
               borderColor: isDark ? zinc[500] : zinc[400],
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: violet[600],
+              borderColor: primary.main,
               borderWidth: '1.5px',
             },
             '&.Mui-error .MuiOutlinedInput-notchedOutline': {
@@ -304,7 +326,7 @@ const buildTheme = (mode: ThemeMode) => {
             fontSize: '0.875rem',
             color: isDark ? zinc[400] : zinc[500],
             '&.Mui-focused': {
-              color: violet[600],
+              color: primary.main,
             },
             '&.Mui-error': {
               color: '#EF4444',
@@ -332,7 +354,7 @@ const buildTheme = (mode: ThemeMode) => {
             fontSize: '0.875rem',
             color: isDark ? zinc[400] : zinc[500],
             '&.Mui-focused': {
-              color: violet[600],
+              color: primary.main,
             },
           },
         },
@@ -365,13 +387,13 @@ const buildTheme = (mode: ThemeMode) => {
           root: {
             borderRadius: 8,
             '&.Mui-selected': {
-              backgroundColor: alpha(violet[600], isDark ? 0.18 : 0.1),
-              color: isDark ? violet[400] : violet[700],
+              backgroundColor: alpha(primary.main, isDark ? 0.18 : 0.1),
+              color: isDark ? primary.light : primary.dark,
               '& .MuiListItemIcon-root': {
-                color: isDark ? violet[400] : violet[700],
+                color: isDark ? primary.light : primary.dark,
               },
               '&:hover': {
-                backgroundColor: alpha(violet[600], isDark ? 0.26 : 0.16),
+                backgroundColor: alpha(primary.main, isDark ? 0.26 : 0.16),
               },
             },
             '&:hover': {
@@ -387,9 +409,9 @@ const buildTheme = (mode: ThemeMode) => {
             borderRadius: 4,
             margin: '1px 4px',
             '&.Mui-selected': {
-              backgroundColor: alpha(violet[600], isDark ? 0.2 : 0.1),
+              backgroundColor: alpha(primary.main, isDark ? 0.2 : 0.1),
               '&:hover': {
-                backgroundColor: alpha(violet[600], isDark ? 0.28 : 0.16),
+                backgroundColor: alpha(primary.main, isDark ? 0.28 : 0.16),
               },
             },
           },
@@ -417,7 +439,7 @@ const buildTheme = (mode: ThemeMode) => {
         styleOverrides: {
           root: {
             '&:hover': {
-              backgroundColor: alpha(violet[600], isDark ? 0.05 : 0.03),
+              backgroundColor: alpha(primary.main, isDark ? 0.05 : 0.03),
             },
             '&:last-child td, &:last-child th': { border: 0 },
           },
@@ -461,7 +483,7 @@ const buildTheme = (mode: ThemeMode) => {
       MuiTabs: {
         styleOverrides: {
           indicator: {
-            backgroundColor: violet[600],
+            backgroundColor: primary.main,
             height: 2,
             borderRadius: 2,
           },
@@ -477,7 +499,7 @@ const buildTheme = (mode: ThemeMode) => {
             color: isDark ? zinc[400] : zinc[500],
             minHeight: 44,
             '&.Mui-selected': {
-              color: isDark ? violet[400] : violet[600],
+              color: isDark ? primary.light : primary.main,
               fontWeight: 600,
             },
           },
@@ -530,4 +552,4 @@ const buildTheme = (mode: ThemeMode) => {
   });
 };
 
-export { buildTheme, type ThemeMode };
+export { buildTheme, THEME_PRESETS, type ThemeColor, type ThemeMode };

@@ -17,6 +17,7 @@ const TenantsPage = lazy(() => import('@/pages/TenantsPage'));
 const TenantAdminsPage = lazy(() => import('@/pages/TenantAdminsPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
           { path: '/', element: <Navigate to="/dashboard" replace /> },
           { path: '/dashboard', handle: { title: 'Dashboard' }, element: <DashboardPage /> },
           { path: '/profile', handle: { title: 'Profile' }, element: <ProfilePage /> },
+          { path: '/settings', handle: { title: 'Settings' }, element: <SettingsPage /> },
 
           // TenantAdmin or above — TenantUser redirected to /dashboard
           {

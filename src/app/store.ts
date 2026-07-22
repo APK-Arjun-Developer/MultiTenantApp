@@ -1,8 +1,13 @@
 import { combineReducers, configureStore, type UnknownAction } from '@reduxjs/toolkit';
 
 import authReducer, { logout } from '@/features/auth/slices/authSlice';
-import uiReducer, { SELECTED_TENANT_STORAGE_KEY, THEME_STORAGE_KEY } from '@/features/ui/uiSlice';
+import uiReducer, {
+  SELECTED_TENANT_STORAGE_KEY,
+  THEME_COLOR_STORAGE_KEY,
+  THEME_STORAGE_KEY,
+} from '@/features/ui/uiSlice';
 import { apiSlice } from '@/shared/api/apiSlice';
+import { storage } from '@/shared/utils/storage';
 
 const combinedReducer = combineReducers({
   auth: authReducer,
@@ -28,24 +33,30 @@ const store = configureStore({
 // Persist ui preferences to localStorage so they survive page reloads.
 let prevTenantId: string | null = store.getState().ui.selectedTenantId;
 let prevThemeMode: string = store.getState().ui.themeMode;
+let prevThemeColor: string = store.getState().ui.themeColor;
 store.subscribe(() => {
-  const { selectedTenantId, selectedTenantName, themeMode } = store.getState().ui;
+  const { selectedTenantId, selectedTenantName, themeMode, themeColor } = store.getState().ui;
 
   if (selectedTenantId !== prevTenantId) {
     prevTenantId = selectedTenantId;
     if (selectedTenantId) {
-      localStorage.setItem(
-        SELECTED_TENANT_STORAGE_KEY,
-        JSON.stringify({ id: selectedTenantId, name: selectedTenantName }),
-      );
+      storage.setJson(SELECTED_TENANT_STORAGE_KEY, {
+        id: selectedTenantId,
+        name: selectedTenantName,
+      });
     } else {
-      localStorage.removeItem(SELECTED_TENANT_STORAGE_KEY);
+      storage.remove(SELECTED_TENANT_STORAGE_KEY);
     }
   }
 
   if (themeMode !== prevThemeMode) {
     prevThemeMode = themeMode;
-    localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+    storage.set(THEME_STORAGE_KEY, themeMode);
+  }
+
+  if (themeColor !== prevThemeColor) {
+    prevThemeColor = themeColor;
+    storage.set(THEME_COLOR_STORAGE_KEY, themeColor);
   }
 });
 

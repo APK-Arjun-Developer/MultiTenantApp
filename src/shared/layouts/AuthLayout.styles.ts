@@ -1,4 +1,7 @@
-﻿import type { StyleSheet } from '@/types';
+﻿import { type Theme } from '@mui/material/styles';
+
+import { themedIconBoxSx } from '@/shared/theme/styleHelpers';
+import type { StyleSheet } from '@/types';
 
 const styles = {
   root: {
@@ -25,21 +28,12 @@ const styles = {
     mb: 0.5,
   },
 
-  brandMark: {
-    width: 32,
-    height: 32,
-    borderRadius: 1.5,
-    background: 'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
+  brandMark: (t: Theme) => ({
+    ...themedIconBoxSx(32, 1.5, 14, 0.4)(t),
     fontWeight: 800,
     fontSize: '0.9375rem',
     letterSpacing: '-0.02em',
-    flexShrink: 0,
-    boxShadow: '0 0 14px rgba(124,58,237,0.4)',
-  },
+  }),
 
   title: {
     fontWeight: 800,
