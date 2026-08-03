@@ -608,6 +608,47 @@ interface UpdateTenantSettingsRequest {
   clearAddress?: boolean;
 }
 
+// ---------- Tenant Config ----------
+
+interface TenantConfigDto {
+  tenantId: UUID;
+  loginEnabled: boolean;
+  welcomeEmailEnabled: boolean;
+  maintenanceMode: boolean;
+  maintenanceMessage?: string | null;
+}
+
+interface UpdateTenantConfigRequest {
+  tenantId: UUID;
+  loginEnabled: boolean;
+  welcomeEmailEnabled: boolean;
+  maintenanceMode: boolean;
+  maintenanceMessage?: string | null;
+}
+
+// Maintenance mode is SystemAdmin-only and intentionally excluded here.
+interface UpdateCurrentTenantConfigRequest {
+  loginEnabled: boolean;
+  welcomeEmailEnabled: boolean;
+}
+
+// ---------- Email Broadcast ----------
+
+type BroadcastTarget = 'AllTenants' | 'SpecificTenants' | 'CurrentTenant' | 'SpecificUsers';
+
+interface SendEmailBroadcastRequest {
+  subject: string;
+  htmlBody: string;
+  targetType: BroadcastTarget;
+  tenantIds?: UUID[];
+  userIds?: UUID[];
+}
+
+interface EmailBroadcastResponse {
+  recipientCount: number;
+  message: string;
+}
+
 // ---------- Impersonation ----------
 
 interface StartImpersonationRequest {
@@ -674,6 +715,7 @@ export type {
   ApiErrorPayload,
   ApiResponse,
   AuthUser,
+  BroadcastTarget,
   ChangePasswordRequest,
   CompanyInfo,
   CreatedRoleSummary,
@@ -685,6 +727,7 @@ export type {
   DashboardStatsDto,
   DeleteTenantRequest,
   DeleteUserRequest,
+  EmailBroadcastResponse,
   FileDto,
   FilterValues,
   ForgotPasswordRequest,
@@ -718,6 +761,7 @@ export type {
   ResendEmailOtpRequest,
   ResetPasswordRequest,
   RoleDto,
+  SendEmailBroadcastRequest,
   SetPasswordRequest,
   SetPasswordResponse,
   SortOrder,
@@ -729,13 +773,16 @@ export type {
   TenantAdminDto,
   TenantAdminInvitationDto,
   TenantAdminTenantDetails,
+  TenantConfigDto,
   TenantCreationInvitationDto,
   TenantDto,
   TenantPlanResponse,
   UpdateCurrentTenantAddressRequest,
+  UpdateCurrentTenantConfigRequest,
   UpdateCurrentUserRequest,
   UpdateRoleRequest,
   UpdateTenantAdminRequest,
+  UpdateTenantConfigRequest,
   UpdateTenantPlanRequest,
   UpdateTenantRequest,
   UpdateTenantSettingsRequest,

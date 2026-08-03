@@ -1,27 +1,15 @@
-import { headerTitleSx, pageIconBoxSx } from '@/shared/theme/styleHelpers';
 import type { StyleSheet } from '@/types';
 
 const styles = {
   /** Outermost wrapper Box for the entire page */
   pageRoot: {},
 
-  /** Row that holds the page title icon+text on the left and action buttons on the right */
+  /** Row that holds the action buttons, right-aligned */
   headerRow: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    mb: 3,
-  },
-
-  /** Left side of the header: icon + title text */
-  headerTitle: headerTitleSx,
-
-  pageIconBox: pageIconBoxSx,
-
-  /** Typography variant for the page title */
-  headerTitleText: {
-    fontWeight: 700,
-    letterSpacing: '-0.01em',
+    justifyContent: 'flex-end',
+    mb: 2,
   },
 
   /** Right side of the header: action buttons */

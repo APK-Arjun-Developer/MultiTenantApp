@@ -6,7 +6,7 @@ import type { StyleSheet, Sx } from '@/types';
 const styles = {
   root: {
     pb: 4,
-    maxWidth: 640,
+    width: '100%',
   },
 
   pageHeader: {
@@ -19,6 +19,21 @@ const styles = {
   pageTitle: {
     fontWeight: 700,
     letterSpacing: '-0.02em',
+  },
+
+  tabsPaper: {
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+
+  tabs: {
+    borderBottom: 1,
+    borderColor: 'divider',
+    px: 1,
+  },
+
+  tabPanel: {
+    p: 3,
   },
 
   sectionPaper: {
@@ -58,6 +73,56 @@ const styles = {
     display: 'flex',
     gap: 1.5,
     flexWrap: 'wrap',
+  },
+
+  // ---- Configuration tab ----
+
+  loadingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    py: 8,
+  },
+
+  configSectionTitle: {
+    fontWeight: 600,
+    fontSize: '0.75rem',
+    color: 'text.secondary',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    mb: 1,
+  },
+
+  configDivider: {
+    my: 2,
+  },
+
+  configRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 2,
+    py: 1,
+  },
+
+  configLabel: {
+    flex: 1,
+  },
+
+  configMaintenanceMsg: {
+    pb: 1,
+    px: 0.5,
+  },
+
+  configHint: {
+    p: 2,
+    borderRadius: 1,
+    bgcolor: 'action.hover',
+  },
+
+  saveRow: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    mt: 3,
   },
 } as const satisfies StyleSheet;
 

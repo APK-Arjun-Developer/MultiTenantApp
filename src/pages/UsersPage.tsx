@@ -366,14 +366,6 @@ const UsersPageHeader = memo(
   }: UsersPageHeaderProps) => {
     return (
       <Box sx={styles.header}>
-        <Box sx={styles.headerTitle}>
-          <Box sx={styles.pageIconBox}>
-            <Icon name="People" sx={styles.pageIconSize} />
-          </Box>
-          <Typography variant="h5" sx={styles.titleText}>
-            Users
-          </Typography>
-        </Box>
         <Box sx={styles.headerActions}>
           {canInvite && (
             <Tooltip

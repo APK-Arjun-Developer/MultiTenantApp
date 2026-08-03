@@ -18,6 +18,7 @@ const apiSlice = createApi({
     'ActivityLog',
     'Subscription',
     'TenantSettings',
+    'TenantConfig',
   ],
   endpoints: () => ({}),
 });

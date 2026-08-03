@@ -119,16 +119,9 @@ const INV_FILTER_DEFAULT = { status: '' };
 
 const TenantAdminsPageHeader = memo(
   ({ canCreate, canInvite, onCreateClick, onInviteClick }: TenantAdminsPageHeaderProps) => {
+    if (!canInvite && !canCreate) return null;
     return (
       <Box sx={styles.headerRow}>
-        <Box sx={styles.headerTitle}>
-          <Box sx={styles.pageIconBox}>
-            <Icon name="ManageAccounts" sx={styles.pageIconSize} />
-          </Box>
-          <Typography variant="h5" sx={styles.headerTitleText}>
-            Tenant Admins
-          </Typography>
-        </Box>
         <Box sx={styles.headerActions}>
           {canInvite && (
             <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>

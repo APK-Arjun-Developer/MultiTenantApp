@@ -33,9 +33,9 @@ import { useStopImpersonationMutation } from '@/features/impersonation/api/imper
 import { selectThemeMode, toggleTheme } from '@/features/ui/uiSlice';
 import { getUserAvatarUrl, useGetCurrentUserQuery } from '@/features/users/api/usersApi';
 import { apiSlice } from '@/shared/api/apiSlice';
-import { Icon, PageTransition, TenantPicker } from '@/shared/components';
+import { Icon, type IconName, PageTransition, TenantPicker } from '@/shared/components';
 import { AVATAR_IMG_SLOT_PROPS } from '@/shared/constants/avatarProps';
-import { usePageTitle } from '@/shared/hooks';
+import { usePageHeader, usePageTitle } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ThemeMode } from '@/shared/theme';
 import { getInitials } from '@/shared/utils/format';
@@ -85,13 +85,20 @@ const NAV_ITEMS: NavItem[] = [
     allowedRoles: ['SystemAdmin'],
   },
   {
+    text: 'Email Broadcast',
+    icon: <Icon name="Email" />,
+    path: '/email-broadcast',
+    allowedRoles: ['TenantAdmin', 'SystemAdmin'],
+    permission: 'Emails.Send',
+  },
+  {
     text: 'Settings',
     icon: <Icon name="Settings" />,
     path: '/settings',
   },
 ];
 
-const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/audit-logs'];
+const TENANT_CONTEXT_PATHS = ['/users', '/roles', '/audit-logs', '/email-broadcast', '/settings'];
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -211,6 +218,8 @@ interface DashboardAppBarProps {
   onThemeToggle: () => void;
   avatarSrc: string | undefined;
   initials: string;
+  pageTitle: string | undefined;
+  pageIcon: IconName | undefined;
 }
 
 const DashboardAppBar = memo(
@@ -222,6 +231,8 @@ const DashboardAppBar = memo(
     onThemeToggle,
     avatarSrc,
     initials,
+    pageTitle,
+    pageIcon,
   }: DashboardAppBarProps) => {
     return (
       <AppBar
@@ -234,9 +245,22 @@ const DashboardAppBar = memo(
             <Icon name="Menu" />
           </IconButton>
 
-          {showTenantPicker && <TenantPicker />}
+          {pageTitle && (
+            <Box sx={styles.appBarPageHeader}>
+              {pageIcon && (
+                <Box sx={styles.appBarPageIcon}>
+                  <Icon name={pageIcon} fontSize="small" />
+                </Box>
+              )}
+              <Typography variant="h6" sx={styles.appBarPageTitle} noWrap>
+                {pageTitle}
+              </Typography>
+            </Box>
+          )}
 
           <Box sx={styles.toolbarSpacer} />
+
+          {showTenantPicker && <TenantPicker />}
 
           <Tooltip title={themeMode === 'dark' ? 'Light mode' : 'Dark mode'}>
             <IconButton onClick={onThemeToggle} sx={styles.themeToggle}>
@@ -301,6 +325,7 @@ const DashboardLayout = memo(() => {
   const [stopImpersonation, { isLoading: isStopping }] = useStopImpersonationMutation();
 
   usePageTitle();
+  const { title: pageTitle, icon: pageIcon } = usePageHeader();
 
   const { data: profile } = useGetCurrentUserQuery();
 
@@ -317,11 +342,17 @@ const DashboardLayout = memo(() => {
           (!user?.systemRole || !item.allowedRoles.includes(user.systemRole))
         )
           return false;
-        if (item.permission && permissionsLoaded && !permissions.includes(item.permission))
+        // SystemAdmin has all permissions — skip the permission check for them
+        if (
+          item.permission &&
+          !isSystemAdmin &&
+          permissionsLoaded &&
+          !permissions.includes(item.permission)
+        )
           return false;
         return true;
       }),
-    [user?.systemRole, permissions, permissionsLoaded],
+    [user?.systemRole, isSystemAdmin, permissions, permissionsLoaded],
   );
 
   const showTenantPicker = useMemo(
@@ -361,6 +392,8 @@ const DashboardLayout = memo(() => {
         onThemeToggle={handleThemeToggle}
         avatarSrc={navAvatarSrc}
         initials={initials}
+        pageTitle={pageTitle}
+        pageIcon={pageIcon}
       />
 
       <Box

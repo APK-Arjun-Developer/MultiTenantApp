@@ -18,6 +18,7 @@ const TenantAdminsPage = lazy(() => import('@/pages/TenantAdminsPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
+const EmailBroadcastPage = lazy(() => import('@/pages/EmailBroadcastPage'));
 
 const router = createBrowserRouter([
   {
@@ -50,16 +51,41 @@ const router = createBrowserRouter([
         element: <DashboardLayout />,
         children: [
           { path: '/', element: <Navigate to="/dashboard" replace /> },
-          { path: '/dashboard', handle: { title: 'Dashboard' }, element: <DashboardPage /> },
-          { path: '/profile', handle: { title: 'Profile' }, element: <ProfilePage /> },
-          { path: '/settings', handle: { title: 'Settings' }, element: <SettingsPage /> },
+          {
+            path: '/dashboard',
+            handle: { title: 'Dashboard', icon: 'Dashboard' },
+            element: <DashboardPage />,
+          },
+          {
+            path: '/profile',
+            handle: { title: 'Profile', icon: 'AccountCircle' },
+            element: <ProfilePage />,
+          },
+          {
+            path: '/settings',
+            handle: { title: 'Settings', icon: 'Settings' },
+            element: <SettingsPage />,
+          },
 
           // TenantAdmin or above — TenantUser redirected to /dashboard
           {
             element: <TenantAdminGuard />,
             children: [
-              { path: '/users', handle: { title: 'Users' }, element: <UsersPage /> },
-              { path: '/roles', handle: { title: 'Roles' }, element: <RolesPage /> },
+              {
+                path: '/users',
+                handle: { title: 'Users', icon: 'People' },
+                element: <UsersPage />,
+              },
+              {
+                path: '/roles',
+                handle: { title: 'Roles', icon: 'AdminPanelSettings' },
+                element: <RolesPage />,
+              },
+              {
+                path: '/email-broadcast',
+                handle: { title: 'Email Broadcast', icon: 'Email' },
+                element: <EmailBroadcastPage />,
+              },
             ],
           },
 
@@ -67,13 +93,21 @@ const router = createBrowserRouter([
           {
             element: <SystemAdminGuard />,
             children: [
-              { path: '/tenants', handle: { title: 'Tenants' }, element: <TenantsPage /> },
+              {
+                path: '/tenants',
+                handle: { title: 'Tenants', icon: 'Business' },
+                element: <TenantsPage />,
+              },
               {
                 path: '/tenant-admins',
-                handle: { title: 'Tenant Admins' },
+                handle: { title: 'Tenant Admins', icon: 'ManageAccounts' },
                 element: <TenantAdminsPage />,
               },
-              { path: '/audit-logs', handle: { title: 'Audit Log' }, element: <AuditLogsPage /> },
+              {
+                path: '/audit-logs',
+                handle: { title: 'Audit Log', icon: 'History' },
+                element: <AuditLogsPage />,
+              },
             ],
           },
         ],

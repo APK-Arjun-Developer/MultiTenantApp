@@ -35,6 +35,28 @@ const styles = {
     display: { md: 'none' },
   },
 
+  appBarPageHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    minWidth: 0,
+    mr: 1,
+  },
+
+  appBarPageIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'primary.main',
+    flexShrink: 0,
+  },
+
+  appBarPageTitle: {
+    fontWeight: 700,
+    letterSpacing: '-0.01em',
+    color: 'text.primary',
+  },
+
   toolbarSpacer: { flex: 1 },
 
   themeToggle: {

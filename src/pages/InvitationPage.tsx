@@ -315,12 +315,14 @@ const InvitationPage = memo(() => {
   const renderNewTenantActions = useCallback(
     ({
       isSubmitting: formSubmitting,
+      isNavigating,
       isLastStep,
       isFirstStep,
       next,
       back,
     }: {
       isSubmitting: boolean;
+      isNavigating: boolean;
       isLastStep: boolean;
       isFirstStep: boolean;
       next: () => void;
@@ -328,13 +330,19 @@ const InvitationPage = memo(() => {
     }) => (
       <Box sx={styles.wizardActions}>
         {!isFirstStep && (
-          <Button type="button" onClick={back} variant="outlined" sx={styles.wizardActionButton}>
+          <Button
+            type="button"
+            onClick={back}
+            disabled={isNavigating || formSubmitting}
+            variant="outlined"
+            sx={styles.wizardActionButton}
+          >
             Back
           </Button>
         )}
         <LoadingButton
           type={isLastStep ? 'submit' : 'button'}
-          loading={formSubmitting || (isLastStep && isSubmitting)}
+          loading={isNavigating || formSubmitting || (isLastStep && isSubmitting)}
           onClick={isLastStep ? undefined : next}
           variant="contained"
           sx={styles.wizardActionButton}
@@ -349,12 +357,14 @@ const InvitationPage = memo(() => {
   const renderAdminUserActions = useCallback(
     ({
       isSubmitting: formSubmitting,
+      isNavigating,
       isLastStep,
       isFirstStep,
       next,
       back,
     }: {
       isSubmitting: boolean;
+      isNavigating: boolean;
       isLastStep: boolean;
       isFirstStep: boolean;
       next: () => void;
@@ -362,13 +372,19 @@ const InvitationPage = memo(() => {
     }) => (
       <Box sx={styles.wizardActions}>
         {!isFirstStep && (
-          <Button type="button" onClick={back} variant="outlined" sx={styles.wizardActionButton}>
+          <Button
+            type="button"
+            onClick={back}
+            disabled={isNavigating || formSubmitting}
+            variant="outlined"
+            sx={styles.wizardActionButton}
+          >
             Back
           </Button>
         )}
         <LoadingButton
           type={isLastStep ? 'submit' : 'button'}
-          loading={formSubmitting || (isLastStep && isSubmitting)}
+          loading={isNavigating || formSubmitting || (isLastStep && isSubmitting)}
           onClick={isLastStep ? undefined : next}
           variant="contained"
           sx={styles.wizardActionButton}

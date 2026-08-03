@@ -1,34 +1,21 @@
-import { headerTitleSx, pageIconBoxSx } from '@/shared/theme/styleHelpers';
 import type { StyleSheet } from '@/types';
 
 const styles = {
   /** Outer page wrapper */
   root: {},
 
-  /** Top header row: title left, action buttons right */
+  /** Top header row: action buttons right-aligned */
   header: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     mb: 2,
   },
-
-  /** Left side of header: icon + title */
-  headerTitle: headerTitleSx,
-
-  /** Gradient icon box for page header (matches dashboard brandMark style) */
-  pageIconBox: pageIconBoxSx,
 
   /** Right side of header: Create / Invite buttons */
   headerActions: {
     display: 'flex',
     gap: 1,
-  },
-
-  /** Page title text */
-  titleText: {
-    fontWeight: 700,
-    letterSpacing: '-0.01em',
   },
 
   /** Plan-limit warning alert */

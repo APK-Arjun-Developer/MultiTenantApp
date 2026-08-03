@@ -11,7 +11,7 @@ import {
   activityLogsApi,
   useGetActivityLogsQuery,
 } from '@/features/activityLogs/api/activityLogsApi';
-import { DataTable, Icon, LoadingButton, TenantContextGuard } from '@/shared/components';
+import { DataTable, LoadingButton, TenantContextGuard } from '@/shared/components';
 import { DATE_DEBOUNCE_MS, EXPORT_PAGE_SIZE } from '@/shared/constants/list';
 import { useDebounce, useFilterState, useTableState } from '@/shared/hooks';
 import { exportToCsv } from '@/shared/utils/exportCsv';
@@ -52,14 +52,6 @@ const AuditLogsPageHeader = memo(
   ({ exportLoading, disableExport, onExport }: AuditLogsPageHeaderProps) => {
     return (
       <Box sx={styles.header}>
-        <Box sx={styles.headerTitle}>
-          <Box sx={styles.pageIconBox}>
-            <Icon name="History" sx={styles.pageIconSize} />
-          </Box>
-          <Typography variant="h5" sx={styles.titleText}>
-            Audit Log
-          </Typography>
-        </Box>
         <Tooltip title="Export to CSV">
           <span>
             <LoadingButton

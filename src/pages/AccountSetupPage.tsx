@@ -204,12 +204,14 @@ const AccountSetupPage = memo(() => {
   const renderWizardActions = useCallback(
     ({
       isSubmitting: formSubmitting,
+      isNavigating,
       isLastStep,
       next,
       back,
       isFirstStep,
     }: {
       isSubmitting: boolean;
+      isNavigating: boolean;
       isLastStep: boolean;
       isFirstStep: boolean;
       next: () => void;
@@ -217,13 +219,19 @@ const AccountSetupPage = memo(() => {
     }) => (
       <Box sx={styles.wizardActionsRow}>
         {!isFirstStep && (
-          <Button type="button" onClick={back} variant="outlined" sx={styles.wizardBackButton}>
+          <Button
+            type="button"
+            onClick={back}
+            disabled={isNavigating || formSubmitting}
+            variant="outlined"
+            sx={styles.wizardBackButton}
+          >
             Back
           </Button>
         )}
         <LoadingButton
           type={isLastStep ? 'submit' : 'button'}
-          loading={formSubmitting || (isLastStep && isSubmitting)}
+          loading={isNavigating || formSubmitting || (isLastStep && isSubmitting)}
           onClick={isLastStep ? undefined : next}
           variant="contained"
           sx={styles.wizardNextButton}

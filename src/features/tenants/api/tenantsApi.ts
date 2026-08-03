@@ -8,9 +8,11 @@ import type {
   OnboardTenantRequest,
   OnboardTenantResponse,
   PaginatedResponse,
+  TenantConfigDto,
   TenantCreationInvitationDto,
   TenantDto,
   UpdateCurrentTenantAddressRequest,
+  UpdateTenantConfigRequest,
   UpdateTenantRequest,
 } from '@/types/api';
 
@@ -148,6 +150,24 @@ const tenantsApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Tenant'],
     }),
+
+    getTenantConfigByAdmin: builder.query<TenantConfigDto, string>({
+      query: (tenantId) => ({
+        url: `/api/v1/tenants/${tenantId}/config`,
+        skipTenantHeader: true,
+      }),
+      providesTags: (_result, _error, tenantId) => [{ type: 'TenantConfig', id: tenantId }],
+    }),
+
+    updateTenantConfigByAdmin: builder.mutation<TenantConfigDto, UpdateTenantConfigRequest>({
+      query: ({ tenantId, ...body }) => ({
+        url: `/api/v1/tenants/${tenantId}/config`,
+        method: 'PUT',
+        data: body,
+        skipTenantHeader: true,
+      }),
+      invalidatesTags: (_result, _error, { tenantId }) => [{ type: 'TenantConfig', id: tenantId }],
+    }),
   }),
 });
 
@@ -163,12 +183,15 @@ const {
   useResendTenantInvitationMutation,
   useUploadTenantLogoByAdminMutation,
   useRemoveTenantLogoByAdminMutation,
+  useGetTenantConfigByAdminQuery,
+  useUpdateTenantConfigByAdminMutation,
 } = tenantsApi;
 
 export {
   type GetTenantsParams,
   tenantsApi,
   useDeleteTenantMutation,
+  useGetTenantConfigByAdminQuery,
   useGetTenantCreationInvitationsQuery,
   useGetTenantsQuery,
   useInviteTenantMutation,
@@ -177,6 +200,7 @@ export {
   useResendTenantInvitationMutation,
   useRevokeTenantInvitationMutation,
   useUpdateCurrentTenantAddressMutation,
+  useUpdateTenantConfigByAdminMutation,
   useUpdateTenantMutation,
   useUploadTenantLogoByAdminMutation,
 };

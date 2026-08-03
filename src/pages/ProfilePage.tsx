@@ -11,7 +11,9 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { FIELD_TYPE, type FieldConfig, FormBuilder } from 'mui-schema-form-builder';
 
+import { useAppSelector } from '@/app/hooks';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
+import { selectIsImpersonating } from '@/features/auth/slices/authSlice';
 import {
   getTenantLogoUrl,
   useGetTenantSettingsQuery,
@@ -247,6 +249,7 @@ const ProfilePage = memo(() => {
   const logoutDialog = useBooleanDialog();
   const avatarModal = useBooleanDialog();
   const companyLogoModal = useBooleanDialog();
+  const isImpersonating = useAppSelector(selectIsImpersonating);
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const { data: profile, isLoading } = useGetCurrentUserQuery();
@@ -419,16 +422,6 @@ const ProfilePage = memo(() => {
 
   return (
     <Box sx={styles.root}>
-      {/* Page header */}
-      <Box sx={styles.pageHeader}>
-        <Box sx={styles.pageIconBox}>
-          <Icon name="AccountCircle" sx={styles.pageIconSize} />
-        </Box>
-        <Typography variant="h5" sx={styles.pageTitle}>
-          Profile
-        </Typography>
-      </Box>
-
       {/* Avatar + identity summary */}
       <ProfileAvatarSection
         avatarSrc={avatarSrc}
@@ -496,17 +489,19 @@ const ProfilePage = memo(() => {
         </Box>
       </Paper>
 
-      {/* Sign out */}
-      <Box sx={styles.actionRow}>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<Icon name="Logout" />}
-          onClick={logoutDialog.onOpen}
-        >
-          Sign out
-        </Button>
-      </Box>
+      {/* Sign out — hidden during impersonation; use "Stop Impersonation" instead */}
+      {!isImpersonating && (
+        <Box sx={styles.actionRow}>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Icon name="Logout" />}
+            onClick={logoutDialog.onOpen}
+          >
+            Sign out
+          </Button>
+        </Box>
+      )}
 
       {/* Profile photo modal */}
       <AvatarManageModal

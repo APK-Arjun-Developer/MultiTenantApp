@@ -1,4 +1,3 @@
-import { headerTitleSx, pageIconBoxSx } from '@/shared/theme/styleHelpers';
 import type { StyleSheet } from '@/types';
 
 const styles = {
@@ -6,14 +5,8 @@ const styles = {
   header: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     mb: 2,
-  },
-  headerTitle: headerTitleSx,
-  pageIconBox: pageIconBoxSx,
-  titleText: {
-    fontWeight: 700,
-    letterSpacing: '-0.01em',
   },
   filterBar: {
     mb: 2,

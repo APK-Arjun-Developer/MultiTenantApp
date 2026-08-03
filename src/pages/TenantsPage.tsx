@@ -48,7 +48,6 @@ import {
   Icon,
   InvitationStatusChip,
   LabelValue,
-  LoadingButton,
   ViewDialog,
 } from '@/shared/components';
 import {
@@ -123,26 +122,17 @@ const INV_FILTER_DEFAULT = { status: '' };
 
 const TenantsPageHeader = memo(
   ({ canCreate, onInviteClick, onOnboardClick }: TenantsPageHeaderProps) => {
+    if (!canCreate) return null;
     return (
       <Box sx={styles.header}>
-        <Box sx={styles.headerTitle}>
-          <Box sx={styles.pageIconBox}>
-            <Icon name="Business" sx={styles.pageIconSize} />
-          </Box>
-          <Typography variant="h5" sx={styles.headerTitleText}>
-            Tenants
-          </Typography>
+        <Box sx={styles.headerActions}>
+          <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
+            Invite Tenant
+          </Button>
+          <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onOnboardClick}>
+            New Tenant
+          </Button>
         </Box>
-        {canCreate && (
-          <Box sx={styles.headerActions}>
-            <Button variant="outlined" startIcon={<Icon name="Send" />} onClick={onInviteClick}>
-              Invite Tenant
-            </Button>
-            <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onOnboardClick}>
-              New Tenant
-            </Button>
-          </Box>
-        )}
       </Box>
     );
   },
@@ -282,43 +272,6 @@ const OnboardTenantDialog = memo(({ open, onClose }: OnboardDialogProps) => {
     [onboardTenant, snackbar, onClose],
   );
 
-  const renderActions = useCallback(
-    ({
-      isSubmitting,
-      isLastStep,
-      isFirstStep,
-      next,
-      back,
-    }: {
-      isSubmitting: boolean;
-      isLastStep: boolean;
-      isFirstStep: boolean;
-      next: () => void;
-      back: () => void;
-    }) => (
-      <Box sx={styles.wizardActions}>
-        <Button
-          type="button"
-          onClick={isFirstStep ? onClose : back}
-          variant="outlined"
-          sx={styles.wizardActionFlex}
-        >
-          {isFirstStep ? 'Cancel' : 'Back'}
-        </Button>
-        <LoadingButton
-          type={isLastStep ? 'submit' : 'button'}
-          loading={isSubmitting || (isLastStep && isLoading)}
-          onClick={isLastStep ? undefined : next}
-          variant="contained"
-          sx={styles.wizardActionFlex}
-        >
-          {isLastStep ? 'Create' : 'Next'}
-        </LoadingButton>
-      </Box>
-    ),
-    [onClose, isLoading],
-  );
-
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>New Tenant</DialogTitle>
@@ -339,7 +292,6 @@ const OnboardTenantDialog = memo(({ open, onClose }: OnboardDialogProps) => {
             },
           ]}
           onSubmit={onSubmit}
-          renderActions={renderActions}
           sx={styles.formInDialog}
         />
       </DialogContent>
@@ -551,6 +503,23 @@ const ChangePlanDialog = memo(({ tenant, onClose }: ChangePlanDialogProps) => {
     </Dialog>
   );
 });
+
+const TenantTabs = memo(
+  ({
+    tab,
+    onTabChange: handleTabChange,
+  }: {
+    tab: number;
+    onTabChange: (event: React.SyntheticEvent<Element, Event>, v: number) => void;
+  }) => {
+    return (
+      <Tabs value={tab} onChange={handleTabChange} sx={styles.tabsRow}>
+        <Tab label="Tenants" />
+        <Tab label="Invitations" />
+      </Tabs>
+    );
+  },
+);
 
 const TenantsPage = memo(() => {
   const snackbar = useSnackbar();
@@ -859,10 +828,7 @@ const TenantsPage = memo(() => {
         onOnboardClick={onboardDialog.onOpen}
       />
 
-      <Tabs value={tab} onChange={handleTabChange} sx={styles.tabsRow}>
-        <Tab label="Tenants" />
-        <Tab label="Invitations" />
-      </Tabs>
+      <TenantTabs tab={tab} onTabChange={handleTabChange} />
 
       {/* Tenants tab */}
       {tab === 0 && !canList && (

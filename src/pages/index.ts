@@ -9,6 +9,5 @@ export { default as ProfilePage } from './ProfilePage';
 export { default as ResetPasswordPage } from './ResetPasswordPage';
 export { default as RolesPage } from './RolesPage';
 export { default as TenantAdminsPage } from './TenantAdminsPage';
-export { default as TenantSettingsPage } from './TenantSettingsPage';
 export { default as TenantsPage } from './TenantsPage';
 export { default as UsersPage } from './UsersPage';

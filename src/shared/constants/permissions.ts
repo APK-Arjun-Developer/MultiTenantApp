@@ -11,6 +11,7 @@ const PERMISSIONS = {
   TENANTS_DELETE: 'Tenants.Delete',
   SUBSCRIPTIONS_VIEW: 'Subscriptions.View',
   SUBSCRIPTIONS_EDIT: 'Subscriptions.Edit',
+  EMAILS_SEND: 'Emails.Send',
 } as const;
 
 type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

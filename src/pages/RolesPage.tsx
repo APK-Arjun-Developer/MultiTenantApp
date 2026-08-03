@@ -58,21 +58,12 @@ const extractPermissionIds = (raw: unknown[]): string[] => {
 const ROLES_FILTER_DEFAULT: RolesFilter = { search: '', permissions: [] };
 
 const RolesPageHeader = memo(({ canCreate, onCreateClick }: RolesPageHeaderProps) => {
+  if (!canCreate) return null;
   return (
     <Box sx={styles.header}>
-      <Box sx={styles.headerTitle}>
-        <Box sx={styles.pageIconBox}>
-          <Icon name="AdminPanelSettings" sx={styles.pageIconSize} />
-        </Box>
-        <Typography variant="h5" sx={styles.titleText}>
-          Roles
-        </Typography>
-      </Box>
-      {canCreate && (
-        <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onCreateClick}>
-          Create role
-        </Button>
-      )}
+      <Button variant="contained" startIcon={<Icon name="Add" />} onClick={onCreateClick}>
+        Create role
+      </Button>
     </Box>
   );
 });
