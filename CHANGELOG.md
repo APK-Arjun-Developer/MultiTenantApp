@@ -1,3 +1,9 @@
+# [1.1.0](https://github.com/APK-Arjun-Developer/MultiTenantApp/compare/v1.0.0...v1.1.0) (2026-10-19)
+
+### Features
+
+- upgrade mui-schema-form-builder to 1.10.4 ([a0c397b](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/a0c397b5f2c4fd28b14bf455a49c94744f6f6982))
+
 # 1.0.0 (2026-10-19)
 
 ### Features
