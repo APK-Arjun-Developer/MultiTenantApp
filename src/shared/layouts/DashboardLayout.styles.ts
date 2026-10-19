@@ -261,6 +261,35 @@ const styles = {
     '& .MuiDrawer-paper': { width: DRAWER_COLLAPSED_WIDTH },
   },
 
+  sidebarVersion: {
+    px: 2.5,
+    pb: 1.5,
+    pt: 0.5,
+  },
+
+  sidebarVersionText: {
+    overflow: 'hidden',
+    whiteSpace: 'nowrap' as const,
+    opacity: 1,
+    maxWidth: 200,
+    transition: 'opacity 0.15s ease 0.1s, max-width 0.2s ease',
+    fontSize: '0.6875rem',
+    color: 'text.disabled',
+    letterSpacing: '0.02em',
+    userSelect: 'none' as const,
+  },
+
+  sidebarVersionTextCollapsed: {
+    overflow: 'hidden',
+    whiteSpace: 'nowrap' as const,
+    opacity: 0,
+    maxWidth: 0,
+    fontSize: '0.6875rem',
+    color: 'text.disabled',
+    transition: 'opacity 0.15s ease, max-width 0.2s ease',
+    pointerEvents: 'none' as const,
+  },
+
   mainContent: {
     flex: 1,
     display: 'flex',

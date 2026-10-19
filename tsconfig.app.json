@@ -24,6 +24,9 @@
       "@/*": ["./src/*"]
     },
 
+    /* JSON module imports */
+    "resolveJsonModule": true,
+
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,

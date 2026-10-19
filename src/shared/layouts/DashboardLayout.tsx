@@ -35,6 +35,7 @@ import { getUserAvatarUrl, useGetCurrentUserQuery } from '@/features/users/api/u
 import { apiSlice } from '@/shared/api/apiSlice';
 import { Icon, type IconName, PageTransition, TenantPicker } from '@/shared/components';
 import { AVATAR_IMG_SLOT_PROPS } from '@/shared/constants/avatarProps';
+import { APP_VERSION } from '@/shared/constants/version';
 import { usePageHeader, usePageTitle } from '@/shared/hooks';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ThemeMode } from '@/shared/theme';
@@ -205,6 +206,14 @@ const DashboardSidebar = memo(
             </List>
           </>
         )}
+
+        <Box sx={styles.sidebarVersion}>
+          <Typography
+            sx={collapsed ? styles.sidebarVersionTextCollapsed : styles.sidebarVersionText}
+          >
+            v{APP_VERSION}
+          </Typography>
+        </Box>
       </Box>
     );
   },
