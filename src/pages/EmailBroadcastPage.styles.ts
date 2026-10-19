@@ -1,9 +1,7 @@
 import type { StyleSheet } from '@/types';
 
 const styles = {
-  root: {
-    maxWidth: 800,
-  },
+  root: {},
 
   pageIntro: {
     mb: 3,
@@ -43,14 +41,33 @@ const styles = {
   },
 
   hintBox: {
-    mt: 2,
     p: 2,
     borderRadius: 1,
     bgcolor: 'action.hover',
   },
 
-  subjectField: {
-    mb: 2,
+  formBuilder: {
+    boxShadow: 'none',
+    p: 0,
+    bgcolor: 'transparent',
+  },
+
+  selectOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1.5,
+    py: 0.25,
+  },
+
+  optionAvatar: {
+    width: 32,
+    height: 32,
+    fontSize: '0.75rem',
+  },
+
+  optionName: {
+    fontWeight: 500,
+    lineHeight: 1.3,
   },
 
   footer: {
@@ -58,12 +75,13 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 2,
-    mt: 1,
+    mt: 2,
     flexWrap: 'wrap' as const,
   },
 
   disclaimer: {
     flex: 1,
+    color: 'text.secondary',
   },
 
   sendButton: {

@@ -1,5 +1,6 @@
 import { memo, useCallback, useState } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -8,6 +9,7 @@ import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { FormBuilder } from 'mui-schema-form-builder';
 
 import { useAppSelector } from '@/app/hooks';
 import { selectCurrentUser } from '@/features/auth/slices/authSlice';
@@ -19,9 +21,11 @@ import { Icon, LoadingButton, PermissionGuard } from '@/shared/components';
 import { PERMISSIONS } from '@/shared/constants/permissions';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
+import { getInitials } from '@/shared/utils/format';
 import type { ApiError, BroadcastTarget, TenantDto, UserDto } from '@/types/api';
 
 import { styles } from './EmailBroadcastPage.styles';
+import { composeFields, composeSchema, type ComposeValues } from './EmailBroadcastPage.types';
 
 // ---------------------------------------------------------------------------
 // Target type options
@@ -70,7 +74,7 @@ const TENANT_ADMIN_TARGETS: TargetOption[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Tenant multi-select (SystemAdmin SpecificTenants)
+// Tenant multi-select (SystemAdmin — SpecificTenants target)
 // ---------------------------------------------------------------------------
 
 interface TenantMultiSelectProps {
@@ -100,6 +104,14 @@ const TenantMultiSelect = memo(({ value, onChange }: TenantMultiSelectProps) => 
       onInputChange={(_, v) => setSearch(v)}
       onChange={(_, v) => onChange(v)}
       slotProps={{ chip: { size: 'small' } }}
+      renderOption={(props, option) => (
+        <li {...props} key={option.id}>
+          <Box sx={styles.selectOption}>
+            <Avatar sx={styles.optionAvatar}>{option.name[0]?.toUpperCase()}</Avatar>
+            <Typography variant="body2">{option.name}</Typography>
+          </Box>
+        </li>
+      )}
       renderInput={(params) => (
         <TextField
           id={params.id}
@@ -128,7 +140,7 @@ const TenantMultiSelect = memo(({ value, onChange }: TenantMultiSelectProps) => 
 });
 
 // ---------------------------------------------------------------------------
-// User multi-select (both roles for SpecificUsers)
+// User multi-select (SpecificUsers target)
 // ---------------------------------------------------------------------------
 
 interface UserMultiSelectProps {
@@ -162,11 +174,16 @@ const UserMultiSelect = memo(({ value, onChange, disabled }: UserMultiSelectProp
       slotProps={{ chip: { size: 'small' } }}
       renderOption={(props, option) => (
         <li {...props} key={option.id}>
-          <Box>
-            <Typography variant="body2">{option.fullName}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {option.email}
-            </Typography>
+          <Box sx={styles.selectOption}>
+            <Avatar sx={styles.optionAvatar}>{getInitials(option.fullName)}</Avatar>
+            <Box>
+              <Typography variant="body2" sx={styles.optionName}>
+                {option.fullName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {option.email}
+              </Typography>
+            </Box>
           </Box>
         </li>
       )}
@@ -207,72 +224,38 @@ const EmailBroadcastContent = memo(() => {
   const isSystemAdmin = user?.systemRole === 'SystemAdmin';
   const selectedTenantId = useAppSelector(selectSelectedTenantId);
 
-  const [sendBroadcast, { isLoading: isSending }] = useSendEmailBroadcastMutation();
+  const [sendBroadcast] = useSendEmailBroadcastMutation();
+  const [formKey, setFormKey] = useState(0);
 
-  // Compose state
-  const [subject, setSubject] = useState('');
-  const [htmlBody, setHtmlBody] = useState('');
-
-  // Recipient state
   const [targetType, setTargetType] = useState<BroadcastTarget>('CurrentTenant');
   const [selectedTenants, setSelectedTenants] = useState<TenantDto[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<UserDto[]>([]);
 
   const targets = isSystemAdmin ? SYSTEM_ADMIN_TARGETS : TENANT_ADMIN_TARGETS;
-
-  // For SystemAdmin + SpecificUsers, we need a tenant context for user search
   const userSearchDisabled = isSystemAdmin && targetType === 'SpecificUsers' && !selectedTenantId;
 
-  const handleSend = useCallback(async () => {
-    if (!subject.trim()) {
-      snackbar.error('Subject is required.');
-      return;
-    }
-    if (!htmlBody.trim()) {
-      snackbar.error('Email body is required.');
-      return;
-    }
-    if (targetType === 'CurrentTenant' && isSystemAdmin && !selectedTenantId) {
-      snackbar.error('Select a tenant from the picker in the top bar.');
-      return;
-    }
-    if (targetType === 'SpecificTenants' && selectedTenants.length === 0) {
-      snackbar.error('Select at least one tenant.');
-      return;
-    }
-    if (targetType === 'SpecificUsers' && selectedUsers.length === 0) {
-      snackbar.error('Select at least one user.');
-      return;
-    }
+  const handleSend = useCallback(
+    async (values: ComposeValues) => {
+      try {
+        const result = await sendBroadcast({
+          subject: values.subject,
+          htmlBody: values.htmlBody,
+          targetType,
+          tenantIds:
+            targetType === 'SpecificTenants' ? selectedTenants.map((t) => t.id) : undefined,
+          userIds: targetType === 'SpecificUsers' ? selectedUsers.map((u) => u.id) : undefined,
+        }).unwrap();
 
-    try {
-      const result = await sendBroadcast({
-        subject,
-        htmlBody,
-        targetType,
-        tenantIds: targetType === 'SpecificTenants' ? selectedTenants.map((t) => t.id) : undefined,
-        userIds: targetType === 'SpecificUsers' ? selectedUsers.map((u) => u.id) : undefined,
-      }).unwrap();
-
-      snackbar.success(result.message);
-      setSubject('');
-      setHtmlBody('');
-      setSelectedTenants([]);
-      setSelectedUsers([]);
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to send email broadcast.');
-    }
-  }, [
-    subject,
-    htmlBody,
-    targetType,
-    selectedTenants,
-    selectedUsers,
-    isSystemAdmin,
-    selectedTenantId,
-    sendBroadcast,
-    snackbar,
-  ]);
+        snackbar.success(result.message);
+        setSelectedTenants([]);
+        setSelectedUsers([]);
+        setFormKey((k) => k + 1);
+      } catch (err) {
+        snackbar.error((err as ApiError).message || 'Failed to send email broadcast.');
+      }
+    },
+    [targetType, selectedTenants, selectedUsers, sendBroadcast, snackbar],
+  );
 
   return (
     <Box sx={styles.root}>
@@ -317,14 +300,12 @@ const EmailBroadcastContent = memo(() => {
           ))}
         </RadioGroup>
 
-        {/* Tenant multi-select for SpecificTenants */}
         {targetType === 'SpecificTenants' && (
           <Box sx={styles.autocompleteWrapper}>
             <TenantMultiSelect value={selectedTenants} onChange={setSelectedTenants} />
           </Box>
         )}
 
-        {/* User multi-select for SpecificUsers */}
         {targetType === 'SpecificUsers' && (
           <Box sx={styles.autocompleteWrapper}>
             {userSearchDisabled ? (
@@ -334,7 +315,7 @@ const EmailBroadcastContent = memo(() => {
                 </Typography>
               </Box>
             ) : (
-              <UserMultiSelect value={selectedUsers} onChange={setSelectedUsers} disabled={false} />
+              <UserMultiSelect value={selectedUsers} onChange={setSelectedUsers} />
             )}
           </Box>
         )}
@@ -346,43 +327,49 @@ const EmailBroadcastContent = memo(() => {
           Compose
         </Typography>
 
-        <TextField
-          fullWidth
-          label="Subject"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          placeholder="e.g. Happy holidays from our team!"
-          slotProps={{ htmlInput: { maxLength: 200 } }}
-          sx={styles.subjectField}
-        />
-
-        <TextField
-          fullWidth
-          label="Email body (HTML supported)"
-          value={htmlBody}
-          onChange={(e) => setHtmlBody(e.target.value)}
-          multiline
-          rows={10}
-          placeholder={'<p>Dear user,</p>\n<p>...</p>'}
+        <FormBuilder
+          key={formKey}
+          schema={composeSchema}
+          fields={composeFields}
+          onSubmit={handleSend}
+          sx={styles.formBuilder}
+          renderActions={({ isSubmitting, submit }) => {
+            const handleClick = () => {
+              if (targetType === 'CurrentTenant' && isSystemAdmin && !selectedTenantId) {
+                snackbar.error('Select a tenant from the picker in the top bar.');
+                return;
+              }
+              if (targetType === 'SpecificTenants' && selectedTenants.length === 0) {
+                snackbar.error('Select at least one tenant.');
+                return;
+              }
+              if (targetType === 'SpecificUsers' && selectedUsers.length === 0) {
+                snackbar.error('Select at least one user.');
+                return;
+              }
+              submit();
+            };
+            return (
+              <Box sx={styles.footer}>
+                <Typography variant="caption" sx={styles.disclaimer}>
+                  Only active users with confirmed email addresses will receive this message.
+                  Delivery runs in the background — the page returns as soon as recipients are
+                  counted.
+                </Typography>
+                <LoadingButton
+                  variant="contained"
+                  loading={isSubmitting}
+                  onClick={handleClick}
+                  startIcon={<Icon name="Send" />}
+                  sx={styles.sendButton}
+                >
+                  Send email
+                </LoadingButton>
+              </Box>
+            );
+          }}
         />
       </Paper>
-
-      {/* Footer */}
-      <Box sx={styles.footer}>
-        <Typography variant="caption" sx={styles.disclaimer}>
-          Only active users with confirmed email addresses will receive this message. Delivery runs
-          in the background — the page returns as soon as recipients are counted.
-        </Typography>
-        <LoadingButton
-          variant="contained"
-          loading={isSending}
-          onClick={handleSend}
-          startIcon={<Icon name="Send" />}
-          sx={styles.sendButton}
-        >
-          Send email
-        </LoadingButton>
-      </Box>
     </Box>
   );
 });
