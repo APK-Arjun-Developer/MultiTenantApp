@@ -1,3 +1,9 @@
+# [1.2.0](https://github.com/APK-Arjun-Developer/MultiTenantApp/compare/v1.1.0...v1.2.0) (2026-10-25)
+
+### Features
+
+- add demo login functionality with credentials display ([325711c](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/325711c2f7e32adac64affade4be611b0eaeb53f))
+
 # [1.1.0](https://github.com/APK-Arjun-Developer/MultiTenantApp/compare/v1.0.0...v1.1.0) (2026-10-19)
 
 ### Features
