@@ -53,6 +53,42 @@ const styles = {
     '&:hover': { textDecoration: 'underline' },
   },
 
+  demoBox: {
+    mt: 3,
+    p: 2,
+    border: '1px dashed',
+    borderColor: 'primary.main',
+    borderRadius: 2,
+    bgcolor: 'action.hover',
+  },
+
+  demoTitle: {
+    fontWeight: 600,
+    mb: 1,
+  },
+
+  demoRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+    mb: 0.5,
+  },
+
+  demoIcon: {
+    fontSize: '1rem',
+    color: 'text.secondary',
+  },
+
+  demoValue: {
+    fontFamily: 'monospace',
+    fontWeight: 600,
+    wordBreak: 'break-all',
+  },
+
+  demoButton: {
+    mt: 1.5,
+  },
+
   verifyBackButton: {
     mb: 1,
     ml: -0.5,

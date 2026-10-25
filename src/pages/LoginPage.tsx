@@ -29,6 +29,10 @@ import { loginSchema, type LoginValues, type OtpInputProps, type Step } from './
 
 const OTP_LENGTH = 6;
 
+const DEMO_EMAIL = import.meta.env.VITE_DEMO_EMAIL ?? '';
+const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD ?? '';
+const HAS_DEMO_CREDENTIALS = !!DEMO_EMAIL && !!DEMO_PASSWORD;
+
 const loginFields: FieldConfig[] = [
   {
     name: 'email',
@@ -201,6 +205,11 @@ const LoginPage = memo(() => {
     [loginMutation, goToVerify, sendOtp, snackbar],
   );
 
+  const handleDemoLogin = useCallback(
+    () => onLoginSubmit({ email: DEMO_EMAIL, password: DEMO_PASSWORD }),
+    [onLoginSubmit],
+  );
+
   const onVerifySubmit = useCallback(async () => {
     if (otp.length !== OTP_LENGTH) return;
     try {
@@ -280,6 +289,36 @@ const LoginPage = memo(() => {
                 Forgot password?
               </Typography>
             </Box>
+
+            {HAS_DEMO_CREDENTIALS && (
+              <Box sx={styles.demoBox}>
+                <Typography variant="subtitle2" sx={styles.demoTitle}>
+                  Demo credentials
+                </Typography>
+                <Box sx={styles.demoRow}>
+                  <Icon name="Email" sx={styles.demoIcon} />
+                  <Typography variant="body2" sx={styles.demoValue}>
+                    {DEMO_EMAIL}
+                  </Typography>
+                </Box>
+                <Box sx={styles.demoRow}>
+                  <Icon name="Lock" sx={styles.demoIcon} />
+                  <Typography variant="body2" sx={styles.demoValue}>
+                    {DEMO_PASSWORD}
+                  </Typography>
+                </Box>
+                <LoadingButton
+                  type="button"
+                  variant="outlined"
+                  fullWidth
+                  loading={isLoggingIn}
+                  onClick={handleDemoLogin}
+                  sx={styles.demoButton}
+                >
+                  Sign in with demo account
+                </LoadingButton>
+              </Box>
+            )}
           </motion.div>
         ) : (
           <motion.div

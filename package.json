@@ -34,7 +34,7 @@
     "axios": "^1.18.1",
     "dayjs": "^1.11.21",
     "framer-motion": "^12.42.2",
-    "mui-schema-form-builder": "1.10.4",
+    "mui-schema-form-builder": "^1.10.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-easy-crop": "^6.2.2",
