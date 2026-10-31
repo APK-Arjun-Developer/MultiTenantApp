@@ -837,6 +837,7 @@ const UsersPage = memo(() => {
                 <Tooltip title="Resend setup email">
                   <span>
                     <IconButton
+                      aria-label="Resend setup email"
                       size="small"
                       disabled={isResendingSetup}
                       onClick={() => handleResend(user)}
@@ -873,6 +874,7 @@ const UsersPage = memo(() => {
                 <Tooltip title="Impersonate user">
                   <span>
                     <IconButton
+                      aria-label="Impersonate user"
                       size="small"
                       color="secondary"
                       disabled={isImpersonating}
@@ -954,6 +956,7 @@ const UsersPage = memo(() => {
                       <Tooltip title="Resend invitation">
                         <span>
                           <IconButton
+                            aria-label="Resend invitation"
                             size="small"
                             color="info"
                             disabled={isResendingInvitation}

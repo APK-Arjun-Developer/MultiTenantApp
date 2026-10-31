@@ -733,6 +733,7 @@ const TenantAdminsPage = memo(() => {
               <Tooltip title="Impersonate admin">
                 <span>
                   <IconButton
+                    aria-label="Impersonate admin"
                     size="small"
                     color="secondary"
                     disabled={isImpersonating}
@@ -761,6 +762,7 @@ const TenantAdminsPage = memo(() => {
               <Tooltip title="Resend setup email">
                 <span>
                   <IconButton
+                    aria-label="Resend setup email"
                     size="small"
                     color="info"
                     disabled={isResendingSetup}
@@ -876,6 +878,7 @@ const TenantAdminsPage = memo(() => {
                       <Tooltip title="Resend invitation">
                         <span>
                           <IconButton
+                            aria-label="Resend invitation"
                             size="small"
                             color="info"
                             disabled={isResendingInvitation}

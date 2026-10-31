@@ -803,6 +803,7 @@ const TenantsPage = memo(() => {
                     <Tooltip title="Resend invitation">
                       <span>
                         <IconButton
+                          aria-label="Resend invitation"
                           size="small"
                           color="info"
                           disabled={isResendingInvitation}
