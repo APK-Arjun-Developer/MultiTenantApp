@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
+import { capture, findRow, paged } from '@/__tests__/utils/api';
 import { fillFields, validAddress, validAddressPayload } from '@/__tests__/utils/forms';
 import {
   renderWithProviders,
@@ -82,14 +83,6 @@ const invitation = (overrides: Partial<UserInvitationDto>): UserInvitationDto =>
   ...overrides,
 });
 
-const paged = <T,>(items: T[], totalCount = items.length) => ({
-  items,
-  page: 1,
-  pageSize: 10,
-  totalCount,
-  totalPages: 1,
-});
-
 interface MockOptions {
   users?: UserDto[];
   totalUsers?: number;
@@ -143,21 +136,6 @@ const renderPage = (
 
 type User = ReturnType<typeof renderPage>['user'];
 
-const row = async (text: string) => (await screen.findByText(text)).closest('tr') as HTMLElement;
-
-/** Records the parsed JSON body (or null) of every request to `method url`. */
-const capture = (method: 'post' | 'put' | 'delete', url: string, response: unknown = null) => {
-  const bodies: unknown[] = [];
-  server.use(
-    http[method](url, async ({ request }) => {
-      const text = await request.text();
-      bodies.push(text ? JSON.parse(text) : null);
-      return envelope(response as never);
-    }),
-  );
-  return bodies;
-};
-
 const pickRole = async (user: User, name: string) => {
   const dialog = screen.getByRole('dialog');
   // The form builder's AUTOCOMPLETE label isn't linked to its input, so find it in the dialog.
@@ -168,7 +146,7 @@ const pickRole = async (user: User, name: string) => {
 };
 
 const openAvatar = async (user: User, rowText: string) =>
-  user.click(within(await row(rowText)).getByLabelText('Manage profile photo'));
+  user.click(within(await findRow(rowText)).getByLabelText('Manage profile photo'));
 
 beforeEach(() => {
   vi.mocked(exportToCsv).mockClear();
@@ -180,12 +158,12 @@ describe('UsersPage', () => {
       mockApi();
       renderPage();
 
-      const janeRow = await row('Jane Doe');
+      const janeRow = await findRow('Jane Doe');
       expect(within(janeRow).getByText('jane@acme.com')).toBeInTheDocument();
       expect(within(janeRow).getByText('Support')).toBeInTheDocument();
       expect(within(janeRow).getByText('Active')).toBeInTheDocument();
 
-      const bobRow = await row('Bob Pending');
+      const bobRow = await findRow('Bob Pending');
       expect(within(bobRow).getByText('-')).toBeInTheDocument();
       expect(within(bobRow).getByText('—')).toBeInTheDocument();
       expect(within(bobRow).getByText('Inactive')).toBeInTheDocument();
@@ -218,7 +196,7 @@ describe('UsersPage', () => {
     it('filters by search text and status', async () => {
       const requests = mockApi();
       const { user } = renderPage();
-      await row('Jane Doe');
+      await findRow('Jane Doe');
 
       await user.type(screen.getByRole('searchbox', { name: 'Search' }), 'jan');
       await waitFor(() => expect(requests.at(-1)?.searchParams.get('search')).toBe('jan'));
@@ -231,7 +209,7 @@ describe('UsersPage', () => {
     it('exports all users to CSV', async () => {
       mockApi();
       const { user } = renderPage();
-      await row('Jane Doe');
+      await findRow('Jane Doe');
 
       await user.click(screen.getByRole('button', { name: 'Export CSV' }));
 
@@ -246,7 +224,7 @@ describe('UsersPage', () => {
       mockApi();
       const { user } = renderPage();
 
-      await user.click(within(await row('Jane Doe')).getByRole('button', { name: 'View' }));
+      await user.click(within(await findRow('Jane Doe')).getByRole('button', { name: 'View' }));
 
       const dialog = await screen.findByRole('dialog', { name: 'User details' });
       expect(within(dialog).getByText('jane@acme.com')).toBeInTheDocument();
@@ -346,7 +324,7 @@ describe('UsersPage', () => {
 
   describe('edit user', () => {
     const openEdit = async (user: User) => {
-      await user.click(within(await row('Jane Doe')).getByRole('button', { name: 'Edit' }));
+      await user.click(within(await findRow('Jane Doe')).getByRole('button', { name: 'Edit' }));
       return screen.findByRole('dialog', { name: 'Edit User' });
     };
 
@@ -404,7 +382,7 @@ describe('UsersPage', () => {
 
   describe('account actions', () => {
     const confirm = async (user: User, rowText: string, action: string, confirmLabel: string) => {
-      await user.click(within(await row(rowText)).getByRole('button', { name: action }));
+      await user.click(within(await findRow(rowText)).getByRole('button', { name: action }));
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: confirmLabel }));
     };
@@ -457,10 +435,10 @@ describe('UsersPage', () => {
       const { user } = renderPage();
 
       expect(
-        within(await row('Jane Doe')).queryByRole('button', { name: 'Resend setup email' }),
+        within(await findRow('Jane Doe')).queryByRole('button', { name: 'Resend setup email' }),
       ).not.toBeInTheDocument();
       await user.click(
-        within(await row('Bob Pending')).getByRole('button', { name: 'Resend setup email' }),
+        within(await findRow('Bob Pending')).getByRole('button', { name: 'Resend setup email' }),
       );
 
       expect(await screen.findByText('Setup email resent to bob@acme.com.')).toBeInTheDocument();
@@ -472,7 +450,7 @@ describe('UsersPage', () => {
       const { user } = renderPage();
 
       await user.click(
-        within(await row('Bob Pending')).getByRole('button', { name: 'Resend setup email' }),
+        within(await findRow('Bob Pending')).getByRole('button', { name: 'Resend setup email' }),
       );
 
       expect(await screen.findByText('Failed to resend setup email.')).toBeInTheDocument();
@@ -498,10 +476,10 @@ describe('UsersPage', () => {
       const { user } = renderPage(ALL, { preloadedState: systemAdminState() });
 
       expect(
-        within(await row('Bob Pending')).queryByRole('button', { name: 'Impersonate user' }),
+        within(await findRow('Bob Pending')).queryByRole('button', { name: 'Impersonate user' }),
       ).not.toBeInTheDocument();
       await user.click(
-        within(await row('Jane Doe')).getByRole('button', { name: 'Impersonate user' }),
+        within(await findRow('Jane Doe')).getByRole('button', { name: 'Impersonate user' }),
       );
 
       expect(await screen.findByText('Now impersonating Jane Doe.')).toBeInTheDocument();
@@ -514,7 +492,7 @@ describe('UsersPage', () => {
       const { user } = renderPage(ALL, { preloadedState: systemAdminState() });
 
       await user.click(
-        within(await row('Jane Doe')).getByRole('button', { name: 'Impersonate user' }),
+        within(await findRow('Jane Doe')).getByRole('button', { name: 'Impersonate user' }),
       );
 
       expect(await screen.findByText('Failed to start impersonation.')).toBeInTheDocument();
@@ -562,21 +540,21 @@ describe('UsersPage', () => {
       mockApi({ invitations: [pending, accepted] });
       renderPage(ALL, { route: '/users?tab=invitations' });
 
-      const pendingRow = await row('pending@acme.com');
+      const pendingRow = await findRow('pending@acme.com');
       expect(
         within(pendingRow).getByRole('button', { name: 'Resend invitation' }),
       ).toBeInTheDocument();
       expect(
         within(pendingRow).getByRole('button', { name: 'Revoke invitation' }),
       ).toBeInTheDocument();
-      expect(within(await row('done@acme.com')).queryAllByRole('button')).toHaveLength(0);
+      expect(within(await findRow('done@acme.com')).queryAllByRole('button')).toHaveLength(0);
     });
 
     it('hides the actions column without resend/revoke permissions', async () => {
       mockApi({ invitations: [pending] });
       renderPage(['Users.List'], { route: '/users?tab=invitations' });
 
-      await row('pending@acme.com');
+      await findRow('pending@acme.com');
       expect(screen.queryByRole('columnheader', { name: 'Actions' })).not.toBeInTheDocument();
     });
 
@@ -586,7 +564,9 @@ describe('UsersPage', () => {
       const { user } = renderPage(ALL, { route: '/users?tab=invitations' });
 
       await user.click(
-        within(await row('pending@acme.com')).getByRole('button', { name: 'Resend invitation' }),
+        within(await findRow('pending@acme.com')).getByRole('button', {
+          name: 'Resend invitation',
+        }),
       );
 
       expect(await screen.findByText('Invitation resent to pending@acme.com.')).toBeInTheDocument();
@@ -598,7 +578,9 @@ describe('UsersPage', () => {
       const { user } = renderPage(ALL, { route: '/users?tab=invitations' });
 
       await user.click(
-        within(await row('pending@acme.com')).getByRole('button', { name: 'Resend invitation' }),
+        within(await findRow('pending@acme.com')).getByRole('button', {
+          name: 'Resend invitation',
+        }),
       );
 
       expect(await screen.findByText('Failed to resend invitation.')).toBeInTheDocument();
@@ -610,7 +592,9 @@ describe('UsersPage', () => {
       const { user } = renderPage(ALL, { route: '/users?tab=invitations' });
 
       await user.click(
-        within(await row('pending@acme.com')).getByRole('button', { name: 'Revoke invitation' }),
+        within(await findRow('pending@acme.com')).getByRole('button', {
+          name: 'Revoke invitation',
+        }),
       );
       const dialog = await screen.findByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Revoke' }));
@@ -626,7 +610,9 @@ describe('UsersPage', () => {
       const { user } = renderPage(ALL, { route: '/users?tab=invitations' });
 
       await user.click(
-        within(await row('pending@acme.com')).getByRole('button', { name: 'Revoke invitation' }),
+        within(await findRow('pending@acme.com')).getByRole('button', {
+          name: 'Revoke invitation',
+        }),
       );
       await user.click(
         within(await screen.findByRole('dialog')).getByRole('button', { name: 'Revoke' }),
