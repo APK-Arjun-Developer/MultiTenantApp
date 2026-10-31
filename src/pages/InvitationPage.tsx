@@ -19,7 +19,8 @@ import {
   useAcceptTenantUserInvitationMutation,
   useValidateInvitationQuery,
 } from '@/features/auth/api/authApi';
-import { Icon, WizardActions } from '@/shared/components';
+import { isNetworkError } from '@/shared/api/networkError';
+import { Icon, ServerUnavailable, WizardActions } from '@/shared/components';
 import {
   buildAddressPayload,
   buildTenantAddressPayload,
@@ -130,7 +131,13 @@ const InvitationPage = memo(() => {
   const handleCancel = useCallback(() => navigate('/login'), [navigate]);
   const token = searchParams.get('token') ?? '';
 
-  const { data: validation, isLoading: isValidating } = useValidateInvitationQuery(token, {
+  const {
+    data: validation,
+    isLoading: isValidating,
+    isFetching: isRevalidating,
+    error: validationError,
+    refetch: revalidate,
+  } = useValidateInvitationQuery(token, {
     skip: !token,
   });
 
@@ -341,6 +348,10 @@ const InvitationPage = memo(() => {
         <CircularProgress size={28} />
       </Box>
     );
+  }
+
+  if (isNetworkError(validationError)) {
+    return <ServerUnavailable onRetry={revalidate} retrying={isRevalidating} />;
   }
 
   if (!validation?.isValid) return <InvitationInvalid message={validation?.errorMessage} />;

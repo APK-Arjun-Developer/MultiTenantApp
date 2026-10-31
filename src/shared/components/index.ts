@@ -13,6 +13,7 @@ export { default as LabelValue } from './LabelValue';
 export { default as LoadingButton } from './LoadingButton';
 export { default as PageTransition } from './PageTransition';
 export { default as PermissionGuard } from './PermissionGuard';
+export { default as ServerUnavailable } from './ServerUnavailable';
 export { default as SnackbarProvider } from './SnackbarProvider';
 export { default as SystemAdminGuard } from './SystemAdminGuard';
 export { default as TenantAdminGuard } from './TenantAdminGuard';

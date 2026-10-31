@@ -14,7 +14,8 @@ import {
 } from 'mui-schema-form-builder';
 
 import { useSetPasswordMutation, useValidateAccountSetupQuery } from '@/features/auth/api/authApi';
-import { Icon, LoadingButton, WizardActions } from '@/shared/components';
+import { isNetworkError } from '@/shared/api/networkError';
+import { Icon, LoadingButton, ServerUnavailable, WizardActions } from '@/shared/components';
 import { buildAddressPayload, getAddressFields } from '@/shared/forms/addressFields';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError, SetPasswordResponse } from '@/types/api';
@@ -93,7 +94,13 @@ const AccountSetupPage = memo(() => {
   const handleCancel = useCallback(() => navigate('/login'), [navigate]);
   const token = searchParams.get('token') ?? '';
 
-  const { data: validation, isLoading: isValidating } = useValidateAccountSetupQuery(token, {
+  const {
+    data: validation,
+    isLoading: isValidating,
+    isFetching: isRevalidating,
+    error: validationError,
+    refetch: revalidate,
+  } = useValidateAccountSetupQuery(token, {
     skip: !token,
   });
   const [setPassword, { isLoading: isSubmitting }] = useSetPasswordMutation();
@@ -224,6 +231,10 @@ const AccountSetupPage = memo(() => {
         <CircularProgress size={28} />
       </Box>
     );
+  }
+
+  if (isNetworkError(validationError)) {
+    return <ServerUnavailable onRetry={revalidate} retrying={isRevalidating} />;
   }
 
   if (!validation?.isValid) return <SetupInvalid message={validation?.errorMessage} />;
