@@ -14,8 +14,8 @@ dist-ssr
 .env
 
 # Test output
-coverage
-coverage-e2e
+/coverage
+/coverage-e2e
 playwright-report
 test-results
 blob-report

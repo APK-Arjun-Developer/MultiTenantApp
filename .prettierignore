@@ -2,8 +2,8 @@ dist
 node_modules
 bun.lock
 CHANGELOG.md
-coverage
-coverage-e2e
+/coverage
+/coverage-e2e
 playwright-report
 test-results
 blob-report
