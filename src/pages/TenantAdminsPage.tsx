@@ -114,6 +114,19 @@ const editSchema = z.object({
 });
 
 const ADMINS_TABS = ['admins', 'invitations'] as const;
+
+const ACTION_COPY: Record<ActionType, { label: string; description: string }> = {
+  delete: {
+    label: 'Delete',
+    description:
+      'This will permanently remove the tenant admin account. This action cannot be undone.',
+  },
+  deactivate: { label: 'Deactivate', description: 'The admin will no longer be able to sign in.' },
+  activate: {
+    label: 'Activate',
+    description: 'The admin account will be re-enabled and they can sign in again.',
+  },
+};
 const ADMINS_FILTER_DEFAULT = { search: '', tenant: '', status: '', createdVia: '' };
 const INV_FILTER_DEFAULT = { status: '' };
 
@@ -535,35 +548,8 @@ const TenantAdminsPage = memo(() => {
     [avatarDialog.item?.fullName],
   );
 
-  const confirmTitle = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? `Delete "${pendingActionDialog.item.admin.fullName}"?`
-        : pendingActionDialog.item?.type === 'deactivate'
-          ? `Deactivate "${pendingActionDialog.item.admin.fullName}"?`
-          : `Activate "${pendingActionDialog.item?.admin.fullName}"?`,
-    [pendingActionDialog.item],
-  );
-
-  const confirmDescription = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? 'This will permanently remove the tenant admin account. This action cannot be undone.'
-        : pendingActionDialog.item?.type === 'deactivate'
-          ? 'The admin will no longer be able to sign in.'
-          : 'The admin account will be re-enabled and they can sign in again.',
-    [pendingActionDialog.item],
-  );
-
-  const confirmLabel = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? 'Delete'
-        : pendingActionDialog.item?.type === 'deactivate'
-          ? 'Deactivate'
-          : 'Activate',
-    [pendingActionDialog.item],
-  );
+  const pendingCopy = ACTION_COPY[pendingActionDialog.item?.type ?? 'activate'];
+  const confirmTitle = `${pendingCopy.label} "${pendingActionDialog.item?.admin.fullName}"?`;
 
   const handleUploadAvatar = useCallback(
     async (file: File) => {
@@ -1024,8 +1010,8 @@ const TenantAdminsPage = memo(() => {
       <ConfirmDialog
         open={pendingActionDialog.open}
         title={confirmTitle}
-        description={confirmDescription}
-        confirmLabel={confirmLabel}
+        description={pendingCopy.description}
+        confirmLabel={pendingCopy.label}
         danger={
           pendingActionDialog.item?.type === 'delete' ||
           pendingActionDialog.item?.type === 'deactivate'

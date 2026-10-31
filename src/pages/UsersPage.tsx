@@ -86,6 +86,7 @@ import type { ApiError, UserCreatedVia } from '@/types/api';
 
 import { styles } from './UsersPage.styles';
 import {
+  type ActionType,
   createSchema,
   type CreateUserDialogProps,
   type CreateValues,
@@ -109,6 +110,18 @@ import {
 const USER_FILTER_DEFAULT = { search: '', status: '', createdVia: '' };
 const INV_FILTER_DEFAULT = { status: '' };
 const USERS_TABS = ['users', 'invitations'] as const;
+
+const ACTION_COPY: Record<ActionType, { label: string; description: string }> = {
+  delete: {
+    label: 'Delete',
+    description: 'This will permanently remove the user. This action cannot be undone.',
+  },
+  activate: { label: 'Activate', description: 'The user will be able to sign in again.' },
+  deactivate: {
+    label: 'Deactivate',
+    description: 'The user will be unable to sign in until reactivated.',
+  },
+};
 
 const CreateUserDialog = memo(({ open, onClose, roleOptions }: CreateUserDialogProps) => {
   const [createUser, { isLoading }] = useCreateUserMutation();
@@ -712,25 +725,8 @@ const UsersPage = memo(() => {
     [],
   );
 
-  const confirmTitle = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? `Delete "${pendingActionDialog.item.user.fullName}"?`
-        : pendingActionDialog.item?.type === 'activate'
-          ? `Activate "${pendingActionDialog.item.user.fullName}"?`
-          : `Deactivate "${pendingActionDialog.item?.user.fullName}"?`,
-    [pendingActionDialog.item],
-  );
-
-  const confirmMessage = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? 'This will permanently remove the user. This action cannot be undone.'
-        : pendingActionDialog.item?.type === 'activate'
-          ? 'The user will be able to sign in again.'
-          : 'The user will be unable to sign in until reactivated.',
-    [pendingActionDialog.item],
-  );
+  const pendingCopy = ACTION_COPY[pendingActionDialog.item?.type ?? 'deactivate'];
+  const confirmTitle = `${pendingCopy.label} "${pendingActionDialog.item?.user.fullName}"?`;
 
   const avatarSrc = useMemo(
     () => (avatarDialog.item?.profileFileId ? getUserAvatarUrl(avatarDialog.item.id) : null),
@@ -1114,14 +1110,8 @@ const UsersPage = memo(() => {
         <ConfirmDialog
           open={pendingActionDialog.open}
           title={confirmTitle}
-          description={confirmMessage}
-          confirmLabel={
-            pendingActionDialog.item?.type === 'delete'
-              ? 'Delete'
-              : pendingActionDialog.item?.type === 'activate'
-                ? 'Activate'
-                : 'Deactivate'
-          }
+          description={pendingCopy.description}
+          confirmLabel={pendingCopy.label}
           danger={pendingActionDialog.item?.type === 'delete'}
           loading={isActivating || isDeactivating || isDeleting}
           onConfirm={handleConfirmAction}
