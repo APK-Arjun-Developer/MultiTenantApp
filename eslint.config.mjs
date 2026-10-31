@@ -8,7 +8,14 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 const config = defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    'coverage',
+    'coverage-e2e',
+    'playwright-report',
+    'test-results',
+    'blob-report',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     plugins: { 'simple-import-sort': simpleImportSort },
