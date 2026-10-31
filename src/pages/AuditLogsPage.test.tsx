@@ -1,5 +1,5 @@
-import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { envelope, http, server, unreachable } from '@/__tests__/msw/server';
 import {
@@ -7,9 +7,12 @@ import {
   signedInState,
   testUser,
 } from '@/__tests__/utils/renderWithProviders';
+import { exportToCsv } from '@/shared/utils/exportCsv';
 import type { ActivityLogDto } from '@/types/api';
 
 import AuditLogsPage from './AuditLogsPage';
+
+vi.mock('@/shared/utils/exportCsv', () => ({ exportToCsv: vi.fn() }));
 
 const LOGS_URL = '/api/v1/activity-logs';
 
@@ -71,5 +74,71 @@ describe('AuditLogsPage', () => {
     });
 
     expect(screen.getByRole('heading', { name: 'No tenant selected' })).toBeInTheDocument();
+  });
+
+  describe('filters and export', () => {
+    beforeEach(() => {
+      vi.mocked(exportToCsv).mockClear();
+    });
+
+    const recordRequests = (items: ActivityLogDto[] = [log]) => {
+      const requests: URL[] = [];
+      server.use(
+        http.get(LOGS_URL, ({ request }) => {
+          requests.push(new URL(request.url));
+          return envelope(page(items));
+        }),
+      );
+      return requests;
+    };
+
+    it('filters by module and date range', async () => {
+      const requests = recordRequests();
+      const { user } = renderWithProviders(<AuditLogsPage />, { preloadedState: signedInState() });
+      await screen.findByText('Created user jane@acme.com');
+
+      await user.click(screen.getByRole('combobox', { name: 'Module' }));
+      await user.click(await screen.findByRole('option', { name: 'Users' }));
+      await waitFor(() => expect(requests.at(-1)?.searchParams.get('module')).toBe('Users'));
+
+      fireEvent.change(screen.getByLabelText('From date'), { target: { value: '2026-10-01' } });
+      fireEvent.change(screen.getByLabelText('To date'), { target: { value: '2026-10-31' } });
+      await waitFor(() => {
+        const last = requests.at(-1)?.searchParams;
+        expect(last?.get('dateFrom')).toBe('2026-10-01');
+        expect(last?.get('dateTo')).toBe('2026-10-31T23:59:59Z');
+      });
+    });
+
+    it('sorts by time', async () => {
+      const requests = recordRequests();
+      const { user } = renderWithProviders(<AuditLogsPage />, { preloadedState: signedInState() });
+      await screen.findByText('Created user jane@acme.com');
+
+      await user.click(screen.getByRole('button', { name: 'Time' }));
+
+      await waitFor(() => expect(requests.at(-1)?.searchParams.get('sortBy')).toBe('createdAt'));
+    });
+
+    it('exports the filtered logs to CSV', async () => {
+      const unknownModule = {
+        ...log,
+        id: 'x2',
+        module: 'Custom',
+        description: 'Custom event',
+        ipAddress: null,
+      };
+      recordRequests([log, unknownModule]);
+      const { user } = renderWithProviders(<AuditLogsPage />, { preloadedState: signedInState() });
+      await screen.findByText('Created user jane@acme.com');
+
+      await user.click(screen.getByRole('button', { name: 'Export CSV' }));
+
+      await waitFor(() => expect(exportToCsv).toHaveBeenCalledTimes(1));
+      const [filename, rows] = vi.mocked(exportToCsv).mock.calls[0];
+      expect(filename).toBe('audit-logs');
+      expect(rows[0]).toMatchObject({ Module: 'Users', Action: 'Create', IP: '10.0.0.1' });
+      expect(rows[1]).toMatchObject({ Module: 'Custom', IP: '' });
+    });
   });
 });

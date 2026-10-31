@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
 import { capture, paged } from '@/__tests__/utils/api';
@@ -57,6 +57,27 @@ const signIn = ({
 };
 
 const nav = () => screen.getAllByRole('navigation')[0];
+
+// Routes lazy-load their pages. Import them up front so a cold import (e.g. the dashboard's
+// recharts) under a busy parallel run can't eat into a test's findBy timeout.
+beforeAll(async () => {
+  await Promise.all([
+    import('@/pages/LoginPage'),
+    import('@/pages/ForgotPasswordPage'),
+    import('@/pages/ResetPasswordPage'),
+    import('@/pages/InvitationPage'),
+    import('@/pages/AccountSetupPage'),
+    import('@/pages/DashboardPage'),
+    import('@/pages/UsersPage'),
+    import('@/pages/RolesPage'),
+    import('@/pages/TenantsPage'),
+    import('@/pages/TenantAdminsPage'),
+    import('@/pages/ProfilePage'),
+    import('@/pages/AuditLogsPage'),
+    import('@/pages/SettingsPage'),
+    import('@/pages/EmailBroadcastPage'),
+  ]);
+}, 60_000);
 
 describe('app routes', () => {
   it('sends signed-out visitors to the login page', async () => {
@@ -182,6 +203,35 @@ describe('app routes', () => {
       await user.click(await screen.findByRole('button', { name: 'Stop Impersonation' }));
 
       expect(await screen.findByText('Failed to stop impersonation.')).toBeInTheDocument();
+    });
+  });
+
+  describe('every route loads its page', () => {
+    it.each([
+      ['/forgot-password', 'Reset your password'],
+      ['/reset-password', 'No reset token found in the link.'],
+      ['/invitation/accept', 'No invitation token found in the link.'],
+      ['/account-setup', 'No setup token found in the link.'],
+    ])('public route %s', async (url, text) => {
+      renderApp(url);
+
+      expect(await screen.findByText(text)).toBeInTheDocument();
+    });
+
+    it.each([
+      ['/profile', 'Sign out'],
+      ['/tenants', 'New Tenant'],
+      ['/tenant-admins', 'Create Admin'],
+      ['/audit-logs', 'No tenant selected'],
+      ['/email-broadcast', 'Send email'],
+    ])('system admin route %s', async (url, text) => {
+      // Catch-all first: the session mocks registered after it take precedence.
+      server.use(http.get('/api/v1/:resource/*', () => envelope(paged([]))));
+      const state = signIn({ systemRole: 'SystemAdmin' });
+
+      renderApp(url, { preloadedState: state });
+
+      expect(await screen.findByText(text)).toBeInTheDocument();
     });
   });
 });

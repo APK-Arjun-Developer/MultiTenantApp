@@ -103,4 +103,41 @@ describe('DataTable', () => {
 
     expect(await axe(container)).toHaveNoViolations();
   });
+
+  describe('pagination', () => {
+    it('is hidden without a total count and page handler', () => {
+      render(<DataTable data={rows} columns={columns} />);
+
+      expect(screen.queryByRole('button', { name: 'Go to next page' })).not.toBeInTheDocument();
+    });
+
+    it('pages forward and resets to the first page when the page size changes', async () => {
+      const onPageChange = vi.fn();
+      const onPageSizeChange = vi.fn();
+      render(
+        <DataTable
+          data={rows}
+          columns={columns}
+          totalCount={30}
+          pageSize={10}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />,
+      );
+
+      await userEvent.click(screen.getByRole('button', { name: 'Go to next page' }));
+      expect(onPageChange).toHaveBeenLastCalledWith(1);
+
+      await userEvent.click(screen.getByRole('combobox', { name: /Rows per page/ }));
+      await userEvent.click(await screen.findByRole('option', { name: '25' }));
+      expect(onPageSizeChange).toHaveBeenCalledWith(25);
+      expect(onPageChange).toHaveBeenLastCalledWith(0);
+    });
+
+    it('ignores sort clicks without a sort handler', async () => {
+      render(<DataTable data={rows} columns={columns} sortableColumns={['name']} />);
+
+      expect(screen.queryByRole('button', { name: 'Name' })).not.toBeInTheDocument();
+    });
+  });
 });
