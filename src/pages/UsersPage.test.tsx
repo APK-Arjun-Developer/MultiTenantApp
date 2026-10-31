@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
 import { capture, findRow, paged } from '@/__tests__/utils/api';
@@ -9,6 +9,7 @@ import {
   signedInState,
   testUser,
 } from '@/__tests__/utils/renderWithProviders';
+import { mockImageCanvas, uploadAndCrop } from '@/__tests__/utils/upload';
 import type { RootState } from '@/app/store';
 import { exportToCsv } from '@/shared/utils/exportCsv';
 import type { UserDto, UserInvitationDto } from '@/types/api';
@@ -619,6 +620,28 @@ describe('UsersPage', () => {
       );
 
       expect(await screen.findByText('Failed to revoke invitation.')).toBeInTheDocument();
+    });
+  });
+
+  describe('avatar upload', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it('uploads a user photo, and reports a failed upload', async () => {
+      mockImageCanvas();
+      mockApi();
+      server.use(http.post(`${USERS}/u1/avatar`, () => apiError(413, ''), { once: true }));
+      const { user } = renderPage();
+
+      await openAvatar(user, 'Jane Doe');
+      await uploadAndCrop(user);
+      expect(await screen.findByText('Failed to upload avatar.')).toBeInTheDocument();
+
+      capture('post', `${USERS}/u1/avatar`, { ...jane, profileFileId: 'f9' });
+      await uploadAndCrop(user);
+      expect(await screen.findByText('Profile picture updated.')).toBeInTheDocument();
     });
   });
 });

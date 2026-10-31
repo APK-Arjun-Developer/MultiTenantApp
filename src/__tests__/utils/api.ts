@@ -11,16 +11,24 @@ const paged = <T>(items: T[], totalCount = items.length) => ({
   totalPages: 1,
 });
 
+const parseBody = (text: string): unknown => {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text; // e.g. multipart uploads
+  }
+};
+
 /**
- * Records the parsed JSON body (or null when empty) of every request to `method url`,
- * answering with `response` in the API envelope.
+ * Records the body of every request to `method url` (parsed JSON, raw text for non-JSON,
+ * null when empty), answering with `response` in the API envelope.
  */
 const capture = (method: 'post' | 'put' | 'delete', url: string, response: unknown = null) => {
   const bodies: unknown[] = [];
   server.use(
     http[method](url, async ({ request }) => {
-      const text = await request.text();
-      bodies.push(text ? JSON.parse(text) : null);
+      bodies.push(parseBody(await request.text()));
       return envelope(response as never);
     }),
   );

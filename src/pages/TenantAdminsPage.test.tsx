@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
 import { capture, findRow, paged } from '@/__tests__/utils/api';
@@ -9,6 +9,7 @@ import {
   signedInState,
   testUser,
 } from '@/__tests__/utils/renderWithProviders';
+import { mockImageCanvas, uploadAndCrop } from '@/__tests__/utils/upload';
 import type { TenantAdminDto, TenantAdminInvitationDto, TenantDto } from '@/types/api';
 
 import TenantAdminsPage from './TenantAdminsPage';
@@ -486,6 +487,28 @@ describe('TenantAdminsPage', () => {
       renderAsLimited(['Tenants.List'], '/tenant-admins?tab=invitations');
 
       expect(within(await findRow('pending@acme.com')).queryAllByRole('button')).toHaveLength(0);
+    });
+  });
+
+  describe('avatar upload', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it('uploads an admin photo, and reports a failed upload', async () => {
+      mockImageCanvas();
+      mockApi();
+      server.use(http.post('/api/v1/users/a1/avatar', () => apiError(413, ''), { once: true }));
+      const { user } = renderPage();
+
+      await user.click(within(await findRow('Ada Admin')).getByLabelText('Manage profile photo'));
+      await uploadAndCrop(user);
+      expect(await screen.findByText('Failed to upload avatar.')).toBeInTheDocument();
+
+      capture('post', '/api/v1/users/a1/avatar', { ...ada, profileFileId: 'f9' });
+      await uploadAndCrop(user);
+      expect(await screen.findByText('Profile picture updated.')).toBeInTheDocument();
     });
   });
 });

@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
 import { capture, findRow, paged } from '@/__tests__/utils/api';
@@ -9,6 +9,7 @@ import {
   signedInState,
   testUser,
 } from '@/__tests__/utils/renderWithProviders';
+import { mockImageCanvas, uploadAndCrop } from '@/__tests__/utils/upload';
 import type { TenantCreationInvitationDto, TenantDto } from '@/types/api';
 
 import TenantsPage from './TenantsPage';
@@ -493,6 +494,28 @@ describe('TenantsPage', () => {
       renderAsLimited(['Tenants.List'], '/tenants?tab=invitations');
 
       expect(within(await findRow('pending@newco.com')).queryAllByRole('button')).toHaveLength(0);
+    });
+  });
+
+  describe('company logo upload', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it('uploads a tenant logo, and reports a failed upload', async () => {
+      mockImageCanvas();
+      mockApi();
+      server.use(http.post(`${TENANTS}/t1/logo`, () => apiError(413, ''), { once: true }));
+      const { user } = renderPage();
+
+      await user.click((await findRow('Acme')).querySelector('.MuiAvatar-root') as HTMLElement);
+      await uploadAndCrop(user);
+      expect(await screen.findByText('Failed to upload logo.')).toBeInTheDocument();
+
+      capture('post', `${TENANTS}/t1/logo`, { ...acme, profileFileId: 'logo-9' });
+      await uploadAndCrop(user);
+      expect(await screen.findByText('Company logo updated.')).toBeInTheDocument();
     });
   });
 });
