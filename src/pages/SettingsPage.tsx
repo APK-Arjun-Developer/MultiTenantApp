@@ -159,19 +159,29 @@ interface ConfigRowProps {
   onChange: (value: boolean) => void;
 }
 
-const ConfigRow = memo(({ title, description, checked, disabled, onChange }: ConfigRowProps) => (
-  <Box sx={styles.configRow}>
-    <Box sx={styles.configLabel}>
-      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-        {title}
-      </Typography>
-      <Typography variant="caption" color="text.secondary">
-        {description}
-      </Typography>
+const ConfigRow = memo(({ title, description, checked, disabled, onChange }: ConfigRowProps) => {
+  // Name the switch after its row title for screen readers.
+  const switchSlotProps = useMemo(() => ({ input: { 'aria-label': title } }), [title]);
+
+  return (
+    <Box sx={styles.configRow}>
+      <Box sx={styles.configLabel}>
+        <Typography variant="body2" sx={styles.configTitle}>
+          {title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {description}
+        </Typography>
+      </Box>
+      <Switch
+        checked={checked}
+        disabled={disabled}
+        slotProps={switchSlotProps}
+        onChange={(e) => onChange(e.target.checked)}
+      />
     </Box>
-    <Switch checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
-  </Box>
-));
+  );
+});
 
 interface TenantConfigFormProps {
   config: TenantConfigDto;

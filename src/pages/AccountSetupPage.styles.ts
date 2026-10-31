@@ -103,19 +103,6 @@ const styles = {
     mt: 1,
   },
 
-  wizardActionsRow: {
-    display: 'flex',
-    gap: 1,
-    mt: 1,
-  },
-
-  wizardBackButton: {
-    flex: 1,
-  },
-
-  wizardNextButton: {
-    flex: 1,
-  },
   headerIconSize: {
     fontSize: '0.875rem',
   },

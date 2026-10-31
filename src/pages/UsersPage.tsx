@@ -86,6 +86,7 @@ import type { ApiError, UserCreatedVia } from '@/types/api';
 
 import { styles } from './UsersPage.styles';
 import {
+  type ActionType,
   createSchema,
   type CreateUserDialogProps,
   type CreateValues,
@@ -109,6 +110,18 @@ import {
 const USER_FILTER_DEFAULT = { search: '', status: '', createdVia: '' };
 const INV_FILTER_DEFAULT = { status: '' };
 const USERS_TABS = ['users', 'invitations'] as const;
+
+const ACTION_COPY: Record<ActionType, { label: string; description: string }> = {
+  delete: {
+    label: 'Delete',
+    description: 'This will permanently remove the user. This action cannot be undone.',
+  },
+  activate: { label: 'Activate', description: 'The user will be able to sign in again.' },
+  deactivate: {
+    label: 'Deactivate',
+    description: 'The user will be unable to sign in until reactivated.',
+  },
+};
 
 const CreateUserDialog = memo(({ open, onClose, roleOptions }: CreateUserDialogProps) => {
   const [createUser, { isLoading }] = useCreateUserMutation();
@@ -136,7 +149,8 @@ const CreateUserDialog = memo(({ open, onClose, roleOptions }: CreateUserDialogP
         required: true,
         options: roleOptions,
         defaultValue: [],
-        muiProps: { multiple: true, disableCloseOnSelect: true },
+        multiple: true,
+        muiProps: { disableCloseOnSelect: true },
       },
       ...getAddressFields(undefined, 'Address', true),
     ],
@@ -202,7 +216,8 @@ const InviteUserDialog = memo(({ open, onClose, roleOptions }: InviteUserDialogP
         required: true,
         options: roleOptions,
         defaultValue: [],
-        muiProps: { multiple: true, disableCloseOnSelect: true },
+        multiple: true,
+        muiProps: { disableCloseOnSelect: true },
       },
     ],
     [roleOptions],
@@ -498,7 +513,12 @@ const UsersPage = memo(() => {
   const pendingActionDialog = useItemDialog<PendingAction>();
   const revokeDialog = useItemDialog<UserInvitationDto>();
 
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    isError: usersError,
+    refetch: refetchUsers,
+  } = useGetUsersQuery({
     page: usersTable.page + 1,
     pageSize: usersTable.pageSize,
     search: debouncedSearch || undefined,
@@ -508,7 +528,12 @@ const UsersPage = memo(() => {
     sortOrder: usersTable.activeSortOrder,
   });
 
-  const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
+  const {
+    data: invitationsData,
+    isLoading: invLoading,
+    isError: invError,
+    refetch: refetchInvitations,
+  } = useGetUserInvitationsQuery({
     page: invTable.page + 1,
     pageSize: invTable.pageSize,
     status: invFilter.status || undefined,
@@ -700,25 +725,8 @@ const UsersPage = memo(() => {
     [],
   );
 
-  const confirmTitle = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? `Delete "${pendingActionDialog.item.user.fullName}"?`
-        : pendingActionDialog.item?.type === 'activate'
-          ? `Activate "${pendingActionDialog.item.user.fullName}"?`
-          : `Deactivate "${pendingActionDialog.item?.user.fullName}"?`,
-    [pendingActionDialog.item],
-  );
-
-  const confirmMessage = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? 'This will permanently remove the user. This action cannot be undone.'
-        : pendingActionDialog.item?.type === 'activate'
-          ? 'The user will be able to sign in again.'
-          : 'The user will be unable to sign in until reactivated.',
-    [pendingActionDialog.item],
-  );
+  const pendingCopy = ACTION_COPY[pendingActionDialog.item?.type ?? 'deactivate'];
+  const confirmTitle = `${pendingCopy.label} "${pendingActionDialog.item?.user.fullName}"?`;
 
   const avatarSrc = useMemo(
     () => (avatarDialog.item?.profileFileId ? getUserAvatarUrl(avatarDialog.item.id) : null),
@@ -825,6 +833,7 @@ const UsersPage = memo(() => {
                 <Tooltip title="Resend setup email">
                   <span>
                     <IconButton
+                      aria-label="Resend setup email"
                       size="small"
                       disabled={isResendingSetup}
                       onClick={() => handleResend(user)}
@@ -861,6 +870,7 @@ const UsersPage = memo(() => {
                 <Tooltip title="Impersonate user">
                   <span>
                     <IconButton
+                      aria-label="Impersonate user"
                       size="small"
                       color="secondary"
                       disabled={isImpersonating}
@@ -942,6 +952,7 @@ const UsersPage = memo(() => {
                       <Tooltip title="Resend invitation">
                         <span>
                           <IconButton
+                            aria-label="Resend invitation"
                             size="small"
                             color="info"
                             disabled={isResendingInvitation}
@@ -1024,6 +1035,8 @@ const UsersPage = memo(() => {
               columns={userColumns}
               data={usersData?.items ?? []}
               isLoading={usersLoading}
+              isError={usersError}
+              onRetry={refetchUsers}
               page={usersTable.page}
               pageSize={usersTable.pageSize}
               totalCount={usersData?.totalCount ?? 0}
@@ -1055,6 +1068,8 @@ const UsersPage = memo(() => {
               columns={invitationColumns}
               data={invitationsData?.items ?? []}
               isLoading={invLoading}
+              isError={invError}
+              onRetry={refetchInvitations}
               page={invTable.page}
               pageSize={invTable.pageSize}
               totalCount={invitationsData?.totalCount ?? 0}
@@ -1095,14 +1110,8 @@ const UsersPage = memo(() => {
         <ConfirmDialog
           open={pendingActionDialog.open}
           title={confirmTitle}
-          description={confirmMessage}
-          confirmLabel={
-            pendingActionDialog.item?.type === 'delete'
-              ? 'Delete'
-              : pendingActionDialog.item?.type === 'activate'
-                ? 'Activate'
-                : 'Deactivate'
-          }
+          description={pendingCopy.description}
+          confirmLabel={pendingCopy.label}
           danger={pendingActionDialog.item?.type === 'delete'}
           loading={isActivating || isDeactivating || isDeleting}
           onConfirm={handleConfirmAction}

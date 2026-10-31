@@ -8,7 +8,14 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 const config = defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    'coverage',
+    'coverage-e2e',
+    'playwright-report',
+    'test-results',
+    'blob-report',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     plugins: { 'simple-import-sort': simpleImportSort },
@@ -109,6 +116,11 @@ const config = defineConfig([
     // router.tsx intentionally mixes lazy page components with the router constant —
     // fast refresh does not apply to this infrastructure file.
     files: ['src/app/router.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
+    // Test files and helpers are never hot-reloaded.
+    files: ['src/__tests__/**', 'src/**/*.test.{ts,tsx}'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {

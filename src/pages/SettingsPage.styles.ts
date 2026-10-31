@@ -108,6 +108,10 @@ const styles = {
     flex: 1,
   },
 
+  configTitle: {
+    fontWeight: 500,
+  },
+
   configMaintenanceMsg: {
     pb: 1,
     px: 0.5,

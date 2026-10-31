@@ -124,7 +124,7 @@ const AuditLogsPage = memo(() => {
     [],
   );
 
-  const { data, isLoading } = useGetActivityLogsQuery({
+  const { data, isLoading, isError, refetch } = useGetActivityLogsQuery({
     page: table.page + 1,
     pageSize: table.pageSize,
     module: auditFilter.module || undefined,
@@ -247,6 +247,8 @@ const AuditLogsPage = memo(() => {
           data={data?.items ?? []}
           columns={columns}
           isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
           totalCount={data?.totalCount ?? 0}
           page={table.page}
           pageSize={table.pageSize}

@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
@@ -11,9 +12,10 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { flexRender, getCoreRowModel, type Header, useReactTable } from '@tanstack/react-table';
 
 import { DEFAULT_PAGE_SIZE } from '@/shared/constants/list';
+import type { SortOrder } from '@/types';
 
 import Icon from '../Icon';
 import { styles } from './styles';
@@ -24,6 +26,8 @@ const DataTable = React.memo(
     data,
     columns,
     isLoading = false,
+    isError = false,
+    onRetry,
     totalCount,
     page = 0,
     pageSize = DEFAULT_PAGE_SIZE,
@@ -57,11 +61,6 @@ const DataTable = React.memo(
       [sortBy, sortOrder, onSortChange],
     );
 
-    const showPagination = useMemo(
-      () => totalCount !== undefined && onPageChange !== undefined,
-      [totalCount, onPageChange],
-    );
-
     const handlePageChange = useCallback(
       (_: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
         onPageChange?.(newPage);
@@ -77,6 +76,76 @@ const DataTable = React.memo(
       [onPageSizeChange, onPageChange],
     );
 
+    const renderHeaderContent = (
+      header: Header<TData, unknown>,
+      isSortable: boolean,
+      activeDirection: SortOrder | false,
+    ) => {
+      if (header.isPlaceholder) return null;
+      const content = flexRender(header.column.columnDef.header, header.getContext());
+      if (!isSortable) return content;
+      return (
+        <TableSortLabel
+          active={activeDirection !== false}
+          direction={activeDirection || 'asc'}
+          onClick={() => handleSortClick(header.column.id)}
+        >
+          {content}
+        </TableSortLabel>
+      );
+    };
+
+    /** A single full-width row for the loading, error and empty states. */
+    const renderStatusRow = (content: React.ReactNode) => (
+      <TableRow>
+        <TableCell colSpan={columns.length} sx={styles.centeredCell}>
+          {content}
+        </TableCell>
+      </TableRow>
+    );
+
+    const renderBody = () => {
+      if (isLoading) return renderStatusRow(<CircularProgress size={24} />);
+
+      if (isError) {
+        return renderStatusRow(
+          <Box sx={styles.emptyState}>
+            <Icon name="ErrorOutline" sx={styles.errorIcon} />
+            <Typography variant="body2" color="text.secondary">
+              Couldn't load data. Please try again.
+            </Typography>
+            {onRetry && (
+              <Button size="small" variant="outlined" onClick={onRetry}>
+                Retry
+              </Button>
+            )}
+          </Box>,
+        );
+      }
+
+      const { rows } = table.getRowModel();
+      if (rows.length === 0) {
+        return renderStatusRow(
+          <Box sx={styles.emptyState}>
+            <Icon name="Inbox" sx={styles.emptyIcon} />
+            <Typography variant="body2" color="text.disabled">
+              No records found
+            </Typography>
+          </Box>,
+        );
+      }
+
+      return rows.map((row) => (
+        <TableRow key={row.id} hover>
+          {row.getVisibleCells().map((cell) => (
+            <TableCell key={cell.id}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          ))}
+        </TableRow>
+      ));
+    };
+
     return (
       <Paper variant="outlined" sx={styles.paper}>
         <TableContainer>
@@ -87,66 +156,30 @@ const DataTable = React.memo(
                   {headerGroup.headers.map((header) => {
                     const isSortable =
                       !!sortableColumns?.includes(header.column.id) && !!onSortChange;
-                    const isActive = sortBy === header.column.id;
+                    // Direction of the active sort column (also exposed as aria-sort).
+                    const activeDirection: SortOrder | false =
+                      isSortable && sortBy === header.column.id ? (sortOrder ?? 'asc') : false;
                     return (
                       <TableCell
                         key={header.id}
+                        sortDirection={activeDirection}
                         sx={isSortable ? styles.sortableHeaderCell : styles.headerCell}
                       >
-                        {header.isPlaceholder ? null : isSortable ? (
-                          <TableSortLabel
-                            active={isActive}
-                            direction={isActive ? (sortOrder ?? 'asc') : 'asc'}
-                            onClick={() => handleSortClick(header.column.id)}
-                          >
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                          </TableSortLabel>
-                        ) : (
-                          flexRender(header.column.columnDef.header, header.getContext())
-                        )}
+                        {renderHeaderContent(header, isSortable, activeDirection)}
                       </TableCell>
                     );
                   })}
                 </TableRow>
               ))}
             </TableHead>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} sx={styles.centeredCell}>
-                    <CircularProgress size={24} />
-                  </TableCell>
-                </TableRow>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} sx={styles.centeredCell}>
-                    <Box sx={styles.emptyState}>
-                      <Icon name="Inbox" sx={styles.emptyIcon} />
-                      <Typography variant="body2" color="text.disabled">
-                        No records found
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} hover>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
+            <TableBody>{renderBody()}</TableBody>
           </Table>
         </TableContainer>
-        {showPagination && (
+        {totalCount !== undefined && onPageChange && (
           <Box sx={styles.paginationContainer}>
             <TablePagination
               component="div"
-              count={totalCount ?? 0}
+              count={totalCount}
               page={page}
               rowsPerPage={pageSize}
               rowsPerPageOptions={[5, 10, 25, 50]}

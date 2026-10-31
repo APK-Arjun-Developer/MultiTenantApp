@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
 
 import NotFoundPage from '@/pages/NotFoundPage';
 import { AuthGuard, ErrorPage, SystemAdminGuard, TenantAdminGuard } from '@/shared/components';
@@ -20,7 +20,7 @@ const AuditLogsPage = lazy(() => import('@/pages/AuditLogsPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const EmailBroadcastPage = lazy(() => import('@/pages/EmailBroadcastPage'));
 
-const router = createBrowserRouter([
+const routes: RouteObject[] = [
   {
     element: <AuthLayout />,
     children: [
@@ -115,6 +115,9 @@ const router = createBrowserRouter([
     ],
   },
   { path: '*', element: <NotFoundPage /> },
-]);
+];
 
+const router = createBrowserRouter(routes);
+
+export { routes };
 export default router;
