@@ -66,11 +66,8 @@ describe('WizardActions', () => {
   it('disables navigation while the step is validating', () => {
     renderActions({ isNavigating: true });
 
-    const [cancel, next] = screen.getAllByRole('button');
-    expect(cancel).toHaveTextContent('Cancel');
-    expect(cancel).toBeDisabled();
-    expect(next).toHaveTextContent('Next');
-    expect(next).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 
   it('has no accessibility violations', async () => {

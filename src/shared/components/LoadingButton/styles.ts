@@ -3,11 +3,12 @@ import type { StyleSheet } from '@/types';
 const buttonRootStyle = { position: 'relative' as const };
 
 const styles = {
+  // Opacity (not visibility) keeps the label in the accessibility tree while loading.
   spinnerVisible: {
-    visibility: 'visible',
+    opacity: 1,
   },
   spinnerHidden: {
-    visibility: 'hidden',
+    opacity: 0,
   },
   spinner: {
     position: 'absolute',
