@@ -110,9 +110,15 @@ First E2E run: `bunx playwright install chromium`.
 
 - **Unit / component tests** — Vitest + Testing Library + `jest-dom` + `jest-axe`, jsdom environment.
   Tests live next to the code as `*.test.ts(x)`; shared setup is in `src/__tests__/setup.ts`.
+  - `renderWithProviders(ui, { preloadedState, route })` (`src/__tests__/utils`) renders with the
+    real store (`setupStore`), router, theme and snackbars; `signedInState(permissions)` preloads auth.
+  - API calls are mocked with **MSW** (`src/__tests__/msw/server.ts`: `server.use(http.get(url, () => envelope(data)))`,
+    `apiError`, `unreachable`). Unmocked requests fail the test.
 - **E2E tests** — Playwright in `e2e/tests`, helpers in `e2e/fixtures`. The API is mocked with
   `page.route`, so no backend is needed. Reports go to `playwright-report/`. Specs import
   `test`/`expect` from `e2e/fixtures/test`, which collects V8 coverage when `E2E_COVERAGE=true`.
+  `signInAs(page, { permissions })` gives a verified session; unmocked API calls answer 404
+  `Not mocked in e2e: <path>`.
 
 ### Coverage target: 95% (ratchet)
 

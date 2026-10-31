@@ -1,4 +1,9 @@
-import { combineReducers, configureStore, type UnknownAction } from '@reduxjs/toolkit';
+import {
+  combineReducers,
+  configureStore,
+  type Reducer,
+  type UnknownAction,
+} from '@reduxjs/toolkit';
 
 import authReducer, { logout } from '@/features/auth/slices/authSlice';
 import uiReducer, {
@@ -17,7 +22,7 @@ const combinedReducer = combineReducers({
 
 type AppState = ReturnType<typeof combinedReducer>;
 
-const rootReducer = (state: AppState | undefined, action: UnknownAction): AppState => {
+const rootReducer: Reducer<AppState, UnknownAction, Partial<AppState>> = (state, action) => {
   if (action.type === logout.type && state) {
     // auth handles its own logout; reset ui (clears selectedTenantId) and api (clears all RTK Query cache)
     return combinedReducer({ auth: state.auth }, action);
@@ -25,10 +30,14 @@ const rootReducer = (state: AppState | undefined, action: UnknownAction): AppSta
   return combinedReducer(state, action);
 };
 
-const store = configureStore({
-  reducer: rootReducer,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware),
-});
+const setupStore = (preloadedState?: Partial<AppState>) =>
+  configureStore({
+    reducer: rootReducer,
+    preloadedState,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware),
+  });
+
+const store = setupStore();
 
 // Persist ui preferences to localStorage so they survive page reloads.
 let prevTenantId: string | null = store.getState().ui.selectedTenantId;
@@ -62,5 +71,6 @@ store.subscribe(() => {
 
 type RootState = ReturnType<typeof store.getState>;
 type AppDispatch = typeof store.dispatch;
+type AppStore = ReturnType<typeof setupStore>;
 
-export { type AppDispatch, type RootState, store };
+export { type AppDispatch, type AppStore, type RootState, setupStore, store };

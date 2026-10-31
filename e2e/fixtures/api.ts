@@ -10,6 +10,8 @@ const signedInUser = {
   systemRole: 'TenantAdmin',
 };
 
+type SessionUser = typeof signedInUser;
+
 const fulfillEnvelope = (route: Route, data: unknown, status = 200) =>
   route.fulfill({
     status,
@@ -28,10 +30,40 @@ const mockGet = (page: Page, path: string, data: unknown) =>
   page.route(`**${path}*`, (route) => fulfillEnvelope(route, data));
 
 /** Starts the page with a persisted session, as if the user had signed in earlier. */
-const signIn = (page: Page) =>
-  page.addInitScript(([key, user]) => localStorage.setItem(key, JSON.stringify(user)), [
+const signIn = (page: Page, user: SessionUser = signedInUser) =>
+  page.addInitScript(([key, value]) => localStorage.setItem(key, JSON.stringify(value)), [
     AUTH_USER_KEY,
-    signedInUser,
+    user,
   ] as const);
 
-export { mockApiDown, mockGet, signIn };
+/**
+ * Signed-in session with a verified /auth/me and permissions. Any API call a test
+ * doesn't mock answers 404 with the path in the message, so gaps are obvious.
+ * Register this first: routes added later take precedence over the fallback.
+ */
+const signInAs = async (
+  page: Page,
+  { permissions = [], user = signedInUser }: { permissions?: string[]; user?: SessionUser } = {},
+) => {
+  await page.route(isApiRequest, (route) =>
+    route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: null,
+        message: `Not mocked in e2e: ${new URL(route.request().url()).pathname}`,
+      }),
+    }),
+  );
+  await signIn(page, user);
+  await mockGet(page, '/api/v1/auth/me', { ...user, permissions });
+  await mockGet(page, '/api/v1/users/current', {
+    ...user,
+    tenantId: '20000000-0000-0000-0000-000000000001',
+    isActive: true,
+    createdVia: 'Direct',
+    hasPendingSetup: false,
+  });
+};
+
+export { mockApiDown, mockGet, signIn, signInAs };
