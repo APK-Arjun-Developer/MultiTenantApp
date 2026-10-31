@@ -333,7 +333,7 @@ const EditAdminDialog = memo(({ admin, tenantAddress, onClose }: EditAdminDialog
           await updateTenant({
             id: admin.tenant.id,
             ...buildTenantAddressPayload(values),
-          });
+          }).unwrap();
         }
         snackbar.success('Tenant admin updated.');
         onClose();
