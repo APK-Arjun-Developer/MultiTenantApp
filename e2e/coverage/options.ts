@@ -3,7 +3,7 @@ import { posix } from 'node:path';
 
 const isCoverageEnabled = process.env.E2E_COVERAGE === 'true';
 
-const toPosix = (path: string) => path.replace(/\\/g, '/');
+const toPosix = (path: string) => path.replaceAll('\\', '/');
 
 const isAppSource = (path: string) => {
   const file = toPosix(path);
@@ -32,6 +32,8 @@ const coverageOptions: CoverageReportOptions = {
   sourceFilter: (sourcePath) => /\.tsx?$/.test(sourcePath),
   sourcePath: (filePath, { distFile }) => resolveSourcePath(filePath, distFile),
   outputFilter: {
+    // Bootstrap only; excluded from Sonar sources and unit coverage too.
+    'src/main.tsx': false,
     'src/__tests__/**': false,
     '**/*.test.{ts,tsx}': false,
     '**/*.d.ts': false,
