@@ -1,10 +1,18 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Provider } from 'react-redux';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  Route,
+  RouterProvider,
+  Routes,
+  useLocation,
+} from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { render, type RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { routes } from '@/app/router';
 import { type AppStore, type RootState, setupStore } from '@/app/store';
 import { SnackbarProvider } from '@/shared/components';
 import { buildTheme } from '@/shared/theme';
@@ -62,6 +70,27 @@ const renderWithProviders = (
   return { store, user: userEvent.setup(), ...render(tree, { wrapper: Wrapper, ...options }) };
 };
 
+/**
+ * Renders the real app routes (layouts, guards, lazy pages) at `url` in a memory data router,
+ * with the same providers as the app.
+ */
+const renderApp = (
+  url: string,
+  { preloadedState, store = setupStore(preloadedState) }: ProviderOptions = {},
+) => {
+  const router = createMemoryRouter(routes, { initialEntries: [url] });
+  const view = render(
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <SnackbarProvider>
+          <RouterProvider router={router} />
+        </SnackbarProvider>
+      </ThemeProvider>
+    </Provider>,
+  );
+  return { store, router, user: userEvent.setup(), ...view };
+};
+
 const testUser: AuthUser = {
   id: '00000000-0000-0000-0000-000000000001',
   email: 'admin@acme.com',
@@ -85,4 +114,4 @@ const signedInState = (
   },
 });
 
-export { renderWithProviders, signedInState, testUser };
+export { renderApp, renderWithProviders, signedInState, testUser };
