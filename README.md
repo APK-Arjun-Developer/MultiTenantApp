@@ -101,8 +101,7 @@ bun run test:coverage  # Vitest + coverage → coverage/ (lcov for Sonar)
 bun run test:e2e       # Playwright E2E (starts Vite on :4173, API is mocked)
 bun run test:e2e:coverage  # E2E + coverage → coverage-e2e/ (lcov for Sonar)
 bun run test:e2e:ui    # Playwright UI mode
-bun run check          # format + lint --fix + typecheck + test + build
-bun run ci             # everything CI runs: format:check, lint, typecheck, coverage, build, e2e
+bun run check          # auto-fix format + lint, then everything CI runs (typecheck, unit + E2E coverage gates, build)
 ```
 
 First E2E run: `bunx playwright install chromium`.
