@@ -12,7 +12,7 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { flexRender, getCoreRowModel, type Header, useReactTable } from '@tanstack/react-table';
 
 import { DEFAULT_PAGE_SIZE } from '@/shared/constants/list';
 
@@ -80,6 +80,73 @@ const DataTable = React.memo(
       [onPageSizeChange, onPageChange],
     );
 
+    const renderHeaderContent = (header: Header<TData, unknown>, isSortable: boolean) => {
+      if (header.isPlaceholder) return null;
+      const content = flexRender(header.column.columnDef.header, header.getContext());
+      if (!isSortable) return content;
+      const isActive = sortBy === header.column.id;
+      return (
+        <TableSortLabel
+          active={isActive}
+          direction={isActive ? (sortOrder ?? 'asc') : 'asc'}
+          onClick={() => handleSortClick(header.column.id)}
+        >
+          {content}
+        </TableSortLabel>
+      );
+    };
+
+    /** A single full-width row for the loading, error and empty states. */
+    const renderStatusRow = (content: React.ReactNode) => (
+      <TableRow>
+        <TableCell colSpan={columns.length} sx={styles.centeredCell}>
+          {content}
+        </TableCell>
+      </TableRow>
+    );
+
+    const renderBody = () => {
+      if (isLoading) return renderStatusRow(<CircularProgress size={24} />);
+
+      if (isError) {
+        return renderStatusRow(
+          <Box sx={styles.emptyState}>
+            <Icon name="ErrorOutline" sx={styles.errorIcon} />
+            <Typography variant="body2" color="text.secondary">
+              Couldn't load data. Please try again.
+            </Typography>
+            {onRetry && (
+              <Button size="small" variant="outlined" onClick={onRetry}>
+                Retry
+              </Button>
+            )}
+          </Box>,
+        );
+      }
+
+      const { rows } = table.getRowModel();
+      if (rows.length === 0) {
+        return renderStatusRow(
+          <Box sx={styles.emptyState}>
+            <Icon name="Inbox" sx={styles.emptyIcon} />
+            <Typography variant="body2" color="text.disabled">
+              No records found
+            </Typography>
+          </Box>,
+        );
+      }
+
+      return rows.map((row) => (
+        <TableRow key={row.id} hover>
+          {row.getVisibleCells().map((cell) => (
+            <TableCell key={cell.id}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          ))}
+        </TableRow>
+      ));
+    };
+
     return (
       <Paper variant="outlined" sx={styles.paper}>
         <TableContainer>
@@ -90,75 +157,19 @@ const DataTable = React.memo(
                   {headerGroup.headers.map((header) => {
                     const isSortable =
                       !!sortableColumns?.includes(header.column.id) && !!onSortChange;
-                    const isActive = sortBy === header.column.id;
                     return (
                       <TableCell
                         key={header.id}
                         sx={isSortable ? styles.sortableHeaderCell : styles.headerCell}
                       >
-                        {header.isPlaceholder ? null : isSortable ? (
-                          <TableSortLabel
-                            active={isActive}
-                            direction={isActive ? (sortOrder ?? 'asc') : 'asc'}
-                            onClick={() => handleSortClick(header.column.id)}
-                          >
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                          </TableSortLabel>
-                        ) : (
-                          flexRender(header.column.columnDef.header, header.getContext())
-                        )}
+                        {renderHeaderContent(header, isSortable)}
                       </TableCell>
                     );
                   })}
                 </TableRow>
               ))}
             </TableHead>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} sx={styles.centeredCell}>
-                    <CircularProgress size={24} />
-                  </TableCell>
-                </TableRow>
-              ) : isError ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} sx={styles.centeredCell}>
-                    <Box sx={styles.emptyState}>
-                      <Icon name="ErrorOutline" sx={styles.errorIcon} />
-                      <Typography variant="body2" color="text.secondary">
-                        Couldn't load data. Please try again.
-                      </Typography>
-                      {onRetry && (
-                        <Button size="small" variant="outlined" onClick={onRetry}>
-                          Retry
-                        </Button>
-                      )}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columns.length} sx={styles.centeredCell}>
-                    <Box sx={styles.emptyState}>
-                      <Icon name="Inbox" sx={styles.emptyIcon} />
-                      <Typography variant="body2" color="text.disabled">
-                        No records found
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} hover>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
+            <TableBody>{renderBody()}</TableBody>
           </Table>
         </TableContainer>
         {showPagination && (
