@@ -11,7 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Slider from '@mui/material/Slider';
 
 import { AVATAR_IMG_SLOT_PROPS } from '@/shared/constants/avatarProps';
-import { useHover } from '@/shared/hooks';
+import { useHover, useSnackbar } from '@/shared/hooks';
 
 import Icon from '../Icon';
 import { hiddenInputStyle, styles } from './styles';
@@ -71,6 +71,7 @@ const AvatarUpload = React.memo(
   ({ src, initials, size = 72, uploading = false, onFileSelect }: AvatarUploadProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const { hover, onMouseEnter, onMouseLeave } = useHover();
+    const snackbar = useSnackbar();
 
     const [cropSrc, setCropSrc] = useState<string | null>(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -101,11 +102,16 @@ const AvatarUpload = React.memo(
 
     const handleCropConfirm = useCallback(async () => {
       if (!cropSrc) return;
-      const blob = await getCroppedBlob(cropSrc, croppedAreaPixels);
-      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
-      setCropSrc(null);
-      onFileSelect(file);
-    }, [cropSrc, croppedAreaPixels, onFileSelect]);
+      try {
+        const blob = await getCroppedBlob(cropSrc, croppedAreaPixels);
+        const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+        onFileSelect(file);
+      } catch {
+        snackbar.error('Could not process this image. Please try a different file.');
+      } finally {
+        setCropSrc(null);
+      }
+    }, [cropSrc, croppedAreaPixels, onFileSelect, snackbar]);
 
     const handleCropCancel = useCallback(() => {
       setCropSrc(null);
