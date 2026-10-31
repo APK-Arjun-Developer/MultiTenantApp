@@ -222,4 +222,19 @@ describe('LoginPage', () => {
       expect(await screen.findByText('Sign in to your account')).toBeInTheDocument();
     });
   });
+
+  it('falls back to a default message for a rejected code, and ignores backspace on the first empty digit', async () => {
+    server.use(http.post(VERIFY, () => apiError(400, '')));
+    const { user } = await goToVerifyStep();
+    const inputs = otpInputs();
+
+    await user.click(inputs[0]);
+    await user.keyboard('{Backspace}');
+    expect(inputs[0]).toHaveFocus();
+
+    await user.keyboard('111111');
+    await user.click(screen.getByRole('button', { name: 'Verify email' }));
+
+    expect(await screen.findByText('Invalid or expired verification code.')).toBeInTheDocument();
+  });
 });

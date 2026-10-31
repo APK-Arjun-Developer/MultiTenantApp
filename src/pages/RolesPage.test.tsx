@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
+import { hold } from '@/__tests__/utils/api';
 import { fillFields } from '@/__tests__/utils/forms';
 import { renderWithProviders, signedInState } from '@/__tests__/utils/renderWithProviders';
 import type { RoleDto } from '@/types/api';
@@ -313,5 +314,55 @@ describe('RolesPage', () => {
     await user.click(screen.getByRole('button', { name: 'Name' }));
 
     await waitFor(() => expect(requests.at(-1)?.searchParams.get('sortBy')).toBe('name'));
+  });
+
+  describe('while saving', () => {
+    const pick = async (user: ReturnType<typeof renderPage>['user'], name: string) => {
+      const dialog = screen.getByRole('dialog');
+      await user.click(within(dialog).getByRole('combobox'));
+      await user.click(await screen.findByRole('option', { name }));
+      await user.click(within(dialog).getAllByRole('heading')[0]);
+    };
+
+    it('keeps the create dialog open on Escape', async () => {
+      mockApi();
+      hold('post', ROLES);
+      const { user } = renderPage();
+      await user.click(await screen.findByRole('button', { name: 'Create role' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Create Role' });
+      await fillFields(user, { 'Role name': 'Billing' });
+      await pick(user, 'Users.Edit');
+
+      await user.click(within(dialog).getByRole('button', { name: 'Create role' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Create Role' })).toBeInTheDocument();
+    });
+
+    it('keeps the edit dialog open on Escape', async () => {
+      mockApi();
+      hold('put', ROLES);
+      const { user } = renderPage();
+      await user.click(within(await row('Support')).getByRole('button', { name: 'Edit' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Role - Support' });
+
+      await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Edit Role - Support' })).toBeInTheDocument();
+    });
+  });
+
+  it('filters roles by permission', async () => {
+    const requests = mockApi();
+    const { user } = renderPage();
+    await row('Support');
+
+    await user.click(screen.getByRole('combobox', { name: 'Filter by permission' }));
+    await user.click(await screen.findByRole('option', { name: 'Users.Edit' }));
+
+    await waitFor(() =>
+      expect(requests.at(-1)?.searchParams.getAll('permissionIds')).toEqual(['p2']),
+    );
   });
 });

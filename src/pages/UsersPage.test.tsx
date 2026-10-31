@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
-import { capture, findRow, paged } from '@/__tests__/utils/api';
+import { capture, findRow, hold, paged } from '@/__tests__/utils/api';
 import { fillFields, validAddress, validAddressPayload } from '@/__tests__/utils/forms';
 import {
   renderWithProviders,
@@ -643,5 +643,74 @@ describe('UsersPage', () => {
       await uploadAndCrop(user);
       expect(await screen.findByText('Profile picture updated.')).toBeInTheDocument();
     });
+  });
+
+  describe('while saving', () => {
+    it('keeps the create dialog open on Escape', async () => {
+      mockApi();
+      hold('post', `${USERS}/direct-create`);
+      const { user } = renderPage();
+      await user.click(await screen.findByRole('button', { name: 'Create user' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Create User' });
+      await fillFields(user, { 'Full name': 'Sam New', 'Email address': 'sam@acme.com' });
+      await pickRole(user, 'Billing');
+      await fillFields(user, validAddress);
+
+      await user.click(within(dialog).getByRole('button', { name: 'Create user' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Create User' })).toBeInTheDocument();
+    });
+
+    it('keeps the invite dialog open on Escape', async () => {
+      mockApi();
+      hold('post', `${USERS}/invite`);
+      const { user } = renderPage();
+      await user.click(await screen.findByRole('button', { name: 'Invite' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Invite User' });
+      await fillFields(user, { 'Email address': 'sam@acme.com' });
+      await pickRole(user, 'Support');
+
+      await user.click(within(dialog).getByRole('button', { name: 'Send invitation' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Invite User' })).toBeInTheDocument();
+    });
+
+    it('keeps the edit dialog open on Escape', async () => {
+      mockApi();
+      hold('put', USERS);
+      const { user } = renderPage();
+      await user.click(within(await findRow('Jane Doe')).getByRole('button', { name: 'Edit' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Edit User' });
+
+      await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Edit User' })).toBeInTheDocument();
+    });
+  });
+
+  it('clears the role when a user without one is saved', async () => {
+    mockApi();
+    const bodies = capture('put', USERS, bob);
+    const { user } = renderPage();
+    await user.click(within(await findRow('Bob Pending')).getByRole('button', { name: 'Edit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Edit User' });
+
+    await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+
+    await screen.findByText('User updated.');
+    expect(bodies[0]).toMatchObject({ email: 'bob@acme.com', roleId: null });
+  });
+
+  it('shows read-only rows to users who cannot edit or activate', async () => {
+    mockApi();
+    renderPage(['Users.List']);
+
+    const bobRow = await findRow('Bob Pending');
+    expect(within(bobRow).queryByLabelText('Manage profile photo')).not.toBeInTheDocument();
+    expect(within(bobRow).queryByRole('button', { name: 'Activate' })).not.toBeInTheDocument();
+    expect(within(bobRow).queryAllByRole('button')).toHaveLength(0);
   });
 });

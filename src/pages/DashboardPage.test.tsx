@@ -70,4 +70,16 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Welcome back.')).toBeInTheDocument();
     expect(screen.queryByText('Roles')).not.toBeInTheDocument();
   });
+
+  it('shows 0 for stats the API leaves empty', async () => {
+    server.use(
+      http.get('/api/v1/dashboard/stats', () =>
+        envelope({ ...stats, totalRoles: null, totalPendingInvitations: null }),
+      ),
+    );
+    renderAs({ systemRole: 'TenantAdmin' });
+
+    expect(await screen.findByText('42')).toBeInTheDocument();
+    expect(screen.getAllByText('0')).toHaveLength(2);
+  });
 });

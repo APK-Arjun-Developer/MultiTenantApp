@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, envelope, http, server } from '@/__tests__/msw/server';
-import { capture, findRow, paged } from '@/__tests__/utils/api';
+import { capture, findRow, hold, paged } from '@/__tests__/utils/api';
 import { fillFields, validAddress, validAddressPayload } from '@/__tests__/utils/forms';
 import {
   renderWithProviders,
@@ -510,5 +510,78 @@ describe('TenantAdminsPage', () => {
       await uploadAndCrop(user);
       expect(await screen.findByText('Profile picture updated.')).toBeInTheDocument();
     });
+  });
+
+  describe('while saving', () => {
+    it('keeps the create dialog open on Escape', async () => {
+      mockApi();
+      hold('post', ADMINS);
+      const { user } = renderPage();
+      await user.click(await screen.findByRole('button', { name: 'Create Admin' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Create Tenant Admin' });
+      await chooseOption(user, dialog, /^Tenant/, 'Acme');
+      await fillFields(user, {
+        'Full name': 'Cy New',
+        'Email address': 'cy@acme.com',
+        ...validAddress,
+      });
+
+      await user.click(within(dialog).getByRole('button', { name: 'Create admin' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Create Tenant Admin' })).toBeInTheDocument();
+    });
+
+    it('keeps the invite dialog open on Escape', async () => {
+      mockApi();
+      hold('post', `${ADMINS}/invite`);
+      const { user } = renderPage();
+      await user.click(await screen.findByRole('button', { name: 'Invite Admin' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Invite Tenant Admin' });
+      await chooseOption(user, dialog, /^Tenant/, 'Globex');
+      await fillFields(user, { 'Email address': 'dee@globex.com' });
+
+      await user.click(within(dialog).getByRole('button', { name: 'Send invitation' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Invite Tenant Admin' })).toBeInTheDocument();
+    });
+
+    it('keeps the edit dialog open on Escape', async () => {
+      mockApi();
+      hold('put', `${ADMINS}/a1`);
+      const { user } = renderPage();
+      await user.click(within(await findRow('Ada Admin')).getByRole('button', { name: 'Edit' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Edit Tenant Admin' });
+
+      await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.getByRole('dialog', { name: 'Edit Tenant Admin' })).toBeInTheDocument();
+    });
+  });
+
+  it('skips the company address update for an admin without a tenant', async () => {
+    mockApi();
+    const adminBodies = capture('put', `${ADMINS}/a2`, ben);
+    const tenantBodies = capture('put', '/api/v1/tenants', {});
+    const { user } = renderPage();
+    await user.click(within(await findRow('Ben Pending')).getByRole('button', { name: 'Edit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Tenant Admin' });
+
+    await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
+
+    await screen.findByText('Tenant admin updated.');
+    expect(adminBodies).toHaveLength(1);
+    expect(tenantBodies).toHaveLength(0);
+  });
+
+  it('hides activation for users without the permission', async () => {
+    mockApi();
+    renderAsLimited(['Tenants.List']);
+
+    expect(
+      within(await findRow('Ada Admin')).queryByRole('button', { name: 'Deactivate' }),
+    ).not.toBeInTheDocument();
   });
 });

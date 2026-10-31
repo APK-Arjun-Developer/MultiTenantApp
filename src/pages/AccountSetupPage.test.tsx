@@ -163,4 +163,23 @@ describe('AccountSetupPage', () => {
       expect(await screen.findByTestId('location')).toHaveTextContent('/login');
     });
   });
+
+  it('falls back to a default message when activation fails silently', async () => {
+    validate({ hasAddress: false, fullName: 'Jane Doe' });
+    server.use(http.post(SET_PASSWORD, () => apiError(500, '')));
+    const { user } = renderPage();
+    await screen.findByText('jane@acme.com');
+    await fillFields(user, {
+      'New password': STRONG_PASSWORD,
+      'Confirm password': STRONG_PASSWORD,
+    });
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await fillFields(user, validAddress);
+
+    await user.click(screen.getByRole('button', { name: 'Activate account' }));
+
+    expect(
+      await screen.findByText('Failed to set password. The link may have expired.'),
+    ).toBeInTheDocument();
+  });
 });

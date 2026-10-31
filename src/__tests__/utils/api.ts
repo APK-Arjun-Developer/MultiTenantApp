@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import { delay } from 'msw';
 
 import { envelope, http, server } from '../msw/server';
 
@@ -35,8 +36,12 @@ const capture = (method: 'post' | 'put' | 'delete', url: string, response: unkno
   return bodies;
 };
 
+/** Keeps every `method url` request pending, so a test can inspect the UI mid-save. */
+const hold = (method: 'post' | 'put' | 'delete', url: string) =>
+  server.use(http[method](url, () => delay('infinite')));
+
 /** The table row containing `text` (waits for it to appear). */
 const findRow = async (text: string) =>
   (await screen.findByText(text)).closest('tr') as HTMLElement;
 
-export { capture, findRow, paged };
+export { capture, findRow, hold, paged };

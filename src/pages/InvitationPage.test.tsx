@@ -179,4 +179,37 @@ describe('InvitationPage', () => {
       expect(await screen.findByText('Tenant name taken')).toBeInTheDocument();
     });
   });
+
+  it('uses singular wording for one assigned role', async () => {
+    validate({ invitationType: 'TenantUser', tenantName: 'Acme', email: null });
+    capture(ACCEPT_USER, ['Support']);
+    const { user } = renderPage();
+    await screen.findByText('Acme');
+    await fillFields(user, profile);
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await fillFields(user, validAddress);
+
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(await screen.findByText(/assigned the role:/)).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
+  });
+
+  it('falls back to a default message when creating the tenant fails silently', async () => {
+    validate({ invitationType: 'NewTenant', email: null });
+    server.use(http.post(ACCEPT_NEW_TENANT, () => apiError(500, '')));
+    const { user } = renderPage();
+    await screen.findByText('Create your tenant account');
+    await fillFields(user, profile);
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await fillFields(user, { 'Company / tenant name': 'NewCo', ...validAddress });
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await fillFields(user, validAddress);
+
+    await user.click(screen.getByRole('button', { name: 'Create tenant & account' }));
+
+    expect(
+      await screen.findByText('Failed to accept invitation. The link may have expired.'),
+    ).toBeInTheDocument();
+  });
 });

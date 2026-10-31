@@ -32,9 +32,9 @@ export default defineConfig({
       // Ratchet toward the 95% target: local runs raise these to the new floor
       // (commit the change); CI only enforces them.
       thresholds: {
-        statements: 97,
-        branches: 92,
-        functions: 97,
+        statements: 98,
+        branches: 96,
+        functions: 98,
         lines: 99,
         autoUpdate: process.env.CI ? false : (newThreshold) => Math.floor(newThreshold),
       },
