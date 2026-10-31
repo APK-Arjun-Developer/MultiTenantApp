@@ -498,7 +498,12 @@ const UsersPage = memo(() => {
   const pendingActionDialog = useItemDialog<PendingAction>();
   const revokeDialog = useItemDialog<UserInvitationDto>();
 
-  const { data: usersData, isLoading: usersLoading } = useGetUsersQuery({
+  const {
+    data: usersData,
+    isLoading: usersLoading,
+    isError: usersError,
+    refetch: refetchUsers,
+  } = useGetUsersQuery({
     page: usersTable.page + 1,
     pageSize: usersTable.pageSize,
     search: debouncedSearch || undefined,
@@ -508,7 +513,12 @@ const UsersPage = memo(() => {
     sortOrder: usersTable.activeSortOrder,
   });
 
-  const { data: invitationsData, isLoading: invLoading } = useGetUserInvitationsQuery({
+  const {
+    data: invitationsData,
+    isLoading: invLoading,
+    isError: invError,
+    refetch: refetchInvitations,
+  } = useGetUserInvitationsQuery({
     page: invTable.page + 1,
     pageSize: invTable.pageSize,
     status: invFilter.status || undefined,
@@ -1024,6 +1034,8 @@ const UsersPage = memo(() => {
               columns={userColumns}
               data={usersData?.items ?? []}
               isLoading={usersLoading}
+              isError={usersError}
+              onRetry={refetchUsers}
               page={usersTable.page}
               pageSize={usersTable.pageSize}
               totalCount={usersData?.totalCount ?? 0}
@@ -1055,6 +1067,8 @@ const UsersPage = memo(() => {
               columns={invitationColumns}
               data={invitationsData?.items ?? []}
               isLoading={invLoading}
+              isError={invError}
+              onRetry={refetchInvitations}
               page={invTable.page}
               pageSize={invTable.pageSize}
               totalCount={invitationsData?.totalCount ?? 0}

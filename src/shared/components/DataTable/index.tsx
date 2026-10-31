@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
@@ -24,6 +25,8 @@ const DataTable = React.memo(
     data,
     columns,
     isLoading = false,
+    isError = false,
+    onRetry,
     totalCount,
     page = 0,
     pageSize = DEFAULT_PAGE_SIZE,
@@ -115,6 +118,22 @@ const DataTable = React.memo(
                 <TableRow>
                   <TableCell colSpan={columns.length} sx={styles.centeredCell}>
                     <CircularProgress size={24} />
+                  </TableCell>
+                </TableRow>
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} sx={styles.centeredCell}>
+                    <Box sx={styles.emptyState}>
+                      <Icon name="ErrorOutline" sx={styles.errorIcon} />
+                      <Typography variant="body2" color="text.secondary">
+                        Couldn't load data. Please try again.
+                      </Typography>
+                      {onRetry && (
+                        <Button size="small" variant="outlined" onClick={onRetry}>
+                          Retry
+                        </Button>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ) : table.getRowModel().rows.length === 0 ? (

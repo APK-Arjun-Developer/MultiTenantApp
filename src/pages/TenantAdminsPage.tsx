@@ -465,7 +465,12 @@ const TenantAdminsPage = memo(() => {
     [tenantsData?.items],
   );
 
-  const { data: adminsData, isLoading: isLoadingAdmins } = useGetTenantAdminsQuery({
+  const {
+    data: adminsData,
+    isLoading: isLoadingAdmins,
+    isError: isAdminsError,
+    refetch: refetchAdmins,
+  } = useGetTenantAdminsQuery({
     page: adminsTable.page + 1,
     pageSize: adminsTable.pageSize,
     search: debouncedSearch || undefined,
@@ -489,12 +494,16 @@ const TenantAdminsPage = memo(() => {
     [],
   );
 
-  const { data: invitationsData, isLoading: isLoadingInvitations } =
-    useGetTenantAdminInvitationsQuery({
-      page: invTable.page + 1,
-      pageSize: invTable.pageSize,
-      status: invFilter.status || undefined,
-    });
+  const {
+    data: invitationsData,
+    isLoading: isLoadingInvitations,
+    isError: isInvitationsError,
+    refetch: refetchInvitations,
+  } = useGetTenantAdminInvitationsQuery({
+    page: invTable.page + 1,
+    pageSize: invTable.pageSize,
+    status: invFilter.status || undefined,
+  });
 
   // Mutations
   const [deleteTenantAdmin, { isLoading: isDeleting }] = useDeleteTenantAdminMutation();
@@ -935,6 +944,8 @@ const TenantAdminsPage = memo(() => {
             data={adminsData?.items ?? []}
             columns={adminColumns}
             isLoading={isLoadingAdmins}
+            isError={isAdminsError}
+            onRetry={refetchAdmins}
             totalCount={adminsData?.totalCount ?? 0}
             page={adminsTable.page}
             pageSize={adminsTable.pageSize}
@@ -967,6 +978,8 @@ const TenantAdminsPage = memo(() => {
             data={invitationsData?.items ?? []}
             columns={invitationColumns}
             isLoading={isLoadingInvitations}
+            isError={isInvitationsError}
+            onRetry={refetchInvitations}
             totalCount={invitationsData?.totalCount ?? 0}
             page={invTable.page}
             pageSize={invTable.pageSize}

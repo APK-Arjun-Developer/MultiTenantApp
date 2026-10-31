@@ -300,7 +300,12 @@ const RolesPage = memo(() => {
     [permissionOptions],
   );
 
-  const { data: rolesData, isLoading } = useGetRolesQuery({
+  const {
+    data: rolesData,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetRolesQuery({
     page: table.page + 1,
     pageSize: table.pageSize,
     search: debouncedSearch || undefined,
@@ -416,6 +421,8 @@ const RolesPage = memo(() => {
             columns={columns}
             data={rolesData?.items ?? []}
             isLoading={isLoading}
+            isError={isError}
+            onRetry={refetch}
             page={table.page}
             pageSize={table.pageSize}
             totalCount={rolesData?.totalCount ?? 0}

@@ -7,6 +7,7 @@ import { logout } from '@/features/auth/slices/authSlice';
 import type { ApiError, ApiResponse } from '@/types/api';
 
 import { axiosInstance } from './axiosInstance';
+import { isUnreachable, NETWORK_ERROR_CODE, NETWORK_ERROR_MESSAGE } from './networkError';
 
 interface AxiosBaseQueryArgs {
   url: string;
@@ -43,6 +44,15 @@ const rawBaseQuery: BaseQueryFn<AxiosBaseQueryArgs, unknown, ApiError> = async (
     return { data: result.data?.data };
   } catch (err) {
     const error = err as AxiosError<ApiResponse<unknown>>;
+    if (isUnreachable(error)) {
+      return {
+        error: {
+          status: error.response?.status ?? 0,
+          code: NETWORK_ERROR_CODE,
+          message: NETWORK_ERROR_MESSAGE,
+        },
+      };
+    }
     return {
       error: {
         status: error.response?.status ?? 0,

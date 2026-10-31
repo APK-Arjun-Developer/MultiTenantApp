@@ -96,10 +96,6 @@ const styles = {
     wordBreak: 'break-all',
   },
 
-  // Wizard renderActions
-  wizardActions: { display: 'flex', gap: 1, mt: 1 },
-  wizardActionButton: { flex: 1 },
-
   // FormWizard container override
   formWizardContainer: { boxShadow: 'none', p: 0, bgcolor: 'transparent' },
   headerIconSize: {

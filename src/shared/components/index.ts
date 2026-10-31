@@ -19,3 +19,4 @@ export { default as TenantAdminGuard } from './TenantAdminGuard';
 export { default as TenantContextGuard } from './TenantContextGuard';
 export { default as TenantPicker } from './TenantPicker';
 export { default as ViewDialog } from './ViewDialog';
+export { default as WizardActions } from './WizardActions';

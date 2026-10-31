@@ -19,6 +19,7 @@ import {
   FilterForm,
   FormBuilder,
   FormWizard,
+  type FormWizardActionsParams,
 } from 'mui-schema-form-builder';
 import { z } from 'zod';
 
@@ -49,6 +50,7 @@ import {
   InvitationStatusChip,
   LabelValue,
   ViewDialog,
+  WizardActions,
 } from '@/shared/components';
 import {
   ACTIVE_STATUS_OPTIONS,
@@ -272,6 +274,13 @@ const OnboardTenantDialog = memo(({ open, onClose }: OnboardDialogProps) => {
     [onboardTenant, snackbar, onClose],
   );
 
+  const renderWizardActions = useCallback(
+    (params: FormWizardActionsParams) => (
+      <WizardActions {...params} submitText="Create tenant" submitting={isLoading} />
+    ),
+    [isLoading],
+  );
+
   return (
     <Dialog open={open} onClose={isLoading ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>New Tenant</DialogTitle>
@@ -292,6 +301,8 @@ const OnboardTenantDialog = memo(({ open, onClose }: OnboardDialogProps) => {
             },
           ]}
           onSubmit={onSubmit}
+          onCancel={onClose}
+          renderActions={renderWizardActions}
           sx={styles.formInDialog}
         />
       </DialogContent>
@@ -559,7 +570,7 @@ const TenantsPage = memo(() => {
   const revokeDialog = useItemDialog<TenantCreationInvitationDto>();
 
   // Data
-  const { data, isLoading } = useGetTenantsQuery({
+  const { data, isLoading, isError, refetch } = useGetTenantsQuery({
     page: tenantsTable.page + 1,
     pageSize: tenantsTable.pageSize,
     search: debouncedSearch || undefined,
@@ -569,12 +580,16 @@ const TenantsPage = memo(() => {
     sortOrder: tenantsTable.activeSortOrder,
   });
 
-  const { data: invitationsData, isLoading: isLoadingInvitations } =
-    useGetTenantCreationInvitationsQuery({
-      page: invTable.page + 1,
-      pageSize: invTable.pageSize,
-      status: invFilter.status || undefined,
-    });
+  const {
+    data: invitationsData,
+    isLoading: isLoadingInvitations,
+    isError: isInvitationsError,
+    refetch: refetchInvitations,
+  } = useGetTenantCreationInvitationsQuery({
+    page: invTable.page + 1,
+    pageSize: invTable.pageSize,
+    status: invFilter.status || undefined,
+  });
 
   const [deleteTenantMutation, { isLoading: isDeleting }] = useDeleteTenantMutation();
   const [revokeTenantInvitation, { isLoading: isRevoking }] = useRevokeTenantInvitationMutation();
@@ -843,6 +858,8 @@ const TenantsPage = memo(() => {
             data={data?.items ?? []}
             columns={tenantColumns}
             isLoading={isLoading}
+            isError={isError}
+            onRetry={refetch}
             totalCount={data?.totalCount ?? 0}
             page={tenantsTable.page}
             pageSize={tenantsTable.pageSize}
@@ -871,6 +888,8 @@ const TenantsPage = memo(() => {
             data={invitationsData?.items ?? []}
             columns={invitationColumns}
             isLoading={isLoadingInvitations}
+            isError={isInvitationsError}
+            onRetry={refetchInvitations}
             totalCount={invitationsData?.totalCount ?? 0}
             page={invTable.page}
             pageSize={invTable.pageSize}
