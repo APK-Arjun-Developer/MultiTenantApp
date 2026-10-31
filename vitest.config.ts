@@ -13,6 +13,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
     css: false,
+    // Form-heavy page tests (MUI + react-hook-form) are slow under coverage and on CI runners.
+    testTimeout: 20_000,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
       provider: 'v8',
@@ -30,10 +32,10 @@ export default defineConfig({
       // Ratchet toward the 95% target: local runs raise these to the new floor
       // (commit the change); CI only enforces them.
       thresholds: {
-        statements: 29,
-        branches: 23,
-        functions: 22,
-        lines: 30,
+        statements: 48,
+        branches: 44,
+        functions: 44,
+        lines: 49,
         autoUpdate: process.env.CI ? false : (newThreshold) => Math.floor(newThreshold),
       },
     },
