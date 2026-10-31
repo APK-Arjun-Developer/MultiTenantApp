@@ -1,2 +1,2 @@
-# Git hooks run under sh on every OS; CRLF breaks them on Linux/macOS.
-.husky/** text eol=lf
+# Check out LF everywhere (Prettier enforces endOfLine: lf); overrides core.autocrlf on Windows.
+* text=auto eol=lf
