@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import { flexRender, getCoreRowModel, type Header, useReactTable } from '@tanstack/react-table';
 
 import { DEFAULT_PAGE_SIZE } from '@/shared/constants/list';
+import type { SortOrder } from '@/types';
 
 import Icon from '../Icon';
 import { styles } from './styles';
@@ -60,11 +61,6 @@ const DataTable = React.memo(
       [sortBy, sortOrder, onSortChange],
     );
 
-    const showPagination = useMemo(
-      () => totalCount !== undefined && onPageChange !== undefined,
-      [totalCount, onPageChange],
-    );
-
     const handlePageChange = useCallback(
       (_: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
         onPageChange?.(newPage);
@@ -80,15 +76,18 @@ const DataTable = React.memo(
       [onPageSizeChange, onPageChange],
     );
 
-    const renderHeaderContent = (header: Header<TData, unknown>, isSortable: boolean) => {
+    const renderHeaderContent = (
+      header: Header<TData, unknown>,
+      isSortable: boolean,
+      activeDirection: SortOrder | false,
+    ) => {
       if (header.isPlaceholder) return null;
       const content = flexRender(header.column.columnDef.header, header.getContext());
       if (!isSortable) return content;
-      const isActive = sortBy === header.column.id;
       return (
         <TableSortLabel
-          active={isActive}
-          direction={isActive ? (sortOrder ?? 'asc') : 'asc'}
+          active={activeDirection !== false}
+          direction={activeDirection || 'asc'}
           onClick={() => handleSortClick(header.column.id)}
         >
           {content}
@@ -157,12 +156,16 @@ const DataTable = React.memo(
                   {headerGroup.headers.map((header) => {
                     const isSortable =
                       !!sortableColumns?.includes(header.column.id) && !!onSortChange;
+                    // Direction of the active sort column (also exposed as aria-sort).
+                    const activeDirection: SortOrder | false =
+                      isSortable && sortBy === header.column.id ? (sortOrder ?? 'asc') : false;
                     return (
                       <TableCell
                         key={header.id}
+                        sortDirection={activeDirection}
                         sx={isSortable ? styles.sortableHeaderCell : styles.headerCell}
                       >
-                        {renderHeaderContent(header, isSortable)}
+                        {renderHeaderContent(header, isSortable, activeDirection)}
                       </TableCell>
                     );
                   })}
@@ -172,11 +175,11 @@ const DataTable = React.memo(
             <TableBody>{renderBody()}</TableBody>
           </Table>
         </TableContainer>
-        {showPagination && (
+        {totalCount !== undefined && onPageChange && (
           <Box sx={styles.paginationContainer}>
             <TablePagination
               component="div"
-              count={totalCount ?? 0}
+              count={totalCount}
               page={page}
               rowsPerPage={pageSize}
               rowsPerPageOptions={[5, 10, 25, 50]}

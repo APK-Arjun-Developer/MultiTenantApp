@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
 import { describe, expect, it, vi } from 'vitest';
@@ -54,6 +54,38 @@ describe('DataTable', () => {
     render(<DataTable data={[]} columns={columns} isError />);
 
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+
+  it('shows an active sort column as ascending when no order is given', () => {
+    render(
+      <DataTable
+        data={rows}
+        columns={columns}
+        sortableColumns={['name']}
+        onSortChange={vi.fn()}
+        sortBy="name"
+      />,
+    );
+
+    expect(screen.getByRole('columnheader', { name: /Name/ })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
+  });
+
+  it('renders grouped column headers with placeholders above ungrouped columns', () => {
+    const grouped: ColumnDef<Row>[] = [
+      { accessorKey: 'id', header: 'ID' },
+      { header: 'Company', columns: [{ accessorKey: 'name', header: 'Name' }] },
+    ];
+
+    render(<DataTable data={rows} columns={grouped} />);
+
+    const headerRows = screen.getAllByRole('row').slice(0, 2);
+    expect(within(headerRows[0]).getByText('Company')).toBeInTheDocument();
+    expect(within(headerRows[0]).queryByText('ID')).not.toBeInTheDocument();
+    expect(within(headerRows[1]).getByText('ID')).toBeInTheDocument();
+    expect(within(headerRows[1]).getByText('Name')).toBeInTheDocument();
   });
 
   it('cycles sort order asc → desc → none', async () => {
