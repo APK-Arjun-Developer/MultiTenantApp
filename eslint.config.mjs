@@ -119,6 +119,11 @@ const config = defineConfig([
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
+    // Test files and helpers are never hot-reloaded.
+    files: ['src/__tests__/**', 'src/**/*.test.{ts,tsx}'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
     // Component files: enforce arrow functions, no inline exports, export default only.
     // This block overrides the global no-restricted-syntax for .tsx files, so all
     // rules (including the inline-export ban) must be listed here too.

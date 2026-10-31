@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { render, type RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -15,9 +15,19 @@ interface ProviderOptions extends Omit<RenderOptions, 'wrapper'> {
   store?: AppStore;
   /** Initial URL, e.g. '/users?page=2'. */
   route?: string;
+  /**
+   * Mounts `ui` as a route with this path (e.g. '/login'). Navigating anywhere else renders
+   * a `location` test id holding the new pathname + search, so redirects can be asserted.
+   */
+  path?: string;
 }
 
 const theme = buildTheme('light');
+
+const LocationDisplay = () => {
+  const location = useLocation();
+  return <div data-testid="location">{`${location.pathname}${location.search}`}</div>;
+};
 
 /** Renders UI with the same providers as the app: Redux store, router, MUI theme and snackbars. */
 const renderWithProviders = (
@@ -26,6 +36,7 @@ const renderWithProviders = (
     preloadedState,
     store = setupStore(preloadedState),
     route = '/',
+    path,
     ...options
   }: ProviderOptions = {},
 ) => {
@@ -39,7 +50,16 @@ const renderWithProviders = (
     </Provider>
   );
 
-  return { store, user: userEvent.setup(), ...render(ui, { wrapper: Wrapper, ...options }) };
+  const tree = path ? (
+    <Routes>
+      <Route path={path} element={ui} />
+      <Route path="*" element={<LocationDisplay />} />
+    </Routes>
+  ) : (
+    ui
+  );
+
+  return { store, user: userEvent.setup(), ...render(tree, { wrapper: Wrapper, ...options }) };
 };
 
 const testUser: AuthUser = {
