@@ -59,7 +59,7 @@ const stepVariants = {
 const OtpInput = memo(({ value, onChange, disabled }: OtpInputProps) => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = useMemo(
-    () => value.padEnd(OTP_LENGTH, '').split('').slice(0, OTP_LENGTH),
+    () => Array.from({ length: OTP_LENGTH }, (_, i) => value[i] ?? ''),
     [value],
   );
 
@@ -331,7 +331,12 @@ const LoginPage = memo(() => {
             transition={stepTransition}
           >
             <Box>
-              <IconButton onClick={goToLogin} size="small" sx={styles.verifyBackButton}>
+              <IconButton
+                onClick={goToLogin}
+                size="small"
+                aria-label="Back to sign in"
+                sx={styles.verifyBackButton}
+              >
                 <Icon name="ArrowBack" fontSize="small" />
               </IconButton>
 

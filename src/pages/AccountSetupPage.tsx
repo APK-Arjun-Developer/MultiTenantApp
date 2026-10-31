@@ -1,14 +1,21 @@
 ﻿import { memo, useCallback, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { FIELD_TYPE, type FieldConfig, FormBuilder, FormWizard } from 'mui-schema-form-builder';
+import {
+  FIELD_TYPE,
+  type FieldConfig,
+  FormBuilder,
+  FormWizard,
+  type FormWizardActionsParams,
+} from 'mui-schema-form-builder';
 
 import { useSetPasswordMutation, useValidateAccountSetupQuery } from '@/features/auth/api/authApi';
-import { Icon, LoadingButton } from '@/shared/components';
+import { isNetworkError } from '@/shared/api/networkError';
+import { Icon, LoadingButton, ServerUnavailable, WizardActions } from '@/shared/components';
 import { buildAddressPayload, getAddressFields } from '@/shared/forms/addressFields';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError, SetPasswordResponse } from '@/types/api';
@@ -83,9 +90,17 @@ const SetupSuccess = memo(({ result }: SetupSuccessProps) => {
 const AccountSetupPage = memo(() => {
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const handleCancel = useCallback(() => navigate('/login'), [navigate]);
   const token = searchParams.get('token') ?? '';
 
-  const { data: validation, isLoading: isValidating } = useValidateAccountSetupQuery(token, {
+  const {
+    data: validation,
+    isLoading: isValidating,
+    isFetching: isRevalidating,
+    error: validationError,
+    refetch: revalidate,
+  } = useValidateAccountSetupQuery(token, {
     skip: !token,
   });
   const [setPassword, { isLoading: isSubmitting }] = useSetPasswordMutation();
@@ -202,43 +217,8 @@ const AccountSetupPage = memo(() => {
   );
 
   const renderWizardActions = useCallback(
-    ({
-      isSubmitting: formSubmitting,
-      isNavigating,
-      isLastStep,
-      next,
-      back,
-      isFirstStep,
-    }: {
-      isSubmitting: boolean;
-      isNavigating: boolean;
-      isLastStep: boolean;
-      isFirstStep: boolean;
-      next: () => void;
-      back: () => void;
-    }) => (
-      <Box sx={styles.wizardActionsRow}>
-        {!isFirstStep && (
-          <Button
-            type="button"
-            onClick={back}
-            disabled={isNavigating || formSubmitting}
-            variant="outlined"
-            sx={styles.wizardBackButton}
-          >
-            Back
-          </Button>
-        )}
-        <LoadingButton
-          type={isLastStep ? 'submit' : 'button'}
-          loading={isNavigating || formSubmitting || (isLastStep && isSubmitting)}
-          onClick={isLastStep ? undefined : next}
-          variant="contained"
-          sx={styles.wizardNextButton}
-        >
-          {isLastStep ? 'Activate account' : 'Next'}
-        </LoadingButton>
-      </Box>
+    (params: FormWizardActionsParams) => (
+      <WizardActions {...params} submitText="Activate account" submitting={isSubmitting} />
     ),
     [isSubmitting],
   );
@@ -251,6 +231,10 @@ const AccountSetupPage = memo(() => {
         <CircularProgress size={28} />
       </Box>
     );
+  }
+
+  if (isNetworkError(validationError)) {
+    return <ServerUnavailable onRetry={revalidate} retrying={isRevalidating} />;
   }
 
   if (!validation?.isValid) return <SetupInvalid message={validation?.errorMessage} />;
@@ -315,6 +299,7 @@ const AccountSetupPage = memo(() => {
           },
         ]}
         onSubmit={onSubmitFull}
+        onCancel={handleCancel}
         renderActions={renderWizardActions}
         sx={styles.formBuilder}
       />

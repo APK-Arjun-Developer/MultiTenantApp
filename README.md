@@ -90,15 +90,72 @@ stay same-origin. `server.host: true` binds the dev server to `0.0.0.0` for mobi
 ### Other commands
 
 ```bash
-bun run build      # tsc -b && vite build  → dist/
-bun run lint       # ESLint
-bun run format     # Prettier
-bun run typecheck  # tsc --noEmit
-bun run check      # format + lint --fix + typecheck + build
+bun run build          # tsc -b && vite build  → dist/
+bun run lint           # ESLint
+bun run format         # Prettier (write)
+bun run format:check   # Prettier (verify only, used in CI)
+bun run typecheck      # tsc -b (app + tests + configs/e2e)
+bun run test           # Vitest unit tests
+bun run test:watch     # Vitest in watch mode
+bun run test:coverage  # Vitest + coverage → coverage/ (lcov for Sonar)
+bun run test:e2e       # Playwright E2E (starts Vite on :4173, API is mocked)
+bun run test:e2e:coverage  # E2E + coverage → coverage-e2e/ (lcov for Sonar)
+bun run test:e2e:ui    # Playwright UI mode
+bun run check          # auto-fix format + lint, then everything CI runs (typecheck, unit + E2E coverage gates, build)
 ```
 
-A **Husky** pre-commit hook runs `lint-staged` (ESLint + Prettier auto-fix) on staged
-`.ts/.tsx/.json/.css/.md` files.
+First E2E run: `bunx playwright install chromium`.
+
+## Testing
+
+- **Unit / component tests** — Vitest + Testing Library + `jest-dom` + `jest-axe`, jsdom environment.
+  Tests live next to the code as `*.test.ts(x)`; shared setup is in `src/__tests__/setup.ts`.
+  - `renderWithProviders(ui, { preloadedState, route })` (`src/__tests__/utils`) renders with the
+    real store (`setupStore`), router, theme and snackbars; `signedInState(permissions)` preloads auth.
+  - API calls are mocked with **MSW** (`src/__tests__/msw/server.ts`: `server.use(http.get(url, () => envelope(data)))`,
+    `apiError`, `unreachable`). Unmocked requests fail the test.
+- **E2E tests** — Playwright in `e2e/tests`, helpers in `e2e/fixtures`. The API is mocked with
+  `page.route`, so no backend is needed. Reports go to `playwright-report/`. Specs import
+  `test`/`expect` from `e2e/fixtures/test`, which collects V8 coverage when `E2E_COVERAGE=true`.
+  `signInAs(page, { permissions })` gives a verified session; unmocked API calls answer 404
+  `Not mocked in e2e: <path>`.
+
+### Coverage target: 95% (ratchet)
+
+Unit and E2E coverage must each reach **95%**. Until then both use a ratchet so coverage can only go up:
+
+- **Unit** — `coverage.thresholds` in `vitest.config.ts`. A local `bun run test:coverage` raises the
+  numbers to the new floor automatically; commit the change. CI enforces them without updating.
+- **E2E** — `e2e/coverage/thresholds.json`. A local `bun run test:e2e:coverage` raises them the same way.
+- **Sonar** — both lcov reports are sent to SonarCloud; its quality gate should require
+  ≥ 95% coverage on new code, so every new change meets the target from day one.
+
+## Branches & releases
+
+`feat/*`, `fix/*`, … → PR into **`dev`** → PR **`dev` → `main`** (the only branch allowed into `main`).
+`main` is the deployed code. Each `dev` → `main` merge produces **one** version: semantic-release bundles
+every conventional commit since the last tag (`feat` → minor, `fix`/`perf` → patch, `BREAKING CHANGE` → major),
+updates `CHANGELOG.md` + `package.json`, tags it and creates a GitHub release. The release commit is then
+merged back into `dev` automatically.
+
+## Quality gates
+
+| Where                                       | Checks                                                                                                                                              |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre-commit` hook                           | `lint-staged`: ESLint + Prettier auto-fix on staged files                                                                                           |
+| `commit-msg` hook                           | commitlint (conventional commits: `feat`, `fix`, `ci`, `chore`, `docs`, `refactor`, `test`, `perf`, `hotfix`; lowercase subject; header ≤ 72 chars) |
+| `pre-push` hook                             | Branch name `<type>/<kebab-case>` (except `main`/`dev`), then lint + typecheck + unit tests                                                         |
+| `ci.yml` (push/PR to `main`, `dev`)         | format check, lint, typecheck, unit tests + coverage threshold, `bun audit` (informational), build, Playwright E2E + coverage threshold             |
+| `sonarcloud.yml` (push/PR to `main`, `dev`) | Unit + E2E coverage → SonarCloud scan; quality gate must pass                                                                                       |
+| `commitlint.yml` / `branch-name.yml` (PR)   | Commit messages and branch name                                                                                                                     |
+| `merge-guard.yml` (PR to `main`)            | Only `dev` may be merged into `main`                                                                                                                |
+| `release.yml` (push to `main`)              | All of the above checks, then semantic-release, then back-merge `main` → `dev`                                                                      |
+| `codeql.yml` (push/PR + weekly)             | CodeQL security analysis (javascript-typescript)                                                                                                    |
+| `dependabot.yml` (weekly)                   | Dependency + GitHub Actions update PRs into `dev` (minor/patch grouped)                                                                             |
+
+SonarCloud needs the `SONAR_TOKEN` repository secret and the project
+`APK-Arjun-Developer_MultiTenantApp` in the `apk-arjun-developer` organization (`sonar-project.properties`).
+Dependabot PRs can't read repository secrets: add `SONAR_TOKEN` under **Settings → Secrets → Dependabot** too.
 
 ## API
 

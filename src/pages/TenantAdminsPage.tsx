@@ -114,6 +114,19 @@ const editSchema = z.object({
 });
 
 const ADMINS_TABS = ['admins', 'invitations'] as const;
+
+const ACTION_COPY: Record<ActionType, { label: string; description: string }> = {
+  delete: {
+    label: 'Delete',
+    description:
+      'This will permanently remove the tenant admin account. This action cannot be undone.',
+  },
+  deactivate: { label: 'Deactivate', description: 'The admin will no longer be able to sign in.' },
+  activate: {
+    label: 'Activate',
+    description: 'The admin account will be re-enabled and they can sign in again.',
+  },
+};
 const ADMINS_FILTER_DEFAULT = { search: '', tenant: '', status: '', createdVia: '' };
 const INV_FILTER_DEFAULT = { status: '' };
 
@@ -333,7 +346,7 @@ const EditAdminDialog = memo(({ admin, tenantAddress, onClose }: EditAdminDialog
           await updateTenant({
             id: admin.tenant.id,
             ...buildTenantAddressPayload(values),
-          });
+          }).unwrap();
         }
         snackbar.success('Tenant admin updated.');
         onClose();
@@ -465,7 +478,12 @@ const TenantAdminsPage = memo(() => {
     [tenantsData?.items],
   );
 
-  const { data: adminsData, isLoading: isLoadingAdmins } = useGetTenantAdminsQuery({
+  const {
+    data: adminsData,
+    isLoading: isLoadingAdmins,
+    isError: isAdminsError,
+    refetch: refetchAdmins,
+  } = useGetTenantAdminsQuery({
     page: adminsTable.page + 1,
     pageSize: adminsTable.pageSize,
     search: debouncedSearch || undefined,
@@ -489,12 +507,16 @@ const TenantAdminsPage = memo(() => {
     [],
   );
 
-  const { data: invitationsData, isLoading: isLoadingInvitations } =
-    useGetTenantAdminInvitationsQuery({
-      page: invTable.page + 1,
-      pageSize: invTable.pageSize,
-      status: invFilter.status || undefined,
-    });
+  const {
+    data: invitationsData,
+    isLoading: isLoadingInvitations,
+    isError: isInvitationsError,
+    refetch: refetchInvitations,
+  } = useGetTenantAdminInvitationsQuery({
+    page: invTable.page + 1,
+    pageSize: invTable.pageSize,
+    status: invFilter.status || undefined,
+  });
 
   // Mutations
   const [deleteTenantAdmin, { isLoading: isDeleting }] = useDeleteTenantAdminMutation();
@@ -526,35 +548,8 @@ const TenantAdminsPage = memo(() => {
     [avatarDialog.item?.fullName],
   );
 
-  const confirmTitle = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? `Delete "${pendingActionDialog.item.admin.fullName}"?`
-        : pendingActionDialog.item?.type === 'deactivate'
-          ? `Deactivate "${pendingActionDialog.item.admin.fullName}"?`
-          : `Activate "${pendingActionDialog.item?.admin.fullName}"?`,
-    [pendingActionDialog.item],
-  );
-
-  const confirmDescription = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? 'This will permanently remove the tenant admin account. This action cannot be undone.'
-        : pendingActionDialog.item?.type === 'deactivate'
-          ? 'The admin will no longer be able to sign in.'
-          : 'The admin account will be re-enabled and they can sign in again.',
-    [pendingActionDialog.item],
-  );
-
-  const confirmLabel = useMemo(
-    () =>
-      pendingActionDialog.item?.type === 'delete'
-        ? 'Delete'
-        : pendingActionDialog.item?.type === 'deactivate'
-          ? 'Deactivate'
-          : 'Activate',
-    [pendingActionDialog.item],
-  );
+  const pendingCopy = ACTION_COPY[pendingActionDialog.item?.type ?? 'activate'];
+  const confirmTitle = `${pendingCopy.label} "${pendingActionDialog.item?.admin.fullName}"?`;
 
   const handleUploadAvatar = useCallback(
     async (file: File) => {
@@ -724,6 +719,7 @@ const TenantAdminsPage = memo(() => {
               <Tooltip title="Impersonate admin">
                 <span>
                   <IconButton
+                    aria-label="Impersonate admin"
                     size="small"
                     color="secondary"
                     disabled={isImpersonating}
@@ -752,6 +748,7 @@ const TenantAdminsPage = memo(() => {
               <Tooltip title="Resend setup email">
                 <span>
                   <IconButton
+                    aria-label="Resend setup email"
                     size="small"
                     color="info"
                     disabled={isResendingSetup}
@@ -867,6 +864,7 @@ const TenantAdminsPage = memo(() => {
                       <Tooltip title="Resend invitation">
                         <span>
                           <IconButton
+                            aria-label="Resend invitation"
                             size="small"
                             color="info"
                             disabled={isResendingInvitation}
@@ -935,6 +933,8 @@ const TenantAdminsPage = memo(() => {
             data={adminsData?.items ?? []}
             columns={adminColumns}
             isLoading={isLoadingAdmins}
+            isError={isAdminsError}
+            onRetry={refetchAdmins}
             totalCount={adminsData?.totalCount ?? 0}
             page={adminsTable.page}
             pageSize={adminsTable.pageSize}
@@ -967,6 +967,8 @@ const TenantAdminsPage = memo(() => {
             data={invitationsData?.items ?? []}
             columns={invitationColumns}
             isLoading={isLoadingInvitations}
+            isError={isInvitationsError}
+            onRetry={refetchInvitations}
             totalCount={invitationsData?.totalCount ?? 0}
             page={invTable.page}
             pageSize={invTable.pageSize}
@@ -1008,8 +1010,8 @@ const TenantAdminsPage = memo(() => {
       <ConfirmDialog
         open={pendingActionDialog.open}
         title={confirmTitle}
-        description={confirmDescription}
-        confirmLabel={confirmLabel}
+        description={pendingCopy.description}
+        confirmLabel={pendingCopy.label}
         danger={
           pendingActionDialog.item?.type === 'delete' ||
           pendingActionDialog.item?.type === 'deactivate'

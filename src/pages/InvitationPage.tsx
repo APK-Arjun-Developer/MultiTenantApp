@@ -1,12 +1,17 @@
 ﻿import { memo, useCallback, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { FIELD_TYPE, type FieldConfig, FormWizard } from 'mui-schema-form-builder';
+import {
+  FIELD_TYPE,
+  type FieldConfig,
+  FormWizard,
+  type FormWizardActionsParams,
+} from 'mui-schema-form-builder';
 
 import {
   useAcceptTenantAdminInvitationMutation,
@@ -14,7 +19,8 @@ import {
   useAcceptTenantUserInvitationMutation,
   useValidateInvitationQuery,
 } from '@/features/auth/api/authApi';
-import { Icon, LoadingButton } from '@/shared/components';
+import { isNetworkError } from '@/shared/api/networkError';
+import { Icon, ServerUnavailable, WizardActions } from '@/shared/components';
 import {
   buildAddressPayload,
   buildTenantAddressPayload,
@@ -121,9 +127,17 @@ const InvitationSuccess = memo(({ result }: InvitationSuccessProps) => {
 const InvitationPage = memo(() => {
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const handleCancel = useCallback(() => navigate('/login'), [navigate]);
   const token = searchParams.get('token') ?? '';
 
-  const { data: validation, isLoading: isValidating } = useValidateInvitationQuery(token, {
+  const {
+    data: validation,
+    isLoading: isValidating,
+    isFetching: isRevalidating,
+    error: validationError,
+    refetch: revalidate,
+  } = useValidateInvitationQuery(token, {
     skip: !token,
   });
 
@@ -313,85 +327,15 @@ const InvitationPage = memo(() => {
   );
 
   const renderNewTenantActions = useCallback(
-    ({
-      isSubmitting: formSubmitting,
-      isNavigating,
-      isLastStep,
-      isFirstStep,
-      next,
-      back,
-    }: {
-      isSubmitting: boolean;
-      isNavigating: boolean;
-      isLastStep: boolean;
-      isFirstStep: boolean;
-      next: () => void;
-      back: () => void;
-    }) => (
-      <Box sx={styles.wizardActions}>
-        {!isFirstStep && (
-          <Button
-            type="button"
-            onClick={back}
-            disabled={isNavigating || formSubmitting}
-            variant="outlined"
-            sx={styles.wizardActionButton}
-          >
-            Back
-          </Button>
-        )}
-        <LoadingButton
-          type={isLastStep ? 'submit' : 'button'}
-          loading={isNavigating || formSubmitting || (isLastStep && isSubmitting)}
-          onClick={isLastStep ? undefined : next}
-          variant="contained"
-          sx={styles.wizardActionButton}
-        >
-          {isLastStep ? 'Create tenant & account' : 'Next'}
-        </LoadingButton>
-      </Box>
+    (params: FormWizardActionsParams) => (
+      <WizardActions {...params} submitText="Create tenant & account" submitting={isSubmitting} />
     ),
     [isSubmitting],
   );
 
   const renderAdminUserActions = useCallback(
-    ({
-      isSubmitting: formSubmitting,
-      isNavigating,
-      isLastStep,
-      isFirstStep,
-      next,
-      back,
-    }: {
-      isSubmitting: boolean;
-      isNavigating: boolean;
-      isLastStep: boolean;
-      isFirstStep: boolean;
-      next: () => void;
-      back: () => void;
-    }) => (
-      <Box sx={styles.wizardActions}>
-        {!isFirstStep && (
-          <Button
-            type="button"
-            onClick={back}
-            disabled={isNavigating || formSubmitting}
-            variant="outlined"
-            sx={styles.wizardActionButton}
-          >
-            Back
-          </Button>
-        )}
-        <LoadingButton
-          type={isLastStep ? 'submit' : 'button'}
-          loading={isNavigating || formSubmitting || (isLastStep && isSubmitting)}
-          onClick={isLastStep ? undefined : next}
-          variant="contained"
-          sx={styles.wizardActionButton}
-        >
-          {isLastStep ? 'Create' : 'Next'}
-        </LoadingButton>
-      </Box>
+    (params: FormWizardActionsParams) => (
+      <WizardActions {...params} submitText="Create" submitting={isSubmitting} />
     ),
     [isSubmitting],
   );
@@ -404,6 +348,10 @@ const InvitationPage = memo(() => {
         <CircularProgress size={28} />
       </Box>
     );
+  }
+
+  if (isNetworkError(validationError)) {
+    return <ServerUnavailable onRetry={revalidate} retrying={isRevalidating} />;
   }
 
   if (!validation?.isValid) return <InvitationInvalid message={validation?.errorMessage} />;
@@ -432,6 +380,7 @@ const InvitationPage = memo(() => {
           schema={tenantCreationSchema}
           steps={newTenantSteps}
           onSubmit={onSubmitNewTenant}
+          onCancel={handleCancel}
           renderActions={renderNewTenantActions}
           sx={styles.formWizardContainer}
         />
@@ -471,6 +420,7 @@ const InvitationPage = memo(() => {
         schema={inviteSchema}
         steps={adminUserSteps}
         onSubmit={onSubmit}
+        onCancel={handleCancel}
         renderActions={renderAdminUserActions}
         sx={styles.formWizardContainer}
       />

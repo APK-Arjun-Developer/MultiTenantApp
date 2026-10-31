@@ -6,6 +6,8 @@ interface DataTableProps<TData> {
   data: TData[];
   columns: ColumnDef<TData>[];
   isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   totalCount?: number;
   page?: number;
   pageSize?: number;

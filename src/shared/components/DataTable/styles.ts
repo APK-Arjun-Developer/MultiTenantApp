@@ -31,6 +31,12 @@ const styles = {
     opacity: 0.5,
   },
 
+  errorIcon: {
+    fontSize: '2.25rem',
+    color: 'error.main',
+    opacity: 0.7,
+  },
+
   paginationContainer: {
     borderTop: 1,
     borderColor: 'divider',

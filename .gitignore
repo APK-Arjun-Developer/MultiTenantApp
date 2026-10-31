@@ -13,6 +13,14 @@ dist-ssr
 *.local
 .env
 
+# Test output
+/coverage
+/coverage-e2e
+playwright-report
+test-results
+blob-report
+playwright/.cache
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

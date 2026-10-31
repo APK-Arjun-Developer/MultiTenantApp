@@ -250,7 +250,12 @@ const DashboardAppBar = memo(
         sx={[styles.appBar, sidebarCollapsed ? styles.appBarCollapsed : styles.appBarExpanded]}
       >
         <Toolbar sx={styles.appBarToolbar}>
-          <IconButton edge="start" onClick={onDrawerToggle} sx={styles.menuButton}>
+          <IconButton
+            edge="start"
+            aria-label="Open navigation"
+            onClick={onDrawerToggle}
+            sx={styles.menuButton}
+          >
             <Icon name="Menu" />
           </IconButton>
 

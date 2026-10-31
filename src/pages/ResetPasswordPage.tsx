@@ -13,7 +13,8 @@ import {
 } from 'mui-schema-form-builder';
 
 import { useResetPasswordMutation, useValidateResetTokenQuery } from '@/features/auth/api/authApi';
-import { Icon, LoadingButton } from '@/shared/components';
+import { isNetworkError } from '@/shared/api/networkError';
+import { Icon, LoadingButton, ServerUnavailable } from '@/shared/components';
 import { useSnackbar } from '@/shared/hooks/useSnackbar';
 import type { ApiError } from '@/types/api';
 
@@ -103,7 +104,13 @@ const ResetPasswordPage = memo(() => {
   const token = searchParams.get('token') ?? '';
   const navigate = useNavigate();
 
-  const { data: validation, isLoading: isValidating } = useValidateResetTokenQuery(token, {
+  const {
+    data: validation,
+    isLoading: isValidating,
+    isFetching: isRevalidating,
+    error: validationError,
+    refetch: revalidate,
+  } = useValidateResetTokenQuery(token, {
     skip: !token,
   });
   const [resetPassword, { isLoading: isResetting }] = useResetPasswordMutation();
@@ -165,6 +172,10 @@ const ResetPasswordPage = memo(() => {
         <CircularProgress size={28} />
       </Box>
     );
+  }
+
+  if (isNetworkError(validationError)) {
+    return <ServerUnavailable onRetry={revalidate} retrying={isRevalidating} />;
   }
 
   if (!validation?.isValid) return <TokenInvalid message={validation?.errorMessage} />;

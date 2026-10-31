@@ -106,7 +106,8 @@ const CreateRoleDialog = memo(({ open, onClose, permissionOptions }: CreateRoleD
         required: true,
         options: permissionOptions,
         defaultValue: [],
-        muiProps: { multiple: true, disableCloseOnSelect: true },
+        multiple: true,
+        muiProps: { disableCloseOnSelect: true },
       },
     ],
     [permissionOptions],
@@ -179,7 +180,8 @@ const EditRoleDialog = memo(({ open, onClose, role, permissionOptions }: EditRol
         required: true,
         options: permissionOptions,
         defaultValue: defaultPermissions,
-        muiProps: { multiple: true, disableCloseOnSelect: true },
+        multiple: true,
+        muiProps: { disableCloseOnSelect: true },
       },
     ],
     [role, permissionOptions, defaultPermissions],
@@ -300,7 +302,12 @@ const RolesPage = memo(() => {
     [permissionOptions],
   );
 
-  const { data: rolesData, isLoading } = useGetRolesQuery({
+  const {
+    data: rolesData,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetRolesQuery({
     page: table.page + 1,
     pageSize: table.pageSize,
     search: debouncedSearch || undefined,
@@ -416,6 +423,8 @@ const RolesPage = memo(() => {
             columns={columns}
             data={rolesData?.items ?? []}
             isLoading={isLoading}
+            isError={isError}
+            onRetry={refetch}
             page={table.page}
             pageSize={table.pageSize}
             totalCount={rolesData?.totalCount ?? 0}
