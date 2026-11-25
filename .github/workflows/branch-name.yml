@@ -14,7 +14,7 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          exempt='^(main|dev|dependabot/.+)$'
+          exempt='^(main|dev)$'
           pattern='^(feat|fix|ci|chore|docs|refactor|test|perf|hotfix)/[a-z0-9][a-z0-9-]*$'
 
           if echo "$BRANCH" | grep -qE "$exempt"; then

@@ -151,11 +151,9 @@ merged back into `dev` automatically.
 | `merge-guard.yml` (PR to `main`)            | Only `dev` may be merged into `main`                                                                                                                |
 | `release.yml` (push to `main`)              | All of the above checks, then semantic-release, then back-merge `main` → `dev`                                                                      |
 | `codeql.yml` (push/PR + weekly)             | CodeQL security analysis (javascript-typescript)                                                                                                    |
-| `dependabot.yml` (weekly)                   | Dependency + GitHub Actions update PRs into `dev` (minor/patch grouped)                                                                             |
 
 SonarCloud needs the `SONAR_TOKEN` repository secret and the project
 `APK-Arjun-Developer_MultiTenantApp` in the `apk-arjun-developer` organization (`sonar-project.properties`).
-Dependabot PRs can't read repository secrets: add `SONAR_TOKEN` under **Settings → Secrets → Dependabot** too.
 
 ## API
 

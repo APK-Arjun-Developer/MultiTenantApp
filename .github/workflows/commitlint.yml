@@ -9,8 +9,6 @@ jobs:
   commitlint:
     name: Validate commit messages
     runs-on: ubuntu-latest
-    # Dependabot's "bump <pkg> from x to y" headers can exceed the 72-char limit
-    if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v4
         with:
