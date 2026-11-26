@@ -1,14 +1,12 @@
-﻿import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import { FIELD_TYPE, FilterForm, FormBuilder } from 'mui-schema-form-builder';
 
 import {
@@ -23,6 +21,7 @@ import {
   DataTable,
   Icon,
   LabelValue,
+  TableActionButton,
   TenantContextGuard,
   ViewDialog,
 } from '@/shared/components';
@@ -253,6 +252,59 @@ const ViewRoleDialog = memo(({ role, onClose }: ViewRoleDialogProps) => {
   );
 });
 
+const RoleNameCell = ({ row }: CellContext<RoleDto, unknown>) => (
+  <Typography variant="body2" sx={styles.columnName}>
+    {row.original.name}
+  </Typography>
+);
+
+const RoleDescriptionCell = ({ row }: CellContext<RoleDto, unknown>) => (
+  <Typography variant="body2" color="text.secondary">
+    {row.original.description || '-'}
+  </Typography>
+);
+
+const RolePermissionsCell = ({ row }: CellContext<RoleDto, unknown>) => {
+  const names = row.original.permissionNames;
+  if (names.length === 0) return <Typography variant="body2">-</Typography>;
+  const shown = names.slice(0, 3);
+  const rest = names.length - shown.length;
+  return (
+    <Box sx={styles.chipRow}>
+      {shown.map((n) => (
+        <Chip key={n} label={n} size="small" variant="outlined" />
+      ))}
+      {rest > 0 && <Chip label={`+${rest} more`} size="small" variant="outlined" color="default" />}
+    </Box>
+  );
+};
+
+interface RoleCellActions {
+  onView?: (role: RoleDto) => void;
+  onEdit?: (role: RoleDto) => void;
+  onDelete?: (role: RoleDto) => void;
+}
+
+const RoleActionsCell = (
+  { onView, onEdit, onDelete }: RoleCellActions,
+  { row }: CellContext<RoleDto, unknown>,
+) => (
+  <Box sx={styles.actionButtons}>
+    {onView && (
+      <TableActionButton label="View" icon="Visibility" onClick={() => onView(row.original)} />
+    )}
+    {onEdit && <TableActionButton label="Edit" icon="Edit" onClick={() => onEdit(row.original)} />}
+    {onDelete && (
+      <TableActionButton
+        label="Delete"
+        icon="Delete"
+        color="error"
+        onClick={() => onDelete(row.original)}
+      />
+    )}
+  </Box>
+);
+
 const RolesPage = memo(() => {
   const snackbar = useSnackbar();
 
@@ -330,81 +382,38 @@ const RolesPage = memo(() => {
     }
   }, [deleteDialog, deleteRole, snackbar]);
 
+  const onViewRole = canView ? viewDialog.onOpen : undefined;
+  const onEditRole = canEdit ? editDialog.onOpen : undefined;
+  const onDeleteRole = canDelete ? deleteDialog.onOpen : undefined;
+
   const columns = useMemo<ColumnDef<RoleDto>[]>(
     () => [
       {
         header: 'Name',
         accessorKey: 'name',
-        cell: ({ row }) => (
-          <Typography variant="body2" sx={styles.columnName}>
-            {row.original.name}
-          </Typography>
-        ),
+        cell: RoleNameCell,
       },
       {
         header: 'Description',
         accessorKey: 'description',
-        cell: ({ row }) => (
-          <Typography variant="body2" color="text.secondary">
-            {row.original.description || '-'}
-          </Typography>
-        ),
+        cell: RoleDescriptionCell,
       },
       {
         header: 'Permissions',
         accessorKey: 'permissionNames',
-        cell: ({ row }) => {
-          const names = row.original.permissionNames;
-          if (names.length === 0) return <Typography variant="body2">-</Typography>;
-          const shown = names.slice(0, 3);
-          const rest = names.length - shown.length;
-          return (
-            <Box sx={styles.chipRow}>
-              {shown.map((n) => (
-                <Chip key={n} label={n} size="small" variant="outlined" />
-              ))}
-              {rest > 0 && (
-                <Chip label={`+${rest} more`} size="small" variant="outlined" color="default" />
-              )}
-            </Box>
-          );
-        },
+        cell: RolePermissionsCell,
       },
       {
         header: 'Actions',
         id: 'actions',
-        cell: ({ row }) => (
-          <Box sx={styles.actionButtons}>
-            {canView && (
-              <Tooltip title="View">
-                <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
-                  <Icon name="Visibility" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canEdit && (
-              <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
-                  <Icon name="Edit" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canDelete && (
-              <Tooltip title="Delete">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => deleteDialog.onOpen(row.original)}
-                >
-                  <Icon name="Delete" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        ),
+        cell: RoleActionsCell.bind(null, {
+          onView: onViewRole,
+          onEdit: onEditRole,
+          onDelete: onDeleteRole,
+        }),
       },
     ],
-    [canView, canEdit, canDelete, viewDialog, editDialog, deleteDialog],
+    [onViewRole, onEditRole, onDeleteRole],
   );
 
   return (

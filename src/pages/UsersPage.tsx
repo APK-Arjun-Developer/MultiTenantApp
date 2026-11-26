@@ -1,4 +1,4 @@
-﻿import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -13,7 +13,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import { FIELD_TYPE, type FieldConfig, FilterForm, FormBuilder } from 'mui-schema-form-builder';
 
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -32,13 +32,11 @@ import {
   useGetUserInvitationsQuery,
   useGetUsersQuery,
   useInviteUserMutation,
-  useRemoveUserAvatarByAdminMutation,
   useResendUserInvitationMutation,
   useResendUserSetupMutation,
   useRevokeUserInvitationMutation,
   usersApi,
   useUpdateUserMutation,
-  useUploadUserAvatarByAdminMutation,
 } from '@/features/users/api/usersApi';
 import { apiSlice } from '@/shared/api/apiSlice';
 import {
@@ -48,23 +46,22 @@ import {
   CreatedViaChip,
   DataTable,
   Icon,
+  InvitationRowActions,
   InvitationStatusChip,
   LabelValue,
   LoadingButton,
+  TableActionButton,
   TenantContextGuard,
   ViewDialog,
 } from '@/shared/components';
-import {
-  ACTIVE_STATUS_OPTIONS,
-  CREATED_VIA_OPTIONS,
-  INVITATION_STATUS_OPTIONS,
-} from '@/shared/constants/filterOptions';
+import { INVITATION_STATUS_OPTIONS } from '@/shared/constants/filterOptions';
 import { EXPORT_PAGE_SIZE } from '@/shared/constants/list';
 import {
   buildAddressPayload,
   getAddressFields,
   getSameAsCompanyField,
 } from '@/shared/forms/addressFields';
+import { getListFilterFields } from '@/shared/forms/listFilters';
 import {
   useBooleanDialog,
   useFilterState,
@@ -74,6 +71,7 @@ import {
   useTableState,
   useUrlTabs,
 } from '@/shared/hooks';
+import { useAvatarManagement } from '@/shared/hooks/useAvatarManagement';
 import { exportToCsv } from '@/shared/utils/exportCsv';
 import {
   formatAddress,
@@ -472,6 +470,222 @@ const UsersInvitationsFilterBar = memo(
   },
 );
 
+interface UserAvatarCellOptions {
+  canEdit: boolean;
+  onManageAvatar: (user: UserDto) => void;
+}
+
+const UserAvatarCell = (
+  { canEdit, onManageAvatar }: UserAvatarCellOptions,
+  { row }: CellContext<UserDto, unknown>,
+) => {
+  const user = row.original;
+  const initials = getInitials(user.fullName);
+  return canEdit ? (
+    <Tooltip title="Manage profile photo">
+      <Avatar
+        src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
+        sx={styles.avatarClickable}
+        onClick={() => onManageAvatar(user)}
+      >
+        {initials}
+      </Avatar>
+    </Tooltip>
+  ) : (
+    <Avatar
+      src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
+      sx={styles.avatarReadOnly}
+    >
+      {initials}
+    </Avatar>
+  );
+};
+
+const UserNameCell = ({ row }: CellContext<UserDto, unknown>) => (
+  <Box sx={styles.userCell}>
+    <Typography variant="body2" sx={styles.userCellName}>
+      {row.original.fullName}
+    </Typography>
+    <Typography variant="caption" color="text.secondary">
+      {row.original.email}
+    </Typography>
+  </Box>
+);
+
+const UserRolesCell = ({ row }: CellContext<UserDto, unknown>) => (
+  <Typography variant="body2">
+    {row.original.roles.length > 0 ? row.original.roles.join(', ') : '-'}
+  </Typography>
+);
+
+const UserCreatedViaCell = ({ row }: CellContext<UserDto, unknown>) => (
+  <CreatedViaChip createdVia={row.original.createdVia} />
+);
+
+const UserLastLoginCell = ({ row }: CellContext<UserDto, unknown>) => (
+  <Typography variant="body2" color="text.secondary" sx={styles.lastLoginCell}>
+    {row.original.lastLoginAt ? formatDateTime(row.original.lastLoginAt) : '—'}
+  </Typography>
+);
+
+const UserStatusCell = ({ row }: CellContext<UserDto, unknown>) => (
+  <ActiveStatusChip isActive={row.original.isActive} />
+);
+
+interface UserActionsCellOptions {
+  canView: boolean;
+  canEdit: boolean;
+  canResend: boolean;
+  isResendingSetup: boolean;
+  canActivate: boolean;
+  canDeactivate: boolean;
+  isImpersonating: boolean;
+  canDelete: boolean;
+  isSystemAdmin: boolean;
+  onView: (user: UserDto) => void;
+  onEdit: (user: UserDto) => void;
+  handleResend: (user: UserDto) => void;
+  handleImpersonate: (user: UserDto) => void;
+  onPendingAction: (action: PendingAction) => void;
+}
+
+const UserActionsCell = (
+  {
+    canView,
+    canEdit,
+    canResend,
+    isResendingSetup,
+    canActivate,
+    canDeactivate,
+    isImpersonating,
+    canDelete,
+    isSystemAdmin,
+    onView,
+    onEdit,
+    handleResend,
+    handleImpersonate,
+    onPendingAction,
+  }: UserActionsCellOptions,
+  { row }: CellContext<UserDto, unknown>,
+) => {
+  const user = row.original;
+  return (
+    <Box sx={styles.actionsCell}>
+      {canView && <TableActionButton label="View" icon="Visibility" onClick={() => onView(user)} />}
+      {canEdit && <TableActionButton label="Edit" icon="Edit" onClick={() => onEdit(user)} />}
+      {canResend && user.hasPendingSetup && (
+        <Tooltip title="Resend setup email">
+          <span>
+            <IconButton
+              aria-label="Resend setup email"
+              size="small"
+              disabled={isResendingSetup}
+              onClick={() => handleResend(user)}
+            >
+              {isResendingSetup ? (
+                <CircularProgress size={14} />
+              ) : (
+                <Icon name="Send" fontSize="small" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
+      {(canActivate || canDeactivate) && (
+        <Tooltip title={user.isActive ? 'Deactivate' : 'Activate'}>
+          <IconButton
+            size="small"
+            onClick={() =>
+              onPendingAction({
+                type: user.isActive ? 'deactivate' : 'activate',
+                user,
+              })
+            }
+          >
+            {user.isActive ? (
+              <Icon name="Block" fontSize="small" />
+            ) : (
+              <Icon name="CheckCircle" fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+      )}
+      {isSystemAdmin && user.isActive && (
+        <Tooltip title="Impersonate user">
+          <span>
+            <IconButton
+              aria-label="Impersonate user"
+              size="small"
+              color="secondary"
+              disabled={isImpersonating}
+              onClick={() => handleImpersonate(user)}
+            >
+              <Icon name="SupervisorAccount" fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
+      {canDelete && (
+        <Tooltip title="Delete">
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => onPendingAction({ type: 'delete', user })}
+          >
+            <Icon name="Delete" fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
+  );
+};
+
+const UserInvitationEmailCell = ({ row }: CellContext<UserInvitationDto, unknown>) => (
+  <Typography variant="body2">{row.original.email}</Typography>
+);
+
+const UserInvitationStatusCell = ({ row }: CellContext<UserInvitationDto, unknown>) => (
+  <InvitationStatusChip status={row.original.status} />
+);
+
+const UserInvitationExpiryCell = ({ row }: CellContext<UserInvitationDto, unknown>) => (
+  <Typography variant="body2">{formatDate(row.original.expiresAt)}</Typography>
+);
+
+interface UserInvitationActionsCellOptions {
+  canResend: boolean;
+  canRevoke: boolean;
+  isResendingInvitation: boolean;
+  handleResendInvitation: (invitation: UserInvitationDto) => void;
+  onRevoke: (invitation: UserInvitationDto) => void;
+}
+
+const UserInvitationActionsCell = (
+  {
+    canResend,
+    canRevoke,
+    isResendingInvitation,
+    handleResendInvitation,
+    onRevoke,
+  }: UserInvitationActionsCellOptions,
+  { row }: CellContext<UserInvitationDto, unknown>,
+) => {
+  const inv = row.original;
+  return (
+    <InvitationRowActions
+      inv={inv}
+      canResend={canResend}
+      canRevoke={canRevoke}
+      isResending={isResendingInvitation}
+      onResend={() => handleResendInvitation(inv)}
+      onRevoke={() => onRevoke(inv)}
+      resendIcon="Email"
+      revokeIcon="Clear"
+      sx={styles.invitationActionsCell}
+    />
+  );
+};
+
 const UsersPage = memo(() => {
   const snackbar = useSnackbar();
   const dispatch = useAppDispatch();
@@ -509,7 +723,13 @@ const UsersPage = memo(() => {
   const inviteDialog = useBooleanDialog();
   const editDialog = useItemDialog<UserDto>();
   const viewDialog = useItemDialog<UserDto>();
-  const avatarDialog = useItemDialog<UserDto>();
+  const {
+    avatarDialog,
+    handleUploadAvatar,
+    handleRemoveAvatar,
+    isUploadingAvatar,
+    isRemovingAvatar,
+  } = useAvatarManagement<UserDto>();
   const pendingActionDialog = useItemDialog<PendingAction>();
   const revokeDialog = useItemDialog<UserInvitationDto>();
 
@@ -549,8 +769,6 @@ const UsersPage = memo(() => {
   const [revokeInvitation, { isLoading: isRevoking }] = useRevokeUserInvitationMutation();
   const [resendInvitation, { isLoading: isResendingInvitation }] =
     useResendUserInvitationMutation();
-  const [uploadUserAvatar, { isLoading: isUploadingAvatar }] = useUploadUserAvatarByAdminMutation();
-  const [removeUserAvatar, { isLoading: isRemovingAvatar }] = useRemoveUserAvatarByAdminMutation();
 
   const roleOptions = useMemo<RoleOption[]>(
     () => (rolesData?.items ?? []).map((r) => ({ value: r.id, label: r.name })),
@@ -637,31 +855,6 @@ const UsersPage = memo(() => {
     [resendInvitation, snackbar],
   );
 
-  const handleUploadAvatar = useCallback(
-    async (file: File) => {
-      if (!avatarDialog.item) return;
-      try {
-        const updated = await uploadUserAvatar({ userId: avatarDialog.item.id, file }).unwrap();
-        avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
-        snackbar.success('Profile picture updated.');
-      } catch (err) {
-        snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
-      }
-    },
-    [avatarDialog, uploadUserAvatar, snackbar],
-  );
-
-  const handleRemoveAvatar = useCallback(async () => {
-    if (!avatarDialog.item) return;
-    try {
-      const updated = await removeUserAvatar(avatarDialog.item.id).unwrap();
-      avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
-      snackbar.success('Profile picture removed.');
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
-    }
-  }, [avatarDialog, removeUserAvatar, snackbar]);
-
   const handleExportUsers = useCallback(async () => {
     setExportLoading(true);
     try {
@@ -685,32 +878,7 @@ const UsersPage = memo(() => {
     }
   }, [dispatch, usersData?.items]);
 
-  const userFilterFields = useMemo<FieldConfig[]>(
-    () => [
-      {
-        name: 'search',
-        label: 'Search',
-        type: FIELD_TYPE.SEARCH,
-        placeholder: 'Search users…',
-        grid: { xs: 12, sm: 5 },
-      },
-      {
-        name: 'status',
-        label: 'Status',
-        type: FIELD_TYPE.SELECT,
-        options: ACTIVE_STATUS_OPTIONS,
-        grid: { xs: 6, sm: 3 },
-      },
-      {
-        name: 'createdVia',
-        label: 'Created via',
-        type: FIELD_TYPE.SELECT,
-        options: CREATED_VIA_OPTIONS,
-        grid: { xs: 6, sm: 4 },
-      },
-    ],
-    [],
-  );
+  const userFilterFields = useMemo(() => getListFilterFields('Search users…'), []);
 
   const invFilterFields = useMemo<FieldConfig[]>(
     () => [
@@ -743,163 +911,57 @@ const UsersPage = memo(() => {
       {
         id: 'avatar',
         header: '',
-        cell: ({ row }) => {
-          const user = row.original;
-          const initials = getInitials(user.fullName);
-          return canEdit ? (
-            <Tooltip title="Manage profile photo">
-              <Avatar
-                src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
-                sx={styles.avatarClickable}
-                onClick={() => avatarDialog.onOpen(user)}
-              >
-                {initials}
-              </Avatar>
-            </Tooltip>
-          ) : (
-            <Avatar
-              src={user.profileFileId ? getUserAvatarUrl(user.id) : undefined}
-              sx={styles.avatarReadOnly}
-            >
-              {initials}
-            </Avatar>
-          );
-        },
+        cell: UserAvatarCell.bind(null, { canEdit, onManageAvatar: avatarDialog.onOpen }),
       },
       {
         header: 'User',
         accessorKey: 'fullName',
-        cell: ({ row }) => (
-          <Box sx={styles.userCell}>
-            <Typography variant="body2" sx={styles.userCellName}>
-              {row.original.fullName}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {row.original.email}
-            </Typography>
-          </Box>
-        ),
+        cell: UserNameCell,
       },
       {
         header: 'Roles',
         accessorKey: 'roles',
-        cell: ({ row }) => (
-          <Typography variant="body2">
-            {row.original.roles.length > 0 ? row.original.roles.join(', ') : '-'}
-          </Typography>
-        ),
+        cell: UserRolesCell,
       },
       {
         header: 'Created via',
         accessorKey: 'createdVia',
-        cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
+        cell: UserCreatedViaCell,
       },
       {
         header: 'Last login',
         accessorKey: 'lastLoginAt',
-        cell: ({ row }) => (
-          <Typography variant="body2" color="text.secondary" sx={styles.lastLoginCell}>
-            {row.original.lastLoginAt ? formatDateTime(row.original.lastLoginAt) : '—'}
-          </Typography>
-        ),
+        cell: UserLastLoginCell,
       },
       {
         header: 'Status',
         accessorKey: 'isActive',
-        cell: ({ row }) => <ActiveStatusChip isActive={row.original.isActive} />,
+        cell: UserStatusCell,
       },
       {
         header: 'Actions',
         id: 'actions',
-        cell: ({ row }) => {
-          const user = row.original;
-          return (
-            <Box sx={styles.actionsCell}>
-              {canView && (
-                <Tooltip title="View">
-                  <IconButton size="small" onClick={() => viewDialog.onOpen(user)}>
-                    <Icon name="Visibility" fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {canEdit && (
-                <Tooltip title="Edit">
-                  <IconButton size="small" onClick={() => editDialog.onOpen(user)}>
-                    <Icon name="Edit" fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {canResend && user.hasPendingSetup && (
-                <Tooltip title="Resend setup email">
-                  <span>
-                    <IconButton
-                      aria-label="Resend setup email"
-                      size="small"
-                      disabled={isResendingSetup}
-                      onClick={() => handleResend(user)}
-                    >
-                      {isResendingSetup ? (
-                        <CircularProgress size={14} />
-                      ) : (
-                        <Icon name="Send" fontSize="small" />
-                      )}
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              )}
-              {(canActivate || canDeactivate) && (
-                <Tooltip title={user.isActive ? 'Deactivate' : 'Activate'}>
-                  <IconButton
-                    size="small"
-                    onClick={() =>
-                      pendingActionDialog.onOpen({
-                        type: user.isActive ? 'deactivate' : 'activate',
-                        user,
-                      })
-                    }
-                  >
-                    {user.isActive ? (
-                      <Icon name="Block" fontSize="small" />
-                    ) : (
-                      <Icon name="CheckCircle" fontSize="small" />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              )}
-              {currentUser?.systemRole === 'SystemAdmin' && user.isActive && (
-                <Tooltip title="Impersonate user">
-                  <span>
-                    <IconButton
-                      aria-label="Impersonate user"
-                      size="small"
-                      color="secondary"
-                      disabled={isImpersonating}
-                      onClick={() => handleImpersonate(user)}
-                    >
-                      <Icon name="SupervisorAccount" fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              )}
-              {canDelete && (
-                <Tooltip title="Delete">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => pendingActionDialog.onOpen({ type: 'delete', user })}
-                  >
-                    <Icon name="Delete" fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          );
-        },
+        cell: UserActionsCell.bind(null, {
+          canView,
+          canEdit,
+          canResend,
+          isResendingSetup,
+          canActivate,
+          canDeactivate,
+          isImpersonating,
+          canDelete,
+          isSystemAdmin: currentUser?.systemRole === 'SystemAdmin',
+          onView: viewDialog.onOpen,
+          onEdit: editDialog.onOpen,
+          handleResend,
+          handleImpersonate,
+          onPendingAction: pendingActionDialog.onOpen,
+        }),
       },
     ],
     [
       canEdit,
-      avatarDialog,
+      avatarDialog.onOpen,
       canView,
       canResend,
       isResendingSetup,
@@ -908,10 +970,10 @@ const UsersPage = memo(() => {
       currentUser?.systemRole,
       isImpersonating,
       canDelete,
-      viewDialog,
-      editDialog,
+      viewDialog.onOpen,
+      editDialog.onOpen,
       handleResend,
-      pendingActionDialog,
+      pendingActionDialog.onOpen,
       handleImpersonate,
     ],
   );
@@ -921,71 +983,35 @@ const UsersPage = memo(() => {
       {
         header: 'Email',
         accessorKey: 'email',
-        cell: ({ row }) => <Typography variant="body2">{row.original.email}</Typography>,
+        cell: UserInvitationEmailCell,
       },
       {
         header: 'Status',
         accessorKey: 'status',
-        cell: ({ row }) => <InvitationStatusChip status={row.original.status} />,
+        cell: UserInvitationStatusCell,
       },
       {
         header: 'Expires',
         accessorKey: 'expiresAt',
-        cell: ({ row }) => (
-          <Typography variant="body2">{formatDate(row.original.expiresAt)}</Typography>
-        ),
+        cell: UserInvitationExpiryCell,
       },
       ...(canRevoke || canResend
         ? ([
             {
               header: 'Actions',
               id: 'actions',
-              cell: ({ row }) => {
-                const inv = row.original;
-                const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-                const canRevokeRow = canRevoke && isPending;
-                const canResendRow = canResend && isPending;
-                if (!canRevokeRow && !canResendRow) return null;
-                return (
-                  <Box sx={styles.invitationActionsCell}>
-                    {canResendRow && (
-                      <Tooltip title="Resend invitation">
-                        <span>
-                          <IconButton
-                            aria-label="Resend invitation"
-                            size="small"
-                            color="info"
-                            disabled={isResendingInvitation}
-                            onClick={() => handleResendInvitation(inv)}
-                          >
-                            {isResendingInvitation ? (
-                              <CircularProgress size={14} />
-                            ) : (
-                              <Icon name="Email" fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    )}
-                    {canRevokeRow && (
-                      <Tooltip title="Revoke invitation">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => revokeDialog.onOpen(inv)}
-                        >
-                          <Icon name="Clear" fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                );
-              },
+              cell: UserInvitationActionsCell.bind(null, {
+                canResend,
+                canRevoke,
+                isResendingInvitation,
+                handleResendInvitation,
+                onRevoke: revokeDialog.onOpen,
+              }),
             },
           ] as ColumnDef<UserInvitationDto>[])
         : []),
     ],
-    [canRevoke, canResend, isResendingInvitation, handleResendInvitation, revokeDialog],
+    [canRevoke, canResend, isResendingInvitation, handleResendInvitation, revokeDialog.onOpen],
   );
 
   return (

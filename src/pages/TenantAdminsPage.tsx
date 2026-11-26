@@ -1,4 +1,4 @@
-﻿import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -11,7 +11,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import { FIELD_TYPE, type FieldConfig, FilterForm, FormBuilder } from 'mui-schema-form-builder';
 import { z } from 'zod';
 
@@ -33,11 +33,7 @@ import {
   useUpdateTenantAdminMutation,
 } from '@/features/tenantAdmins/api/tenantAdminsApi';
 import { useGetTenantsQuery, useUpdateTenantMutation } from '@/features/tenants/api/tenantsApi';
-import {
-  getUserAvatarUrl,
-  useRemoveUserAvatarByAdminMutation,
-  useUploadUserAvatarByAdminMutation,
-} from '@/features/users/api/usersApi';
+import { getUserAvatarUrl } from '@/features/users/api/usersApi';
 import { apiSlice } from '@/shared/api/apiSlice';
 import {
   ActiveStatusChip,
@@ -46,8 +42,10 @@ import {
   CreatedViaChip,
   DataTable,
   Icon,
+  InvitationRowActions,
   InvitationStatusChip,
   LabelValue,
+  TableActionButton,
   ViewDialog,
 } from '@/shared/components';
 import {
@@ -73,6 +71,7 @@ import {
   useTableState,
   useUrlTabs,
 } from '@/shared/hooks';
+import { useAvatarManagement } from '@/shared/hooks/useAvatarManagement';
 import { formatAddress, formatDate, getInitials, statusToIsActive } from '@/shared/utils/format';
 import type { ApiError, UserCreatedVia } from '@/types/api';
 
@@ -396,6 +395,220 @@ const ViewAdminDialog = memo(({ admin, onClose }: ViewAdminDialogProps) => {
   );
 });
 
+interface AdminAvatarCellOptions {
+  onManageAvatar: (admin: TenantAdminDto) => void;
+}
+
+const AdminAvatarCell = (
+  { onManageAvatar }: AdminAvatarCellOptions,
+  { row }: CellContext<TenantAdminDto, unknown>,
+) => {
+  const admin = row.original;
+  const initials = getInitials(admin.fullName);
+  return (
+    <Tooltip title="Manage profile photo">
+      <Avatar
+        src={admin.profileFileId ? getUserAvatarUrl(admin.id) : undefined}
+        sx={styles.adminAvatar}
+        onClick={() => onManageAvatar(admin)}
+      >
+        {initials}
+      </Avatar>
+    </Tooltip>
+  );
+};
+
+const AdminNameCell = ({ row }: CellContext<TenantAdminDto, unknown>) => (
+  <Box sx={styles.adminNameCell}>
+    <Typography variant="body2" sx={styles.adminNameText}>
+      {row.original.fullName}
+    </Typography>
+    <Typography variant="caption" color="text.secondary">
+      {row.original.email}
+    </Typography>
+  </Box>
+);
+
+const AdminTenantCell = ({ row }: CellContext<TenantAdminDto, unknown>) =>
+  row.original.tenant ? (
+    <Typography variant="body2" sx={styles.tenantNameText}>
+      {row.original.tenant.name}
+    </Typography>
+  ) : (
+    <Typography variant="body2" color="text.secondary">
+      —
+    </Typography>
+  );
+
+const AdminCreatedViaCell = ({ row }: CellContext<TenantAdminDto, unknown>) => (
+  <CreatedViaChip createdVia={row.original.createdVia} />
+);
+
+const AdminStatusCell = ({ row }: CellContext<TenantAdminDto, unknown>) => (
+  <ActiveStatusChip isActive={row.original.isActive} />
+);
+
+interface AdminActionsCellOptions {
+  isSystemAdmin: boolean;
+  isImpersonating: boolean;
+  canView: boolean;
+  canEdit: boolean;
+  canResend: boolean;
+  isResendingSetup: boolean;
+  canActivate: boolean;
+  canDeactivate: boolean;
+  canDelete: boolean;
+  handleImpersonate: (admin: TenantAdminDto) => void;
+  handleResend: (admin: TenantAdminDto) => void;
+  onView: (admin: TenantAdminDto) => void;
+  onEdit: (admin: TenantAdminDto) => void;
+  onPendingAction: (action: { type: ActionType; admin: TenantAdminDto }) => void;
+}
+
+const AdminActionsCell = (
+  {
+    isSystemAdmin,
+    isImpersonating,
+    canView,
+    canEdit,
+    canResend,
+    isResendingSetup,
+    canActivate,
+    canDeactivate,
+    canDelete,
+    handleImpersonate,
+    handleResend,
+    onView,
+    onEdit,
+    onPendingAction,
+  }: AdminActionsCellOptions,
+  { row }: CellContext<TenantAdminDto, unknown>,
+) => (
+  <Box sx={styles.adminRowActions}>
+    {isSystemAdmin && row.original.isActive && (
+      <Tooltip title="Impersonate admin">
+        <span>
+          <IconButton
+            aria-label="Impersonate admin"
+            size="small"
+            color="secondary"
+            disabled={isImpersonating}
+            onClick={() => handleImpersonate(row.original)}
+          >
+            <Icon name="SupervisorAccount" fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+    )}
+    {canView && (
+      <TableActionButton label="View" icon="Visibility" onClick={() => onView(row.original)} />
+    )}
+    {canEdit && <TableActionButton label="Edit" icon="Edit" onClick={() => onEdit(row.original)} />}
+    {canResend && row.original.hasPendingSetup && (
+      <Tooltip title="Resend setup email">
+        <span>
+          <IconButton
+            aria-label="Resend setup email"
+            size="small"
+            color="info"
+            disabled={isResendingSetup}
+            onClick={() => handleResend(row.original)}
+          >
+            {isResendingSetup ? (
+              <CircularProgress size={14} />
+            ) : (
+              <Icon name="Email" fontSize="small" />
+            )}
+          </IconButton>
+        </span>
+      </Tooltip>
+    )}
+    {(canActivate || canDeactivate) && (
+      <Tooltip title={row.original.isActive ? 'Deactivate' : 'Activate'}>
+        <IconButton
+          size="small"
+          color={row.original.isActive ? 'warning' : 'success'}
+          onClick={() =>
+            onPendingAction({
+              type: row.original.isActive ? 'deactivate' : 'activate',
+              admin: row.original,
+            })
+          }
+        >
+          {row.original.isActive ? (
+            <Icon name="Block" fontSize="small" />
+          ) : (
+            <Icon name="CheckCircle" fontSize="small" />
+          )}
+        </IconButton>
+      </Tooltip>
+    )}
+    {canDelete && (
+      <Tooltip title="Delete">
+        <IconButton
+          size="small"
+          color="error"
+          onClick={() => onPendingAction({ type: 'delete', admin: row.original })}
+        >
+          <Icon name="Delete" fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    )}
+  </Box>
+);
+
+const AdminInvitationEmailCell = ({ row }: CellContext<TenantAdminInvitationDto, unknown>) => (
+  <Typography variant="body2">{row.original.email}</Typography>
+);
+
+const AdminInvitationTenantCell = ({ row }: CellContext<TenantAdminInvitationDto, unknown>) => (
+  <Typography variant="body2">{row.original.tenantName ?? '—'}</Typography>
+);
+
+const AdminInvitationStatusCell = ({ row }: CellContext<TenantAdminInvitationDto, unknown>) => (
+  <InvitationStatusChip status={row.original.status} />
+);
+
+const AdminInvitationExpiryCell = ({ row }: CellContext<TenantAdminInvitationDto, unknown>) => (
+  <Typography variant="body2" color="text.secondary">
+    {formatDate(row.original.expiresAt)}
+  </Typography>
+);
+
+interface AdminInvitationActionsCellOptions {
+  canResend: boolean;
+  canRevoke: boolean;
+  isResendingInvitation: boolean;
+  handleResendInvitation: (invitation: TenantAdminInvitationDto) => void;
+  onRevoke: (invitation: TenantAdminInvitationDto) => void;
+}
+
+const AdminInvitationActionsCell = (
+  {
+    canResend,
+    canRevoke,
+    isResendingInvitation,
+    handleResendInvitation,
+    onRevoke,
+  }: AdminInvitationActionsCellOptions,
+  { row }: CellContext<TenantAdminInvitationDto, unknown>,
+) => {
+  const inv = row.original;
+  return (
+    <InvitationRowActions
+      inv={inv}
+      canResend={canResend}
+      canRevoke={canRevoke}
+      isResending={isResendingInvitation}
+      onResend={() => handleResendInvitation(inv)}
+      onRevoke={() => onRevoke(inv)}
+      resendIcon="ForwardToInbox"
+      revokeIcon="Block"
+      sx={styles.invitationRowActions}
+    />
+  );
+};
+
 const TenantAdminsPage = memo(() => {
   const snackbar = useSnackbar();
   const dispatch = useAppDispatch();
@@ -434,7 +647,13 @@ const TenantAdminsPage = memo(() => {
   const inviteDialog = useBooleanDialog();
   const viewDialog = useItemDialog<TenantAdminDto>();
   const editDialog = useItemDialog<TenantAdminDto>();
-  const avatarDialog = useItemDialog<TenantAdminDto>();
+  const {
+    avatarDialog,
+    handleUploadAvatar,
+    handleRemoveAvatar,
+    isUploadingAvatar,
+    isRemovingAvatar,
+  } = useAvatarManagement<TenantAdminDto>();
   const pendingActionDialog = useItemDialog<{ type: ActionType; admin: TenantAdminDto }>();
   const revokeDialog = useItemDialog<TenantAdminInvitationDto>();
 
@@ -527,8 +746,6 @@ const TenantAdminsPage = memo(() => {
   const [resendInvitationMutation, { isLoading: isResendingInvitation }] =
     useResendInvitationMutation();
   const [startImpersonation, { isLoading: isImpersonating }] = useStartImpersonationMutation();
-  const [uploadUserAvatar, { isLoading: isUploadingAvatar }] = useUploadUserAvatarByAdminMutation();
-  const [removeUserAvatar, { isLoading: isRemovingAvatar }] = useRemoveUserAvatarByAdminMutation();
 
   const isActioning = isDeleting || isActivating || isDeactivating;
 
@@ -550,31 +767,6 @@ const TenantAdminsPage = memo(() => {
 
   const pendingCopy = ACTION_COPY[pendingActionDialog.item?.type ?? 'activate'];
   const confirmTitle = `${pendingCopy.label} "${pendingActionDialog.item?.admin.fullName}"?`;
-
-  const handleUploadAvatar = useCallback(
-    async (file: File) => {
-      if (!avatarDialog.item) return;
-      try {
-        const updated = await uploadUserAvatar({ userId: avatarDialog.item.id, file }).unwrap();
-        avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
-        snackbar.success('Profile picture updated.');
-      } catch (err) {
-        snackbar.error((err as ApiError).message || 'Failed to upload avatar.');
-      }
-    },
-    [avatarDialog, uploadUserAvatar, snackbar],
-  );
-
-  const handleRemoveAvatar = useCallback(async () => {
-    if (!avatarDialog.item) return;
-    try {
-      const updated = await removeUserAvatar(avatarDialog.item.id).unwrap();
-      avatarDialog.setItem({ ...avatarDialog.item, profileFileId: updated.profileFileId });
-      snackbar.success('Profile picture removed.');
-    } catch (err) {
-      snackbar.error((err as ApiError).message || 'Failed to remove avatar.');
-    }
-  }, [avatarDialog, removeUserAvatar, snackbar]);
 
   const handleImpersonate = useCallback(
     async (admin: TenantAdminDto) => {
@@ -656,152 +848,51 @@ const TenantAdminsPage = memo(() => {
       {
         id: 'avatar',
         header: '',
-        cell: ({ row }) => {
-          const admin = row.original;
-          const initials = getInitials(admin.fullName);
-          return (
-            <Tooltip title="Manage profile photo">
-              <Avatar
-                src={admin.profileFileId ? getUserAvatarUrl(admin.id) : undefined}
-                sx={styles.adminAvatar}
-                onClick={() => avatarDialog.onOpen(admin)}
-              >
-                {initials}
-              </Avatar>
-            </Tooltip>
-          );
-        },
+        cell: AdminAvatarCell.bind(null, { onManageAvatar: avatarDialog.onOpen }),
       },
       {
         accessorKey: 'fullName',
         header: 'Admin',
-        cell: ({ row }) => (
-          <Box sx={styles.adminNameCell}>
-            <Typography variant="body2" sx={styles.adminNameText}>
-              {row.original.fullName}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {row.original.email}
-            </Typography>
-          </Box>
-        ),
+        cell: AdminNameCell,
       },
       {
         id: 'tenant',
         header: 'Tenant',
-        cell: ({ row }) =>
-          row.original.tenant ? (
-            <Typography variant="body2" sx={styles.tenantNameText}>
-              {row.original.tenant.name}
-            </Typography>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              —
-            </Typography>
-          ),
+        cell: AdminTenantCell,
       },
       {
         accessorKey: 'createdVia',
         header: 'Created via',
-        cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
+        cell: AdminCreatedViaCell,
       },
       {
         accessorKey: 'isActive',
         header: 'Status',
-        cell: ({ row }) => <ActiveStatusChip isActive={row.original.isActive} />,
+        cell: AdminStatusCell,
       },
       {
         id: 'actions',
         header: '',
-        cell: ({ row }) => (
-          <Box sx={styles.adminRowActions}>
-            {currentUser?.systemRole === 'SystemAdmin' && row.original.isActive && (
-              <Tooltip title="Impersonate admin">
-                <span>
-                  <IconButton
-                    aria-label="Impersonate admin"
-                    size="small"
-                    color="secondary"
-                    disabled={isImpersonating}
-                    onClick={() => handleImpersonate(row.original)}
-                  >
-                    <Icon name="SupervisorAccount" fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-            {canView && (
-              <Tooltip title="View">
-                <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
-                  <Icon name="Visibility" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canEdit && (
-              <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
-                  <Icon name="Edit" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canResend && row.original.hasPendingSetup && (
-              <Tooltip title="Resend setup email">
-                <span>
-                  <IconButton
-                    aria-label="Resend setup email"
-                    size="small"
-                    color="info"
-                    disabled={isResendingSetup}
-                    onClick={() => handleResend(row.original)}
-                  >
-                    {isResendingSetup ? (
-                      <CircularProgress size={14} />
-                    ) : (
-                      <Icon name="Email" fontSize="small" />
-                    )}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )}
-            {(canActivate || canDeactivate) && (
-              <Tooltip title={row.original.isActive ? 'Deactivate' : 'Activate'}>
-                <IconButton
-                  size="small"
-                  color={row.original.isActive ? 'warning' : 'success'}
-                  onClick={() =>
-                    pendingActionDialog.onOpen({
-                      type: row.original.isActive ? 'deactivate' : 'activate',
-                      admin: row.original,
-                    })
-                  }
-                >
-                  {row.original.isActive ? (
-                    <Icon name="Block" fontSize="small" />
-                  ) : (
-                    <Icon name="CheckCircle" fontSize="small" />
-                  )}
-                </IconButton>
-              </Tooltip>
-            )}
-            {canDelete && (
-              <Tooltip title="Delete">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() =>
-                    pendingActionDialog.onOpen({ type: 'delete', admin: row.original })
-                  }
-                >
-                  <Icon name="Delete" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        ),
+        cell: AdminActionsCell.bind(null, {
+          isSystemAdmin: currentUser?.systemRole === 'SystemAdmin',
+          isImpersonating,
+          canView,
+          canEdit,
+          canResend,
+          isResendingSetup,
+          canActivate,
+          canDeactivate,
+          canDelete,
+          handleImpersonate,
+          handleResend,
+          onView: viewDialog.onOpen,
+          onEdit: editDialog.onOpen,
+          onPendingAction: pendingActionDialog.onOpen,
+        }),
       },
     ],
     [
-      avatarDialog,
+      avatarDialog.onOpen,
       currentUser?.systemRole,
       isImpersonating,
       canView,
@@ -812,10 +903,10 @@ const TenantAdminsPage = memo(() => {
       canDeactivate,
       canDelete,
       handleImpersonate,
-      viewDialog,
-      editDialog,
+      viewDialog.onOpen,
+      editDialog.onOpen,
       handleResend,
-      pendingActionDialog,
+      pendingActionDialog.onOpen,
     ],
   );
 
@@ -824,80 +915,40 @@ const TenantAdminsPage = memo(() => {
       {
         accessorKey: 'email',
         header: 'Email',
-        cell: ({ row }) => <Typography variant="body2">{row.original.email}</Typography>,
+        cell: AdminInvitationEmailCell,
       },
       {
         id: 'tenant',
         header: 'Tenant',
-        cell: ({ row }) => (
-          <Typography variant="body2">{row.original.tenantName ?? '—'}</Typography>
-        ),
+        cell: AdminInvitationTenantCell,
       },
       {
         id: 'status',
         header: 'Status',
-        cell: ({ row }) => <InvitationStatusChip status={row.original.status} />,
+        cell: AdminInvitationStatusCell,
       },
       {
         accessorKey: 'expiresAt',
         header: 'Expires',
-        cell: ({ row }) => (
-          <Typography variant="body2" color="text.secondary">
-            {formatDate(row.original.expiresAt)}
-          </Typography>
-        ),
+        cell: AdminInvitationExpiryCell,
       },
       ...(canRevoke || canResend
         ? ([
             {
               id: 'actions',
               header: '',
-              cell: ({ row }) => {
-                const inv = row.original;
-                const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-                const canRevokeRow = canRevoke && isPending;
-                const canResendRow = canResend && isPending;
-                if (!canRevokeRow && !canResendRow) return null;
-                return (
-                  <Box sx={styles.invitationRowActions}>
-                    {canResendRow && (
-                      <Tooltip title="Resend invitation">
-                        <span>
-                          <IconButton
-                            aria-label="Resend invitation"
-                            size="small"
-                            color="info"
-                            disabled={isResendingInvitation}
-                            onClick={() => handleResendInvitation(inv)}
-                          >
-                            {isResendingInvitation ? (
-                              <CircularProgress size={14} />
-                            ) : (
-                              <Icon name="ForwardToInbox" fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    )}
-                    {canRevokeRow && (
-                      <Tooltip title="Revoke invitation">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => revokeDialog.onOpen(inv)}
-                        >
-                          <Icon name="Block" fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                );
-              },
+              cell: AdminInvitationActionsCell.bind(null, {
+                canResend,
+                canRevoke,
+                isResendingInvitation,
+                handleResendInvitation,
+                onRevoke: revokeDialog.onOpen,
+              }),
             },
           ] as ColumnDef<TenantAdminInvitationDto>[])
         : []),
     ],
-    [canRevoke, canResend, isResendingInvitation, handleResendInvitation, revokeDialog],
+    [canRevoke, canResend, isResendingInvitation, handleResendInvitation, revokeDialog.onOpen],
   );
 
   return (
