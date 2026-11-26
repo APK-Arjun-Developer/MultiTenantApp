@@ -1,9 +1,8 @@
-﻿import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -12,7 +11,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import {
   FIELD_TYPE,
   type FieldConfig,
@@ -47,16 +46,14 @@ import {
   CreatedViaChip,
   DataTable,
   Icon,
+  InvitationRowActions,
   InvitationStatusChip,
   LabelValue,
+  TableActionButton,
   ViewDialog,
   WizardActions,
 } from '@/shared/components';
-import {
-  ACTIVE_STATUS_OPTIONS,
-  CREATED_VIA_OPTIONS,
-  INVITATION_STATUS_OPTIONS,
-} from '@/shared/constants/filterOptions';
+import { INVITATION_STATUS_OPTIONS } from '@/shared/constants/filterOptions';
 import {
   addressZodShape,
   buildAddressPayload,
@@ -66,6 +63,7 @@ import {
   requiredAddressZodShape,
   requiredTenantAddressZodShape,
 } from '@/shared/forms/addressFields';
+import { getListFilterFields } from '@/shared/forms/listFilters';
 import {
   useBooleanDialog,
   useFilterState,
@@ -141,32 +139,7 @@ const TenantsPageHeader = memo(
 );
 
 const TenantsPageFilterBar = memo(({ onChange }: TenantsPageFilterBarProps) => {
-  const fields = useMemo<FieldConfig[]>(
-    () => [
-      {
-        name: 'search',
-        label: 'Search',
-        type: FIELD_TYPE.SEARCH,
-        placeholder: 'Search tenants…',
-        grid: { xs: 12, sm: 5 },
-      },
-      {
-        name: 'status',
-        label: 'Status',
-        type: FIELD_TYPE.SELECT,
-        options: ACTIVE_STATUS_OPTIONS,
-        grid: { xs: 6, sm: 3 },
-      },
-      {
-        name: 'createdVia',
-        label: 'Created via',
-        type: FIELD_TYPE.SELECT,
-        options: CREATED_VIA_OPTIONS,
-        grid: { xs: 6, sm: 4 },
-      },
-    ],
-    [],
-  );
+  const fields = useMemo(() => getListFilterFields('Search tenants…'), []);
 
   return (
     <Box sx={styles.filterBar}>
@@ -447,7 +420,7 @@ const ViewTenantDialog = memo(({ tenant, onClose }: ViewTenantDialogProps) => {
   );
 });
 
-const PlanBadge = memo(({ plan }: { plan?: PlanType | string }) => {
+const PlanBadge = memo(({ plan }: { plan?: string }) => {
   const isPro = plan === 'Pro';
   return (
     <Chip
@@ -531,6 +504,136 @@ const TenantTabs = memo(
     );
   },
 );
+
+interface TenantLogoCellOptions {
+  onManageLogo: (tenant: TenantDto) => void;
+}
+
+const TenantLogoCell = (
+  { onManageLogo }: TenantLogoCellOptions,
+  { row }: CellContext<TenantDto, unknown>,
+) => {
+  const logoSrc = row.original.profileFileId
+    ? getTenantLogoUrl(row.original.profileFileId)
+    : undefined;
+  return (
+    <Avatar src={logoSrc} sx={styles.avatarLogo} onClick={() => onManageLogo(row.original)}>
+      {row.original.name.charAt(0).toUpperCase()}
+    </Avatar>
+  );
+};
+
+const TenantNameCell = ({ row }: CellContext<TenantDto, unknown>) => (
+  <Box>
+    <Typography variant="body2" sx={styles.tenantNameCell}>
+      {row.original.name}
+    </Typography>
+    {row.original.adminEmail && (
+      <Typography variant="caption" color="text.secondary">
+        {row.original.adminEmail}
+      </Typography>
+    )}
+  </Box>
+);
+
+const TenantPlanCell = ({ row }: CellContext<TenantDto, unknown>) => (
+  <PlanBadge plan={row.original.planType} />
+);
+
+const TenantCreatedViaCell = ({ row }: CellContext<TenantDto, unknown>) => (
+  <CreatedViaChip createdVia={row.original.createdVia} />
+);
+
+const TenantStatusCell = ({ row }: CellContext<TenantDto, unknown>) => (
+  <ActiveStatusChip isActive={row.original.isActive} />
+);
+
+interface TenantActionsCellOptions {
+  canView: boolean;
+  canEdit: boolean;
+  canEditSubscription: boolean;
+  canDelete: boolean;
+  onView: (tenant: TenantDto) => void;
+  onEdit: (tenant: TenantDto) => void;
+  onChangePlan: (tenant: TenantDto) => void;
+  onDelete: (tenant: TenantDto) => void;
+}
+
+const TenantActionsCell = (
+  {
+    canView,
+    canEdit,
+    canEditSubscription,
+    canDelete,
+    onView,
+    onEdit,
+    onChangePlan,
+    onDelete,
+  }: TenantActionsCellOptions,
+  { row }: CellContext<TenantDto, unknown>,
+) => (
+  <Box sx={styles.actionsCell}>
+    {canView && (
+      <TableActionButton label="View" icon="Visibility" onClick={() => onView(row.original)} />
+    )}
+    {canEdit && <TableActionButton label="Edit" icon="Edit" onClick={() => onEdit(row.original)} />}
+    {canEditSubscription && (
+      <Tooltip title="Change plan">
+        <IconButton size="small" color="primary" onClick={() => onChangePlan(row.original)}>
+          <Icon name="WorkspacePremium" fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    )}
+    {canDelete && (
+      <TableActionButton
+        label="Delete"
+        icon="Delete"
+        color="error"
+        onClick={() => onDelete(row.original)}
+      />
+    )}
+  </Box>
+);
+
+const TenantInvitationEmailCell = ({ row }: CellContext<TenantCreationInvitationDto, unknown>) => (
+  <Typography variant="body2">{row.original.email}</Typography>
+);
+
+const TenantInvitationStatusCell = ({ row }: CellContext<TenantCreationInvitationDto, unknown>) => (
+  <InvitationStatusChip status={row.original.status} />
+);
+
+const TenantInvitationExpiryCell = ({ row }: CellContext<TenantCreationInvitationDto, unknown>) => (
+  <Typography variant="body2" color="text.secondary">
+    {formatDate(row.original.expiresAt)}
+  </Typography>
+);
+
+interface TenantInvitationActionsCellOptions {
+  isResendingInvitation: boolean;
+  handleResendInvitation: (invitation: TenantCreationInvitationDto) => void;
+  onRevoke: (invitation: TenantCreationInvitationDto) => void;
+}
+
+const TenantInvitationActionsCell = (
+  { isResendingInvitation, handleResendInvitation, onRevoke }: TenantInvitationActionsCellOptions,
+  { row }: CellContext<TenantCreationInvitationDto, unknown>,
+) => {
+  const inv = row.original;
+  return (
+    <InvitationRowActions
+      inv={inv}
+      canResend
+      canRevoke
+      isResending={isResendingInvitation}
+      onResend={() => handleResendInvitation(inv)}
+      onRevoke={() => onRevoke(inv)}
+      resendIcon="ForwardToInbox"
+      revokeIcon="Block"
+      sx={styles.actionsCell}
+    />
+  );
+};
 
 const TenantsPage = memo(() => {
   const snackbar = useSnackbar();
@@ -664,107 +767,53 @@ const TenantsPage = memo(() => {
         id: 'logo',
         header: '',
         size: 48,
-        cell: ({ row }) => {
-          const logoSrc = row.original.profileFileId
-            ? getTenantLogoUrl(row.original.profileFileId)
-            : undefined;
-          return (
-            <Avatar
-              src={logoSrc}
-              sx={styles.avatarLogo}
-              onClick={() => logoDialog.onOpen(row.original)}
-            >
-              {row.original.name.charAt(0).toUpperCase()}
-            </Avatar>
-          );
-        },
+        cell: TenantLogoCell.bind(null, { onManageLogo: logoDialog.onOpen }),
       },
       {
         accessorKey: 'name',
         header: 'Name',
-        cell: ({ row }) => (
-          <Box>
-            <Typography variant="body2" sx={styles.tenantNameCell}>
-              {row.original.name}
-            </Typography>
-            {row.original.adminEmail && (
-              <Typography variant="caption" color="text.secondary">
-                {row.original.adminEmail}
-              </Typography>
-            )}
-          </Box>
-        ),
+        cell: TenantNameCell,
       },
       {
         accessorKey: 'planType',
         header: 'Plan',
-        cell: ({ row }) => <PlanBadge plan={row.original.planType} />,
+        cell: TenantPlanCell,
       },
       {
         accessorKey: 'createdVia',
         header: 'Created via',
-        cell: ({ row }) => <CreatedViaChip createdVia={row.original.createdVia} />,
+        cell: TenantCreatedViaCell,
       },
       {
         accessorKey: 'isActive',
         header: 'Status',
-        cell: ({ row }) => <ActiveStatusChip isActive={row.original.isActive} />,
+        cell: TenantStatusCell,
       },
       {
         id: 'actions',
         header: '',
-        cell: ({ row }) => (
-          <Box sx={styles.actionsCell}>
-            {canView && (
-              <Tooltip title="View">
-                <IconButton size="small" onClick={() => viewDialog.onOpen(row.original)}>
-                  <Icon name="Visibility" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canEdit && (
-              <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => editDialog.onOpen(row.original)}>
-                  <Icon name="Edit" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canEditSubscription && (
-              <Tooltip title="Change plan">
-                <IconButton
-                  size="small"
-                  color="primary"
-                  onClick={() => changePlanDialog.onOpen(row.original)}
-                >
-                  <Icon name="WorkspacePremium" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {canDelete && (
-              <Tooltip title="Delete">
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => deleteDialog.onOpen(row.original)}
-                >
-                  <Icon name="Delete" fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        ),
+        cell: TenantActionsCell.bind(null, {
+          canView,
+          canEdit,
+          canEditSubscription,
+          canDelete,
+          onView: viewDialog.onOpen,
+          onEdit: editDialog.onOpen,
+          onChangePlan: changePlanDialog.onOpen,
+          onDelete: deleteDialog.onOpen,
+        }),
       },
     ],
     [
-      logoDialog,
+      logoDialog.onOpen,
       canView,
       canEdit,
       canEditSubscription,
       canDelete,
-      viewDialog,
-      editDialog,
-      changePlanDialog,
-      deleteDialog,
+      viewDialog.onOpen,
+      editDialog.onOpen,
+      changePlanDialog.onOpen,
+      deleteDialog.onOpen,
     ],
   );
 
@@ -773,67 +822,33 @@ const TenantsPage = memo(() => {
       {
         accessorKey: 'email',
         header: 'Email',
-        cell: ({ row }) => <Typography variant="body2">{row.original.email}</Typography>,
+        cell: TenantInvitationEmailCell,
       },
       {
         id: 'status',
         header: 'Status',
-        cell: ({ row }) => <InvitationStatusChip status={row.original.status} />,
+        cell: TenantInvitationStatusCell,
       },
       {
         accessorKey: 'expiresAt',
         header: 'Expires',
-        cell: ({ row }) => (
-          <Typography variant="body2" color="text.secondary">
-            {formatDate(row.original.expiresAt)}
-          </Typography>
-        ),
+        cell: TenantInvitationExpiryCell,
       },
       ...(canCreate
         ? ([
             {
               id: 'actions',
               header: '',
-              cell: ({ row }) => {
-                const inv = row.original;
-                const isPending = !inv.isRevoked && !inv.isAccepted && !inv.isExpired;
-                if (!isPending) return null;
-                return (
-                  <Box sx={styles.actionsCell}>
-                    <Tooltip title="Resend invitation">
-                      <span>
-                        <IconButton
-                          aria-label="Resend invitation"
-                          size="small"
-                          color="info"
-                          disabled={isResendingInvitation}
-                          onClick={() => handleResendInvitation(inv)}
-                        >
-                          {isResendingInvitation ? (
-                            <CircularProgress size={14} />
-                          ) : (
-                            <Icon name="ForwardToInbox" fontSize="small" />
-                          )}
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title="Revoke invitation">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => revokeDialog.onOpen(inv)}
-                      >
-                        <Icon name="Block" fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                );
-              },
+              cell: TenantInvitationActionsCell.bind(null, {
+                isResendingInvitation,
+                handleResendInvitation,
+                onRevoke: revokeDialog.onOpen,
+              }),
             },
           ] as ColumnDef<TenantCreationInvitationDto>[])
         : []),
     ],
-    [canCreate, isResendingInvitation, handleResendInvitation, revokeDialog],
+    [canCreate, isResendingInvitation, handleResendInvitation, revokeDialog.onOpen],
   );
 
   return (
