@@ -1,4 +1,4 @@
-﻿import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -124,6 +124,30 @@ const InvitationSuccess = memo(({ result }: InvitationSuccessProps) => {
   );
 });
 
+const createProfileFields = (): FieldConfig[] => [
+  {
+    name: 'fullName',
+    label: 'Full name',
+    type: FIELD_TYPE.TEXT,
+    required: true,
+    muiProps: { autoComplete: 'name', autoFocus: true },
+  },
+  {
+    name: 'password',
+    label: 'Password',
+    type: FIELD_TYPE.PASSWORD,
+    required: true,
+    muiProps: { autoComplete: 'new-password' },
+  },
+  {
+    name: 'confirmPassword',
+    label: 'Confirm password',
+    type: FIELD_TYPE.PASSWORD,
+    required: true,
+    muiProps: { autoComplete: 'new-password' },
+  },
+];
+
 const InvitationPage = memo(() => {
   const snackbar = useSnackbar();
   const [searchParams] = useSearchParams();
@@ -154,64 +178,14 @@ const InvitationPage = memo(() => {
   const isAdmin = rawInvType === 'TenantAdmin' || rawInvType === 1;
   const isNewTenant = rawInvType === 'NewTenant' || rawInvType === 3;
 
-  const profileFields = useMemo<FieldConfig[]>(
-    () => [
-      {
-        name: 'fullName',
-        label: 'Full name',
-        type: FIELD_TYPE.TEXT,
-        required: true,
-        muiProps: { autoComplete: 'name', autoFocus: true },
-      },
-      {
-        name: 'password',
-        label: 'Password',
-        type: FIELD_TYPE.PASSWORD,
-        required: true,
-        muiProps: { autoComplete: 'new-password' },
-      },
-      {
-        name: 'confirmPassword',
-        label: 'Confirm password',
-        type: FIELD_TYPE.PASSWORD,
-        required: true,
-        muiProps: { autoComplete: 'new-password' },
-      },
-    ],
-    [],
-  );
+  const profileFields = useMemo(createProfileFields, []);
 
   const addressFields = useMemo<FieldConfig[]>(
     () => getAddressFields(undefined, undefined, true),
     [],
   );
 
-  const newTenantAccountFields = useMemo<FieldConfig[]>(
-    () => [
-      {
-        name: 'fullName',
-        label: 'Full name',
-        type: FIELD_TYPE.TEXT,
-        required: true,
-        muiProps: { autoComplete: 'name', autoFocus: true },
-      },
-      {
-        name: 'password',
-        label: 'Password',
-        type: FIELD_TYPE.PASSWORD,
-        required: true,
-        muiProps: { autoComplete: 'new-password' },
-      },
-      {
-        name: 'confirmPassword',
-        label: 'Confirm password',
-        type: FIELD_TYPE.PASSWORD,
-        required: true,
-        muiProps: { autoComplete: 'new-password' },
-      },
-    ],
-    [],
-  );
+  const newTenantAccountFields = useMemo(createProfileFields, []);
 
   const newTenantDetailsFields = useMemo<FieldConfig[]>(
     () => [

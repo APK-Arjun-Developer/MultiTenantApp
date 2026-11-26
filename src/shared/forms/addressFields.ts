@@ -5,7 +5,7 @@ import type { AddressDto, AddressRequest } from '@/types/api';
 
 const optStr = (max: number) => z.string().max(max).optional().or(z.literal(''));
 
-const nonEmpty = (value: string | undefined): string | null => {
+const nonEmpty = (value: string | null | undefined): string | null => {
   const t = value?.trim();
   if (!t) return null;
   return t;
@@ -21,60 +21,32 @@ const addressZodShape = {
   addressCountry: optStr(100),
 };
 
-const getAddressFields = (
+const addressFields = [
+  { suffix: 'Line1', key: 'line1', label: 'Address line 1', required: true },
+  { suffix: 'Line2', key: 'line2', label: 'Address line 2', required: false },
+  { suffix: 'City', key: 'city', label: 'City', required: true },
+  { suffix: 'State', key: 'state', label: 'State / Province', required: false },
+  { suffix: 'PostalCode', key: 'postalCode', label: 'Postal code', required: true },
+  { suffix: 'Country', key: 'country', label: 'Country', required: true },
+] as const;
+
+const createAddressFields = (
+  prefix: 'address' | 'tenantAddress',
   address?: AddressDto | null,
   section?: string,
-  required?: boolean,
-): FieldConfig[] => {
-  return [
-    {
-      name: 'addressLine1',
-      label: 'Address line 1',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.line1 ?? '',
-      section,
-    },
-    {
-      name: 'addressLine2',
-      label: 'Address line 2',
-      type: FIELD_TYPE.TEXT,
-      defaultValue: address?.line2 ?? '',
-      section,
-    },
-    {
-      name: 'addressCity',
-      label: 'City',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.city ?? '',
-      section,
-    },
-    {
-      name: 'addressState',
-      label: 'State / Province',
-      type: FIELD_TYPE.TEXT,
-      defaultValue: address?.state ?? '',
-      section,
-    },
-    {
-      name: 'addressPostalCode',
-      label: 'Postal code',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.postalCode ?? '',
-      section,
-    },
-    {
-      name: 'addressCountry',
-      label: 'Country',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.country ?? '',
-      section,
-    },
-  ];
-};
+  required = false,
+): FieldConfig[] =>
+  addressFields.map((field) => ({
+    name: prefix + field.suffix,
+    label: field.label,
+    type: FIELD_TYPE.TEXT,
+    ...(field.required && { required }),
+    defaultValue: address?.[field.key] ?? '',
+    section,
+  }));
+
+const getAddressFields = (address?: AddressDto | null, section?: string, required?: boolean) =>
+  createAddressFields('address', address, section, required);
 
 const requiredAddressZodShape = {
   addressLine1: reqStr(200),
@@ -104,24 +76,32 @@ interface AddressValues {
   addressCountry?: string;
 }
 
-const buildAddressPayload = (
-  values: AddressValues,
+const normalizeAddress = (
+  values: AddressRequest,
 ): {
   address?: AddressRequest;
   clearAddress?: boolean;
 } => {
-  const line1 = nonEmpty(values.addressLine1);
-  const line2 = nonEmpty(values.addressLine2);
-  const city = nonEmpty(values.addressCity);
-  const state = nonEmpty(values.addressState);
-  const postalCode = nonEmpty(values.addressPostalCode);
-  const country = nonEmpty(values.addressCountry);
-
-  const hasAny = [line1, line2, city, state, postalCode, country].some(Boolean);
-  return hasAny
-    ? { address: { line1, line2, city, state, postalCode, country } }
-    : { clearAddress: true };
+  const address = {
+    line1: nonEmpty(values.line1),
+    line2: nonEmpty(values.line2),
+    city: nonEmpty(values.city),
+    state: nonEmpty(values.state),
+    postalCode: nonEmpty(values.postalCode),
+    country: nonEmpty(values.country),
+  };
+  return Object.values(address).some(Boolean) ? { address } : { clearAddress: true };
 };
+
+const buildAddressPayload = (values: AddressValues) =>
+  normalizeAddress({
+    line1: values.addressLine1,
+    line2: values.addressLine2,
+    city: values.addressCity,
+    state: values.addressState,
+    postalCode: values.addressPostalCode,
+    country: values.addressCountry,
+  });
 
 const tenantAddressZodShape = {
   tenantAddressLine1: optStr(200),
@@ -136,56 +116,7 @@ const getTenantAddressFields = (
   address?: AddressDto | null,
   section?: string,
   required?: boolean,
-): FieldConfig[] => {
-  return [
-    {
-      name: 'tenantAddressLine1',
-      label: 'Address line 1',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.line1 ?? '',
-      section,
-    },
-    {
-      name: 'tenantAddressLine2',
-      label: 'Address line 2',
-      type: FIELD_TYPE.TEXT,
-      defaultValue: address?.line2 ?? '',
-      section,
-    },
-    {
-      name: 'tenantAddressCity',
-      label: 'City',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.city ?? '',
-      section,
-    },
-    {
-      name: 'tenantAddressState',
-      label: 'State / Province',
-      type: FIELD_TYPE.TEXT,
-      defaultValue: address?.state ?? '',
-      section,
-    },
-    {
-      name: 'tenantAddressPostalCode',
-      label: 'Postal code',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.postalCode ?? '',
-      section,
-    },
-    {
-      name: 'tenantAddressCountry',
-      label: 'Country',
-      type: FIELD_TYPE.TEXT,
-      required: required ?? false,
-      defaultValue: address?.country ?? '',
-      section,
-    },
-  ];
-};
+) => createAddressFields('tenantAddress', address, section, required);
 
 const requiredTenantAddressZodShape = {
   tenantAddressLine1: reqStr(200),
@@ -205,24 +136,15 @@ interface TenantAddressValues {
   tenantAddressCountry?: string;
 }
 
-const buildTenantAddressPayload = (
-  values: TenantAddressValues,
-): {
-  address?: AddressRequest;
-  clearAddress?: boolean;
-} => {
-  const line1 = nonEmpty(values.tenantAddressLine1);
-  const line2 = nonEmpty(values.tenantAddressLine2);
-  const city = nonEmpty(values.tenantAddressCity);
-  const state = nonEmpty(values.tenantAddressState);
-  const postalCode = nonEmpty(values.tenantAddressPostalCode);
-  const country = nonEmpty(values.tenantAddressCountry);
-
-  const hasAny = [line1, line2, city, state, postalCode, country].some(Boolean);
-  return hasAny
-    ? { address: { line1, line2, city, state, postalCode, country } }
-    : { clearAddress: true };
-};
+const buildTenantAddressPayload = (values: TenantAddressValues) =>
+  normalizeAddress({
+    line1: values.tenantAddressLine1,
+    line2: values.tenantAddressLine2,
+    city: values.tenantAddressCity,
+    state: values.tenantAddressState,
+    postalCode: values.tenantAddressPostalCode,
+    country: values.tenantAddressCountry,
+  });
 
 export {
   type AddressValues,

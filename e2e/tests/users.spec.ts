@@ -31,6 +31,7 @@ test.describe('Users (signed in as tenant admin)', () => {
         'Users.Edit',
         'Onboarding.Create',
         'Onboarding.Invite',
+        'Onboarding.Resend',
       ],
     });
     await mockGet(page, '/api/v1/users/invitations', paged([]));
@@ -93,5 +94,49 @@ test.describe('Users (signed in as tenant admin)', () => {
 
     await expect(page).toHaveURL(/tab=invitations/);
     await expect(page.getByText('No records found')).toBeVisible();
+  });
+
+  test('resends pending invitations and hides actions for accepted invitations', async ({
+    page,
+  }) => {
+    const pending = {
+      id: 'i1',
+      email: 'pending@acme.com',
+      invitationType: 'TenantUser',
+      tenantId: 't1',
+      expiresAt: '2099-12-01T00:00:00Z',
+      isExpired: false,
+      isAccepted: false,
+      isRevoked: false,
+      status: 'Pending',
+    };
+    await mockGet(
+      page,
+      '/api/v1/users/invitations',
+      paged([
+        pending,
+        { ...pending, id: 'i2', email: 'accepted@acme.com', isAccepted: true, status: 'Accepted' },
+      ]),
+    );
+    await page.route('**/api/v1/users/invitations/i1/resend', (route) =>
+      route.fulfill({ json: { data: null, message: null } }),
+    );
+
+    await page.goto('/users?tab=invitations');
+
+    const acceptedRow = page.getByRole('row', { name: /accepted@acme\.com/ });
+    await expect(acceptedRow).toContainText('Accepted');
+    await expect(acceptedRow.getByRole('button')).toHaveCount(0);
+
+    const pendingRow = page.getByRole('row', { name: /pending@acme\.com/ });
+    await expect(pendingRow.getByRole('button', { name: 'Revoke invitation' })).toHaveCount(0);
+    const response = page.waitForResponse(
+      (result) =>
+        result.url().endsWith('/api/v1/users/invitations/i1/resend') &&
+        result.request().method() === 'POST',
+    );
+    await pendingRow.getByRole('button', { name: 'Resend invitation' }).click();
+    expect((await response).ok()).toBe(true);
+    await expect(page.getByText('Invitation resent to pending@acme.com.')).toBeVisible();
   });
 });
