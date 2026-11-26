@@ -1,3 +1,29 @@
+# [1.3.0](https://github.com/APK-Arjun-Developer/MultiTenantApp/compare/v1.2.0...v1.3.0) (2026-11-26)
+
+
+### Bug Fixes
+
+* **a11y:** expose the sorted column to screen readers ([a4327bf](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/a4327bf9c7cafb20f5eaf1d8850c58b7199ef74b))
+* **a11y:** keep loading button label accessible ([97c46d7](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/97c46d75a2b32d92f220ae101085c22be19bccd0))
+* **a11y:** label the configuration switches ([f6a12d6](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/f6a12d66d8e7b8ea8a27c68fbc1a2be99b178985))
+* **a11y:** name icon buttons wrapped for disabled tooltips ([97d9075](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/97d907506c11d4d4d247716b1ab3698fadc6580b))
+* **a11y:** name the navigation menu button ([53d2ee2](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/53d2ee293c47837d6549b61afc2057314946d398))
+* correct regex for exempt branch names in validation script ([98aca81](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/98aca81918680e263a466bfb3d766cc5f11ce59e))
+* make role and permission pickers real multi-selects ([15b8768](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/15b8768fa32ce4c0ba2132f39f8b61700fc5fec2))
+* render the email verification code inputs ([5ffe031](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/5ffe031e357b039fb0bbab4ee857a480a53fb178))
+* report failed company address updates when editing an admin ([b123f1a](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/b123f1a4c7802107fdddf76bbc496ff3f53c18ce))
+* restrict sonarcloud analysis to main ([7f72faa](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/7f72faae0711a561e79336e23169e3fb3e830916))
+* tell the user when a photo cannot be cropped ([c0b9d83](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/c0b9d83f87b8f4333e32e1c3a3bf93ad8e395ecb))
+* update release workflow to use app token for permissions ([6b67718](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/6b677187f2918b583092a12d3c20c5e27456ec1a))
+* update release workflow to use client-id for app token ([932d6e9](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/932d6e9262219f10d08652d8947dda0d32e56f2e))
+* upgrade vulnerable dependencies ([56d9a0a](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/56d9a0a94d6c4178a62c32406e718b84bf083ad7))
+
+
+### Features
+
+* add stepper cancel and server-unavailable handling ([6972c6c](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/6972c6cef6610e8ac8cf8b6c4ffb63d0a4a7923c))
+* show server unavailable on public pages instead of expired link ([b13489c](https://github.com/APK-Arjun-Developer/MultiTenantApp/commit/b13489cfb0fc3022020ede9e2044b82e6a37cccd))
+
 # [1.2.0](https://github.com/APK-Arjun-Developer/MultiTenantApp/compare/v1.1.0...v1.2.0) (2026-10-25)
 
 ### Features
